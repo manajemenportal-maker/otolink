@@ -1021,9 +1021,8 @@
           <span class="brand-text"><span>OtoLink <span style="font-weight:600">Indonesia</span></span><small>Automotive Marketplace</small></span>
         </a>
         <div class="menu" id="menu">
-          <a href="#beli">Mobil</a>
-          <a href="#motor">Motor</a>
-          <a href="#jual">Jual Kendaraan</a>
+          <a href="#beli" onclick="showVehicleGroup('Mobil')">Mobil</a>
+          <a href="#beli" onclick="showVehicleGroup('Motor')">Motor</a>
           <a href="#kredit">Kredit & Asuransi</a>
           <a href="#inspeksi">Inspeksi</a>
           <a href="#dealer">Dealer</a>
@@ -1169,12 +1168,12 @@
     </div>
   </section>
 
-  <section class="section" id="beli" style="background:linear-gradient(180deg,#fff1f7,#fff)">
+  <section class="section" id="beli" data-listing-section="true" style="background:linear-gradient(180deg,#fff1f7,#fff)">
     <div class="wrap">
       <div class="section-title">
         <div>
-          <h2>Listing Kendaraan Pilihan</h2>
-          <p>Temukan pilihan mobil dan motor baru maupun bekas dari penjual pribadi, showroom, dan dealer terpercaya.</p>
+          <h2>Daftar Penjualan Mobil & Motor</h2>
+          <p>Pilih menu Mobil atau Motor untuk melihat daftar penjualan yang tersedia dari seller, showroom, dan dealer terpercaya.</p>
         </div>
         <button class="btn btn-dark" onclick="openModal('compareModal')">Lihat Compare (<span id="compareCount">0</span>)</button>
       </div>
@@ -2934,6 +2933,20 @@
       const side=document.getElementById('sideCondition');
       const main=document.getElementById('vehicleCondition');
       if(side && main){ main.value=side.value; renderCars(); }
+    }
+
+    
+    function showVehicleGroup(group){
+      selectedType = group;
+      document.querySelectorAll('.tab').forEach(t=>{
+        t.classList.toggle('active', t.dataset.type === group);
+      });
+      populateBrandOptions('brand');
+      populateModelOptions('brand','model');
+      renderCars();
+      document.querySelector('#beli')?.scrollIntoView({behavior:'smooth', block:'start'});
+      const menu = document.getElementById('menu');
+      if(menu) menu.classList.remove('open');
     }
 
     function quick(v){
