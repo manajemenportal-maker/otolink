@@ -677,6 +677,13 @@
     }
   </style>
 
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
 </head>
 <body>
   <header class="topbar">
@@ -1042,7 +1049,7 @@
   <div class="modal" id="adminModal">
     <div class="modal-box">
       <div class="modal-head">
-        <h2>Admin Panel</h2>
+        <h2>Admin Panel</h2><span class="live-badge"><i class="live-dot"></i> Firebase Cloud</span>
         <button class="x" onclick="closeModal('adminModal')">×</button>
       </div>
 
@@ -2614,6 +2621,13 @@
         seller:'Seller Terverifikasi', badge:'Listing Baru', status:'Dealer',
         img:'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=900&q=80'
       });
+      const newListing = cars[0];
+      cloudAdd('otolink_listings', newListing).then(ref=>{
+        if(ref){
+          newListing.cloudId = ref.id;
+          cloudSet('otolink_listings', ref.id, {id:newListing.id, cloudId:ref.id});
+        }
+      });
       initOptions(); renderCars(); renderAdminTables(); closeModal('sellModal'); notify('Listing baru ditambahkan', `${brand} ${model} berhasil masuk marketplace`); toast('Listing berhasil ditambahkan');
     }
 
@@ -2655,6 +2669,173 @@
     });
 
     
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOwyyhNKRF0bl6t3ozSP2CrcxIo1gY7BA",
+      authDomain: "alarm-sos-b73cc.firebaseapp.com",
+      projectId: "alarm-sos-b73cc",
+      storageBucket: "alarm-sos-b73cc.firebasestorage.app",
+      messagingSenderId: "745103732098",
+      appId: "1:745103732098:web:a7f5ae578a0c548669739b",
+      measurementId: "G-9VK9JJB9N9"
+    };
+
+    let firebaseReady = false;
+    let db = null;
+    let storage = null;
+
+    function initFirebaseOtoLink(){
+      try{
+        if(!window.firebase){
+          console.warn('Firebase SDK belum termuat.');
+          return;
+        }
+        if(!firebase.apps.length){
+          firebase.initializeApp(firebaseConfig);
+        }
+        try{
+          firebase.analytics();
+        }catch(analyticsError){
+          console.warn('Analytics tidak aktif di environment ini:', analyticsError?.message || analyticsError);
+        }
+        db = firebase.firestore();
+        storage = firebase.storage();
+        firebaseReady = true;
+        window.otoFirebase = { db, storage, ready:true };
+        console.log('OtoLink Firebase aktif:', firebaseConfig.projectId);
+      }catch(error){
+        firebaseReady = false;
+        console.error('Firebase gagal aktif:', error);
+      }
+    }
+
+    function cloudAdd(collectionName, payload){
+      if(!firebaseReady || !db) return Promise.resolve(null);
+      return db.collection(collectionName).add({
+        ...payload,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(error=>{
+        console.warn('Cloud add gagal:', collectionName, error);
+        return null;
+      });
+    }
+
+    function cloudSet(collectionName, docId, payload){
+      if(!firebaseReady || !db) return Promise.resolve(null);
+      return db.collection(collectionName).doc(String(docId)).set({
+        ...payload,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, {merge:true}).catch(error=>{
+        console.warn('Cloud set gagal:', collectionName, error);
+        return null;
+      });
+    }
+
+    function cloudDelete(collectionName, docId){
+      if(!firebaseReady || !db) return Promise.resolve(null);
+      return db.collection(collectionName).doc(String(docId)).delete().catch(error=>{
+        console.warn('Cloud delete gagal:', collectionName, error);
+        return null;
+      });
+    }
+
+    function normalizeCloudVehicle(doc){
+      const data = doc.data() || {};
+      return {
+        id: data.id || doc.id,
+        cloudId: doc.id,
+        condition: data.condition || 'Bekas',
+        category: data.category || 'Mobil',
+        brand: data.brand || 'Toyota',
+        model: data.model || 'Unit Kendaraan',
+        type: data.type || ((data.category || 'Mobil') + ' ' + (data.condition || 'Bekas')),
+        body: data.body || (data.category === 'Motor' ? 'Skutik' : 'MPV'),
+        year: Number(data.year || 2024),
+        km: Number(data.km || 0),
+        price: Number(data.price || 0),
+        city: data.city || 'Jakarta',
+        trans: data.trans || 'Automatic',
+        fuel: data.fuel || 'Bensin',
+        seller: data.seller || 'Seller Terverifikasi',
+        badge: data.badge || 'Listing',
+        status: data.status || 'Dealer',
+        img: data.img || 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=900&q=80'
+      };
+    }
+
+    function loadCloudVehicles(){
+      if(!firebaseReady || !db) return;
+      db.collection('otolink_listings')
+        .orderBy('updatedAt','desc')
+        .limit(80)
+        .onSnapshot(snapshot=>{
+          const cloudCars = snapshot.docs.map(normalizeCloudVehicle);
+          const localIds = new Set(cars.map(c=>String(c.id)));
+          cloudCars.forEach(item=>{
+            const idx = cars.findIndex(c=>String(c.cloudId || c.id) === String(item.cloudId));
+            if(idx >= 0) cars[idx] = item;
+            else if(!localIds.has(String(item.id))) cars.unshift(item);
+          });
+          initOptions();
+          renderCars();
+          renderAdminTables();
+        }, error=>console.warn('Load listing cloud gagal:', error));
+    }
+
+    function loadCloudLeads(){
+      if(!firebaseReady || !db) return;
+      db.collection('otolink_leads')
+        .orderBy('createdAt','desc')
+        .limit(100)
+        .onSnapshot(snapshot=>{
+          const cloudLeads = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()}));
+          if(cloudLeads.length){
+            leads = cloudLeads.map(l=>({
+              name:l.name || 'Calon Pembeli',
+              phone:l.phone || '-',
+              vehicle:l.vehicle || 'Kendaraan',
+              interest:l.interest || 'Chat Penjual',
+              status:l.status || 'Baru'
+            }));
+            renderAdminTables();
+          }
+        }, error=>console.warn('Load lead cloud gagal:', error));
+    }
+
+    function loadCloudDealers(){
+      if(!firebaseReady || !db) return;
+      db.collection('otolink_dealers')
+        .orderBy('updatedAt','desc')
+        .limit(100)
+        .onSnapshot(snapshot=>{
+          const cloudDealers = snapshot.docs.map(doc=>({id:doc.id, ...doc.data()}));
+          if(cloudDealers.length){
+            dealers = cloudDealers.map(d=>({
+              name:d.name || 'Dealer',
+              city:d.city || 'Jakarta',
+              phone:d.phone || '081296629033',
+              status:d.status || 'Verified'
+            }));
+            renderAdminTables();
+          }
+        }, error=>console.warn('Load dealer cloud gagal:', error));
+    }
+
+    function startCloudSync(){
+      if(!firebaseReady) return;
+      loadCloudVehicles();
+      loadCloudLeads();
+      loadCloudDealers();
+      cloudSet('otolink_system','status',{
+        platform:'OtoLink Indonesia',
+        status:'Online',
+        lastOnline:new Date().toISOString(),
+        projectId:firebaseConfig.projectId
+      });
+    }
+
+
     let leads = [
       {name:'Andi Pratama', phone:'0812xxxx9901', vehicle:'Toyota Avanza 1.5 G CVT', interest:'Chat Penjual', status:'Baru'},
       {name:'Maya Sari', phone:'0857xxxx2109', vehicle:'Honda PCX 160 CBS', interest:'Booking Inspeksi', status:'Diproses'},
@@ -2710,7 +2891,9 @@
       const phone = document.getElementById('leadPhone').value || 'Belum diisi';
       const interest = document.getElementById('leadInterest').value;
       const vehicle = c ? `${c.brand} ${c.model}` : 'Kendaraan';
-      leads.unshift({name, phone, vehicle, interest, status:'Baru'});
+      const leadData = {name, phone, vehicle, interest, status:'Baru'};
+      leads.unshift(leadData);
+      cloudAdd('otolink_leads', leadData);
       document.getElementById('leadName').value = '';
       document.getElementById('leadPhone').value = '';
       closeLeadDrawer();
@@ -2774,6 +2957,7 @@
       c.status = 'Hot Deal';
       renderCars();
       renderAdminTables();
+      cloudSet('otolink_listings', c.cloudId || c.id, c);
       notify('Listing dipromosikan', `${c.brand} ${c.model} masuk Hot Deal`);
     }
 
@@ -2781,7 +2965,9 @@
       const name = document.getElementById('dealerName').value || 'Dealer Baru';
       const city = document.getElementById('dealerCity').value || 'Jakarta';
       const phone = document.getElementById('dealerPhone').value || '081296629033';
-      dealers.unshift({name, city, phone, status:'Verified'});
+      const dealerData = {name, city, phone, status:'Verified'};
+      dealers.unshift(dealerData);
+      cloudAdd('otolink_dealers', dealerData);
       document.getElementById('dealerName').value = '';
       document.getElementById('dealerCity').value = '';
       document.getElementById('dealerPhone').value = '';
@@ -2796,6 +2982,7 @@
       const p = document.querySelector('.hero p');
       if(h1) h1.textContent = title;
       if(p) p.textContent = sub;
+      cloudSet('otolink_settings','hero_banner',{title, sub});
       notify('Banner diperbarui', 'Tampilan hero berhasil diganti');
       toast('Banner aktif');
     }
@@ -2806,6 +2993,7 @@
       document.querySelectorAll('.brand-text span:first-child').forEach(el=>{
         if(el) el.innerHTML = platform.replace(' ', ' <span style="font-weight:600">') + '</span>';
       });
+      cloudSet('otolink_settings','operasional',{platform, status, customerService:document.getElementById('setWa')?.value || '081296629033'});
       notify('Setting tersimpan', `Status website: ${status}`);
       toast('Setting disimpan');
     }
@@ -2821,6 +3009,8 @@
       document.querySelectorAll('.modal').forEach(m=>{if(e.target===m)m.classList.remove('show')})
     }
 
+    initFirebaseOtoLink();
+    startCloudSync();
     initOptions();
     renderCars();
     calculateCredit();
