@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>OtoLink Indonesia - Marketplace Jual Beli Mobil</title>
-  <meta name="description" content="Marketplace jual beli mobil baru dan bekas lengkap dengan inspeksi, simulasi kredit, dealer terpercaya, listing cepat, wishlist, compare, dan dashboard seller.">
+  <title>OtoLink Indonesia - Marketplace Jual Mobil</title>
+  <meta name="description" content="Marketplace jual beli mobil dan motor baru maupun bekas lengkap dengan inspeksi, simulasi kredit, dealer terpercaya, listing cepat, wishlist, compare, dan dashboard seller.">
   <style>
     :root{
       --red:#ec4899;
@@ -80,7 +80,7 @@
     .search-card{
       background:linear-gradient(180deg,#fff,#fff1f7);color:var(--dark);border-radius:28px;padding:22px;box-shadow:var(--shadow);border:1px solid rgba(236,72,153,.14);
     }
-    .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
     .tab{
       border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px 8px;font-weight:900;cursor:pointer;
     }
@@ -339,7 +339,7 @@
         transform:translateY(0);
       }
       .tabs{
-        grid-template-columns:repeat(4,1fr);
+        grid-template-columns:repeat(3,1fr);
         gap:6px;
         margin-bottom:10px;
       }
@@ -590,8 +590,9 @@
           <span class="brand-text"><span>OtoLink <span style="font-weight:600">Indonesia</span></span><small>Automotive Marketplace</small></span>
         </a>
         <div class="menu" id="menu">
-          <a href="#beli">Beli Mobil</a>
-          <a href="#jual">Jual Mobil</a>
+          <a href="#beli">Mobil</a>
+          <a href="#motor">Motor</a>
+          <a href="#jual">Jual Kendaraan</a>
           <a href="#kredit">Kredit & Asuransi</a>
           <a href="#inspeksi">Inspeksi</a>
           <a href="#dealer">Dealer</a>
@@ -612,16 +613,16 @@
         <span class="badge">🚗 Marketplace mobil profesional untuk Indonesia</span>
         <h1>Jual beli mobil lebih cepat, aman, dan terlihat profesional.</h1>
         <p>
-          Satu platform untuk mencari mobil baru, mobil bekas, mobil listrik, dealer terpercaya,
+          Satu platform untuk mencari mobil baru, mobil bekas, motor baru, motor bekas, kendaraan listrik, dealer terpercaya,
           inspeksi kendaraan, simulasi kredit, asuransi, gadai BPKB, perbandingan unit, komunikasi penjual,
           dan pusat kendali seller.
         </p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
-          <a class="btn btn-red" href="#beli">Cari Mobil Sekarang</a>
-          <button class="btn btn-green" onclick="openModal('sellModal')">Jual Mobil Sekarang</button>
+          <a class="btn btn-red" href="#beli">Cari Kendaraan Sekarang</a>
+          <button class="btn btn-green" onclick="openModal('sellModal')">Jual Kendaraan Sekarang</button>
         </div>
         <div class="hero-stats">
-          <div class="stat"><b>59K+</b><span>listing aktif</span></div>
+          <div class="stat"><b>59K+</b><span>listing kendaraan aktif</span></div>
           <div class="stat"><b>750+</b><span>dealer & showroom</span></div>
           <div class="stat"><b>24 Jam</b><span>lead masuk</span></div>
           <div class="stat"><b>99%</b><span>mobile ready</span></div>
@@ -631,19 +632,24 @@
       <div class="search-card">
         <div class="tabs">
           <button class="tab active" data-type="Semua">Semua</button>
-          <button class="tab" data-type="Bekas">Bekas</button>
-          <button class="tab" data-type="Baru">Baru</button>
-          <button class="tab" data-type="Listrik">Listrik</button>
+          <button class="tab" data-type="Mobil">Mobil</button>
+          <button class="tab" data-type="Motor">Motor</button>
         </div>
         <div class="form-grid">
           <div class="field full">
-            <label>Cari cepat</label>
-            <input id="keyword" data="Contoh: Avanza, HR-V, Pajero, Alphard..." oninput="renderCars()">
+            <label>Cari cepat mobil / motor</label>
+            <input id="keyword" data="Contoh: Avanza, HR-V, Pajero, NMAX, PCX, Vario..." oninput="renderCars()">
           </div>
           <div class="field">
             <label>Merek</label>
-            <select id="brand" onchange="renderCars()">
+            <select id="brand" onchange="populateModelOptions('brand','model'); renderCars()">
               <option value="">Semua Merek</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tipe / Model</label>
+            <select id="model" onchange="renderCars()">
+              <option value="">Semua Tipe / Model</option>
             </select>
           </div>
           <div class="field">
@@ -670,6 +676,14 @@
               <option>Manual</option>
             </select>
           </div>
+          <div class="field">
+            <label>Kondisi Kendaraan</label>
+            <select id="vehicleCondition" onchange="renderCars()">
+              <option value="">Semua Kondisi</option>
+              <option>Baru</option>
+              <option>Bekas</option>
+            </select>
+          </div>
           <button class="btn btn-red full" onclick="document.querySelector('#beli').scrollIntoView({behavior:'smooth'})">Tampilkan Mobil</button>
         </div>
         <div class="quick-tags">
@@ -677,7 +691,13 @@
           <span class="tag" onclick="quick('Honda')">Honda</span>
           <span class="tag" onclick="quick('SUV')">SUV</span>
           <span class="tag" onclick="quick('Keluarga')">Mobil Keluarga</span>
-          <span class="tag" onclick="quick('Listrik')">Mobil Listrik</span>
+          <span class="tag" onclick="quick('Listrik')">Listrik</span>
+          <span class="tag" onclick="quick('NMAX')">NMAX</span>
+          <span class="tag" onclick="quick('PCX')">PCX</span>
+          <span class="tag" onclick="quick('Motor')">Motor</span>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:#9d174d;font-weight:800">
+          Database merek dan tipe kendaraan global tersedia untuk pilihan Mobil dan Motor.
         </div>
       </div>
     </div>
@@ -708,8 +728,8 @@
     <div class="wrap">
       <div class="section-title">
         <div>
-          <h2>Listing Mobil Pilihan</h2>
-          <p>Temukan pilihan mobil baru dan bekas dari penjual pribadi, showroom, dan dealer terpercaya.</p>
+          <h2>Listing Kendaraan Pilihan</h2>
+          <p>Temukan pilihan mobil dan motor baru maupun bekas dari penjual pribadi, showroom, dan dealer terpercaya.</p>
         </div>
         <button class="btn btn-dark" onclick="openModal('compareModal')">Lihat Compare (<span id="compareCount">0</span>)</button>
       </div>
@@ -719,9 +739,10 @@
           <h3>Filter Detail</h3>
           <div class="field"><label>Tahun Minimal</label><select id="minYear" onchange="renderCars()"><option value="">Semua</option><option>2024</option><option>2022</option><option>2020</option><option>2018</option></select></div>
           <br>
-          <div class="field"><label>Tipe Body</label><select id="bodyType" onchange="renderCars()"><option value="">Semua</option><option>SUV</option><option>MPV</option><option>Sedan</option><option>Hatchback</option><option>Pickup</option></select></div>
+          <div class="field"><label>Tipe Body</label><select id="bodyType" onchange="renderCars()"><option value="">Semua</option><option>SUV</option><option>MPV</option><option>Sedan</option><option>Hatchback</option><option>Pickup</option><option>Skutik</option><option>Sport</option><option>Bebek</option><option>Trail</option><option>EV Motor</option></select></div>
           <br>
-          <div class="field"><label>Status</label><select id="status" onchange="renderCars()"><option value="">Semua</option><option>Inspected</option><option>Hot Deal</option><option>Dealer</option></select></div>
+          <div class="field"><label>Status Listing</label><select id="status" onchange="renderCars()"><option value="">Semua</option><option>Inspected</option><option>Hot Deal</option><option>Dealer</option></select></div>
+          <div class="field"><label>Kondisi</label><select id="sideCondition" onchange="syncConditionFromSide()"><option value="">Semua Kondisi</option><option>Baru</option><option>Bekas</option></select></div>
           <br>
           <button class="btn btn-red" style="width:100%" onclick="resetFilters()">Reset Filter</button>
           <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
@@ -744,13 +765,31 @@
     </div>
   </section>
 
+  
+  <section class="section" id="motor">
+    <div class="wrap">
+      <div class="section-title">
+        <div>
+          <h2>Jual Motor</h2>
+          <p>Grup motor masuk sebagai kategori utama. Pilihan baru, bekas, listrik, tipe body, tahun, harga, dan spesifikasi diatur di dalam filter pencarian.</p>
+        </div>
+      </div>
+      <div class="tools-grid">
+        <div class="tool"><div class="ico">🛵</div><h3>Motor</h3><p>Listing motor dari penjual pribadi dan showroom dengan informasi kilometer, pajak, dan kondisi.</p></div>
+        <div class="tool"><div class="ico">🏍️</div><h3>Dealer Motor</h3><p>Promo unit dari dealer dari dealer, pilihan DP, tenor kredit, warna, dan ketersediaan unit.</p></div>
+        <div class="tool"><div class="ico">⚡</div><h3>Motor Listrik</h3><p>Kategori khusus motor listrik dengan jarak tempuh, baterai, charging, dan garansi.</p></div>
+        <div class="tool"><div class="ico">🧾</div><h3>Inspeksi Motor</h3><p>Checklist mesin, rangka, kelistrikan, ban, rem, surat kendaraan, dan kelengkapan unit.</p></div>
+      </div>
+    </div>
+  </section>
+
   <section class="section" id="kredit">
     <div class="wrap split">
       <div class="panel">
-        <h3>Simulasi Kredit Mobil</h3>
+        <h3>Simulasi Kredit Kendaraan</h3>
         <p style="color:var(--muted)">Hitungan cepat untuk buyer sebelum menghubungi dealer/leasing.</p>
         <div class="form-grid">
-          <div class="field"><label>Harga Mobil</label><input id="calcPrice" type="number" value="250000000"></div>
+          <div class="field"><label>Harga Kendaraan</label><input id="calcPrice" type="number" value="250000000"></div>
           <div class="field"><label>DP (%)</label><input id="calcDp" type="number" value="25"></div>
           <div class="field"><label>Tenor (tahun)</label><select id="calcTenor"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div>
           <div class="field"><label>Bunga per tahun (%)</label><input id="calcRate" type="number" value="6.5"></div>
@@ -842,7 +881,7 @@
       <div class="news-grid">
         <article class="news"><b>PANDUAN PEMBELI</b><h3>Checklist sebelum beli mobil bekas</h3><p>Cek dokumen, nomor rangka, servis, ban, kaki-kaki, AC, mesin, dan riwayat tabrakan.</p></article>
         <article class="news"><b>KREDIT MOBIL</b><h3>Cara menghitung DP dan cicilan aman</h3><p>Gunakan simulasi cicilan dan sesuaikan rasio angsuran dengan pemasukan bulanan.</p></article>
-        <article class="news"><b>MOBIL LISTRIK</b><h3>Hal yang perlu dicek sebelum beli EV</h3><p>Kondisi baterai, garansi, charging, jarak tempuh, dan biaya servis berkala.</p></article>
+        <article class="news"><b>MOBIL LISTRIK</b><h3>Hal yang perlu dicek sebelum beli kendaraan listrik</h3><p>Kondisi baterai, garansi, charging, jarak tempuh, dan biaya servis berkala.</p></article>
       </div>
     </div>
   </section>
@@ -851,9 +890,9 @@
     <div class="wrap footer-grid">
       <div>
         <h3>OtoLink Indonesia</h3>
-        <p>Marketplace jual beli mobil baru dan bekas dengan layanan lengkap untuk pembeli, penjual, dealer, pembiayaan, inspeksi, dan promosi kendaraan.</p>
+        <p>Marketplace jual beli mobil dan motor baru maupun bekas dengan layanan lengkap untuk pembeli, penjual, dealer, pembiayaan, inspeksi, dan promosi kendaraan.</p>
       </div>
-      <div><h4>Beli</h4><a>Mobil Bekas</a><a>Mobil Baru</a><a>Mobil Listrik</a><a>Hot Deals</a></div>
+      <div><h4>Beli</h4><a>Mobil Bekas</a><a>Mobil Baru</a><a>Motor Bekas</a><a>Motor</a><a>Kendaraan Listrik</a><a>Hot Deals</a></div>
       <div><h4>Jual</h4><a>Pasang Iklan</a><a>Dealer Center</a><a>Iklan Prioritas</a><a>Bulk Upload</a></div>
       <div><h4>Layanan</h4><a>Inspeksi</a><a>Kredit</a><a>Asuransi</a><a>Gadai BPKB</a></div>
     </div>
@@ -874,8 +913,10 @@
         <button class="x" onclick="closeModal('sellModal')">×</button>
       </div>
       <div class="form-grid">
-        <div class="field"><label>Merek</label><input id="sellBrand" data="Toyota"></div>
-        <div class="field"><label>Model</label><input id="sellModel" data="Avanza 1.5 G"></div>
+        <div class="field"><label>Grup Kendaraan</label><select id="sellCategory" onchange="populateBrandOptions('sellBrand', this.value); populateModelOptions('sellBrand','sellModel', this.value)"><option>Mobil</option><option>Motor</option></select></div>
+        <div class="field"><label>Merek</label><select id="sellBrand" onchange="populateModelOptions('sellBrand','sellModel', document.getElementById('sellCategory')?.value || 'Mobil')"><option value="">Pilih Merek</option></select></div>
+        <div class="field"><label>Tipe / Model</label><select id="sellModel"><option value="">Pilih Tipe / Model</option></select></div>
+        <div class="field"><label>Kondisi</label><select id="sellCondition"><option>Bekas</option><option>Baru</option></select></div>
         <div class="field"><label>Tahun</label><input id="sellYear" type="number" data="2022"></div>
         <div class="field"><label>Harga</label><input id="sellPrice" type="number" data="220000000"></div>
         <div class="field"><label>Kota</label><input id="sellCity" data="Jakarta"></div>
@@ -903,7 +944,7 @@
         <button class="x" onclick="closeModal('adminModal')">×</button>
       </div>
       <div class="dash-grid" style="color:#111">
-        <div class="dash-card" style="background:#f8fafc;border-color:#e5e7eb"><b id="admCars">0</b><span>Total Listing</span></div>
+        <div class="dash-card" style="background:#f8fafc;border-color:#e5e7eb"><b id="admCars">0</b><span>Total Listing Kendaraan</span></div>
         <div class="dash-card" style="background:#f8fafc;border-color:#e5e7eb"><b id="admLead">316</b><span>Lead</span></div>
         <div class="dash-card" style="background:#f8fafc;border-color:#e5e7eb"><b>42</b><span>Dealer</span></div>
         <div class="dash-card" style="background:#f8fafc;border-color:#e5e7eb"><b>8</b><span>Menunggu Review</span></div>
@@ -922,32 +963,1319 @@
   <script>
     const rupiah = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
 
+    const vehicleDatabase = {
+      "Mobil": {
+            "Toyota": [
+                  "Agya",
+                  "Ayla/Toyota Raize",
+                  "Avanza",
+                  "Veloz",
+                  "Calya",
+                  "Yaris",
+                  "Yaris Cross",
+                  "Raize",
+                  "Rush",
+                  "Innova",
+                  "Innova Zenix",
+                  "Fortuner",
+                  "Hilux",
+                  "HiAce",
+                  "Camry",
+                  "Corolla Altis",
+                  "Corolla Cross",
+                  "Alphard",
+                  "Vellfire",
+                  "Land Cruiser",
+                  "Prius",
+                  "Supra",
+                  "GR86",
+                  "C-HR",
+                  "RAV4",
+                  "Sienna",
+                  "Tacoma",
+                  "Tundra"
+            ],
+            "Daihatsu": [
+                  "Ayla",
+                  "Sigra",
+                  "Xenia",
+                  "Terios",
+                  "Rocky",
+                  "Sirion",
+                  "Luxio",
+                  "Gran Max Blind Van",
+                  "Gran Max Pick Up",
+                  "Hi-Max",
+                  "Taft"
+            ],
+            "Honda": [
+                  "Brio",
+                  "Mobilio",
+                  "BR-V",
+                  "HR-V",
+                  "WR-V",
+                  "CR-V",
+                  "City",
+                  "Civic",
+                  "Accord",
+                  "Odyssey",
+                  "Jazz",
+                  "Freed",
+                  "Pilot",
+                  "Ridgeline",
+                  "e:N1",
+                  "ZR-V"
+            ],
+            "Mitsubishi": [
+                  "Xforce",
+                  "Xpander",
+                  "Xpander Cross",
+                  "Pajero Sport",
+                  "Triton",
+                  "L300",
+                  "Outlander",
+                  "Eclipse Cross",
+                  "Mirage",
+                  "Delica",
+                  "XFC"
+            ],
+            "Suzuki": [
+                  "S-Presso",
+                  "Ignis",
+                  "Baleno",
+                  "Ertiga",
+                  "XL7",
+                  "Grand Vitara",
+                  "Jimny",
+                  "Carry Pick Up",
+                  "APV",
+                  "Swift",
+                  "Ciaz",
+                  "Vitara",
+                  "Fronx"
+            ],
+            "Nissan": [
+                  "March",
+                  "Livina",
+                  "Grand Livina",
+                  "Serena",
+                  "Kicks",
+                  "Juke",
+                  "X-Trail",
+                  "Terra",
+                  "Navara",
+                  "Patrol",
+                  "GT-R",
+                  "Leaf",
+                  "Ariya",
+                  "Almera",
+                  "Teana"
+            ],
+            "Mazda": [
+                  "Mazda2",
+                  "Mazda3",
+                  "Mazda6",
+                  "CX-3",
+                  "CX-30",
+                  "CX-5",
+                  "CX-8",
+                  "CX-9",
+                  "CX-60",
+                  "CX-90",
+                  "MX-5",
+                  "BT-50"
+            ],
+            "Hyundai": [
+                  "Stargazer",
+                  "Stargazer X",
+                  "Creta",
+                  "Santa Fe",
+                  "Palisade",
+                  "Tucson",
+                  "Kona",
+                  "Kona Electric",
+                  "Ioniq",
+                  "Ioniq 5",
+                  "Ioniq 6",
+                  "Staria",
+                  "H-1",
+                  "Venue",
+                  "Elantra",
+                  "Sonata"
+            ],
+            "Kia": [
+                  "Picanto",
+                  "Rio",
+                  "Sonet",
+                  "Seltos",
+                  "Carens",
+                  "Carnival",
+                  "Sportage",
+                  "Sorento",
+                  "EV6",
+                  "EV9",
+                  "Cerato",
+                  "Optima",
+                  "Stinger"
+            ],
+            "Wuling": [
+                  "Air EV",
+                  "Binguo EV",
+                  "Cloud EV",
+                  "Confero",
+                  "Cortez",
+                  "Almaz",
+                  "Alvez",
+                  "Formo",
+                  "Victory",
+                  "Hongguang Mini EV"
+            ],
+            "BYD": [
+                  "Dolphin",
+                  "Atto 3",
+                  "Seal",
+                  "M6",
+                  "Tang",
+                  "Han",
+                  "Song Plus",
+                  "Seagull",
+                  "Denza D9",
+                  "Yangwang U8"
+            ],
+            "Chery": [
+                  "Omoda 5",
+                  "Omoda E5",
+                  "Tiggo 5X",
+                  "Tiggo 7 Pro",
+                  "Tiggo 8 Pro",
+                  "Tiggo 8 Pro Max",
+                  "J6",
+                  "Arrizo 5",
+                  "Arrizo 8"
+            ],
+            "MG": [
+                  "MG 3",
+                  "MG 4 EV",
+                  "MG 5 GT",
+                  "MG HS",
+                  "MG ZS",
+                  "MG ZS EV",
+                  "MG Cyberster",
+                  "MG Hector"
+            ],
+            "DFSK": [
+                  "Glory 560",
+                  "Glory 580",
+                  "Glory i-Auto",
+                  "Gelora",
+                  "Gelora E",
+                  "Super Cab"
+            ],
+            "Seres": [
+                  "Seres E1",
+                  "Seres 3",
+                  "Seres 5"
+            ],
+            "GWM": [
+                  "Haval H6",
+                  "Haval Jolion",
+                  "Tank 300",
+                  "Tank 500",
+                  "Ora 03",
+                  "Wingle"
+            ],
+            "Geely": [
+                  "Coolray",
+                  "Boyue",
+                  "Okavango",
+                  "Emgrand",
+                  "Geometry C",
+                  "Panda Mini",
+                  "Galaxy L7"
+            ],
+            "Proton": [
+                  "X50",
+                  "X70",
+                  "X90",
+                  "Saga",
+                  "Persona",
+                  "Iriz",
+                  "Exora",
+                  "Satria Neo"
+            ],
+            "Perodua": [
+                  "Myvi",
+                  "Axia",
+                  "Bezza",
+                  "Alza",
+                  "Aruz",
+                  "Ativa"
+            ],
+            "Isuzu": [
+                  "Panther",
+                  "D-Max",
+                  "MU-X",
+                  "Elf",
+                  "Traga",
+                  "Giga",
+                  "N-Series",
+                  "F-Series"
+            ],
+            "Chevrolet": [
+                  "Spark",
+                  "Aveo",
+                  "Trax",
+                  "Captiva",
+                  "Trailblazer",
+                  "Colorado",
+                  "Cruze",
+                  "Malibu",
+                  "Tahoe",
+                  "Suburban",
+                  "Camaro",
+                  "Corvette",
+                  "Silverado"
+            ],
+            "Ford": [
+                  "Fiesta",
+                  "Focus",
+                  "EcoSport",
+                  "Escape",
+                  "Everest",
+                  "Ranger",
+                  "Raptor",
+                  "Explorer",
+                  "Expedition",
+                  "Bronco",
+                  "Mustang",
+                  "F-150",
+                  "Maverick"
+            ],
+            "Jeep": [
+                  "Renegade",
+                  "Compass",
+                  "Cherokee",
+                  "Grand Cherokee",
+                  "Wrangler",
+                  "Gladiator",
+                  "Commander",
+                  "Wagoneer"
+            ],
+            "Volkswagen": [
+                  "Polo",
+                  "Golf",
+                  "Jetta",
+                  "Passat",
+                  "Arteon",
+                  "Tiguan",
+                  "Touareg",
+                  "T-Cross",
+                  "ID.3",
+                  "ID.4",
+                  "ID.Buzz",
+                  "Beetle",
+                  "Scirocco"
+            ],
+            "Audi": [
+                  "A1",
+                  "A3",
+                  "A4",
+                  "A5",
+                  "A6",
+                  "A7",
+                  "A8",
+                  "Q2",
+                  "Q3",
+                  "Q5",
+                  "Q7",
+                  "Q8",
+                  "TT",
+                  "R8",
+                  "e-tron",
+                  "RS3",
+                  "RS4",
+                  "RS5",
+                  "RS6"
+            ],
+            "BMW": [
+                  "1 Series",
+                  "2 Series",
+                  "3 Series",
+                  "4 Series",
+                  "5 Series",
+                  "6 Series",
+                  "7 Series",
+                  "8 Series",
+                  "X1",
+                  "X2",
+                  "X3",
+                  "X4",
+                  "X5",
+                  "X6",
+                  "X7",
+                  "Z4",
+                  "i3",
+                  "i4",
+                  "i5",
+                  "i7",
+                  "iX",
+                  "M2",
+                  "M3",
+                  "M4",
+                  "M5"
+            ],
+            "Mercedes-Benz": [
+                  "A-Class",
+                  "B-Class",
+                  "C-Class",
+                  "E-Class",
+                  "S-Class",
+                  "CLA",
+                  "CLS",
+                  "GLA",
+                  "GLB",
+                  "GLC",
+                  "GLE",
+                  "GLS",
+                  "G-Class",
+                  "V-Class",
+                  "Sprinter",
+                  "EQA",
+                  "EQB",
+                  "EQC",
+                  "EQE",
+                  "EQS",
+                  "AMG GT",
+                  "Maybach"
+            ],
+            "Mini": [
+                  "Cooper",
+                  "Cooper S",
+                  "Clubman",
+                  "Countryman",
+                  "Paceman",
+                  "Convertible",
+                  "Electric"
+            ],
+            "Porsche": [
+                  "718 Boxster",
+                  "718 Cayman",
+                  "911",
+                  "Panamera",
+                  "Macan",
+                  "Cayenne",
+                  "Taycan"
+            ],
+            "Volvo": [
+                  "S60",
+                  "S90",
+                  "V40",
+                  "V60",
+                  "V90",
+                  "XC40",
+                  "XC60",
+                  "XC90",
+                  "EX30",
+                  "EX90"
+            ],
+            "Peugeot": [
+                  "2008",
+                  "3008",
+                  "5008",
+                  "208",
+                  "308",
+                  "408",
+                  "508",
+                  "Partner",
+                  "Traveller"
+            ],
+            "Renault": [
+                  "Kwid",
+                  "Kiger",
+                  "Triber",
+                  "Duster",
+                  "Koleos",
+                  "Megane",
+                  "Captur",
+                  "Clio",
+                  "Arkana"
+            ],
+            "Citroen": [
+                  "C3",
+                  "C3 Aircross",
+                  "C4",
+                  "C5 Aircross",
+                  "Berlingo",
+                  "Ami",
+                  "DS3",
+                  "DS7"
+            ],
+            "Fiat": [
+                  "500",
+                  "500X",
+                  "Panda",
+                  "Tipo",
+                  "Doblo",
+                  "Ducato",
+                  "Punto",
+                  "Abarth 595"
+            ],
+            "Alfa Romeo": [
+                  "Giulia",
+                  "Stelvio",
+                  "Tonale",
+                  "4C",
+                  "Giulietta",
+                  "MiTo"
+            ],
+            "Jaguar": [
+                  "XE",
+                  "XF",
+                  "XJ",
+                  "F-Pace",
+                  "E-Pace",
+                  "I-Pace",
+                  "F-Type"
+            ],
+            "Land Rover": [
+                  "Defender",
+                  "Discovery",
+                  "Discovery Sport",
+                  "Range Rover",
+                  "Range Rover Sport",
+                  "Range Rover Velar",
+                  "Range Rover Evoque"
+            ],
+            "Lexus": [
+                  "LBX",
+                  "UX",
+                  "NX",
+                  "RX",
+                  "GX",
+                  "LX",
+                  "ES",
+                  "LS",
+                  "IS",
+                  "RC",
+                  "LC",
+                  "RZ"
+            ],
+            "Subaru": [
+                  "Impreza",
+                  "WRX",
+                  "BRZ",
+                  "Legacy",
+                  "Outback",
+                  "Forester",
+                  "XV/Crosstrek",
+                  "Ascent",
+                  "Solterra"
+            ],
+            "Tesla": [
+                  "Model 3",
+                  "Model Y",
+                  "Model S",
+                  "Model X",
+                  "Cybertruck",
+                  "Roadster"
+            ],
+            "Lucid": [
+                  "Air",
+                  "Gravity"
+            ],
+            "Rivian": [
+                  "R1T",
+                  "R1S",
+                  "EDV"
+            ],
+            "Polestar": [
+                  "Polestar 2",
+                  "Polestar 3",
+                  "Polestar 4"
+            ],
+            "Ferrari": [
+                  "Roma",
+                  "Portofino",
+                  "California",
+                  "F8 Tributo",
+                  "296 GTB",
+                  "SF90",
+                  "812 Superfast",
+                  "Purosangue",
+                  "LaFerrari"
+            ],
+            "Lamborghini": [
+                  "Huracan",
+                  "Aventador",
+                  "Revuelto",
+                  "Urus",
+                  "Gallardo",
+                  "Murcielago"
+            ],
+            "Maserati": [
+                  "Ghibli",
+                  "Quattroporte",
+                  "Levante",
+                  "Grecale",
+                  "GranTurismo",
+                  "MC20"
+            ],
+            "Bentley": [
+                  "Continental GT",
+                  "Flying Spur",
+                  "Bentayga",
+                  "Mulsanne"
+            ],
+            "Rolls-Royce": [
+                  "Ghost",
+                  "Phantom",
+                  "Wraith",
+                  "Dawn",
+                  "Cullinan",
+                  "Spectre"
+            ],
+            "Aston Martin": [
+                  "Vantage",
+                  "DB11",
+                  "DB12",
+                  "DBX",
+                  "Vanquish",
+                  "Rapide",
+                  "Valhalla"
+            ],
+            "McLaren": [
+                  "570S",
+                  "600LT",
+                  "720S",
+                  "750S",
+                  "Artura",
+                  "GT",
+                  "P1",
+                  "Senna"
+            ],
+            "Koenigsegg": [
+                  "Agera",
+                  "Regera",
+                  "Jesko",
+                  "Gemera",
+                  "CC850"
+            ],
+            "Bugatti": [
+                  "Veyron",
+                  "Chiron",
+                  "Divo",
+                  "Bolide",
+                  "Tourbillon"
+            ],
+            "Mahindra": [
+                  "Scorpio",
+                  "XUV300",
+                  "XUV500",
+                  "XUV700",
+                  "Thar",
+                  "Bolero",
+                  "Pik-Up"
+            ],
+            "Tata": [
+                  "Nano",
+                  "Tiago",
+                  "Tigor",
+                  "Altroz",
+                  "Punch",
+                  "Nexon",
+                  "Harrier",
+                  "Safari",
+                  "Ace"
+            ],
+            "Skoda": [
+                  "Fabia",
+                  "Octavia",
+                  "Superb",
+                  "Kushaq",
+                  "Karoq",
+                  "Kodiaq",
+                  "Enyaq"
+            ],
+            "Seat": [
+                  "Ibiza",
+                  "Leon",
+                  "Ateca",
+                  "Arona",
+                  "Tarraco"
+            ],
+            "Cupra": [
+                  "Born",
+                  "Formentor",
+                  "Leon",
+                  "Ateca",
+                  "Tavascan"
+            ],
+            "Holden": [
+                  "Barina",
+                  "Astra",
+                  "Commodore",
+                  "Colorado",
+                  "Trailblazer",
+                  "Captiva"
+            ],
+            "Saab": [
+                  "9-3",
+                  "9-5",
+                  "900",
+                  "9000"
+            ],
+            "Lada": [
+                  "Niva",
+                  "Vesta",
+                  "Granta",
+                  "Largus"
+            ],
+            "UAZ": [
+                  "Hunter",
+                  "Patriot",
+                  "Pickup"
+            ],
+            "BAIC": [
+                  "BJ40",
+                  "BJ80",
+                  "X55",
+                  "EU5"
+            ],
+            "JAC": [
+                  "T8",
+                  "JS4",
+                  "JS6",
+                  "iEV7S",
+                  "Refine"
+            ],
+            "Foton": [
+                  "Tunland",
+                  "View",
+                  "Aumark",
+                  "Toano"
+            ],
+            "Maxus": [
+                  "T60",
+                  "T90",
+                  "D60",
+                  "G10",
+                  "Mifa 9"
+            ],
+            "VinFast": [
+                  "VF 3",
+                  "VF 5",
+                  "VF 6",
+                  "VF 7",
+                  "VF 8",
+                  "VF 9"
+            ],
+            "Neta": [
+                  "V",
+                  "V-II",
+                  "X",
+                  "S",
+                  "GT"
+            ],
+            "Aion": [
+                  "Y Plus",
+                  "V Plus",
+                  "S Plus",
+                  "LX Plus",
+                  "Hyper HT",
+                  "Hyper SSR"
+            ],
+            "Zeekr": [
+                  "001",
+                  "007",
+                  "009",
+                  "X"
+            ],
+            "Lynk & Co": [
+                  "01",
+                  "02",
+                  "03",
+                  "05",
+                  "06",
+                  "08",
+                  "09"
+            ],
+            "Smart": [
+                  "ForTwo",
+                  "ForFour",
+                  "#1",
+                  "#3"
+            ]
+      },
+      "Motor": {
+            "Honda": [
+                  "Beat",
+                  "Beat Street",
+                  "Genio",
+                  "Scoopy",
+                  "Vario 125",
+                  "Vario 160",
+                  "PCX 160",
+                  "ADV 160",
+                  "Forza 250",
+                  "Revo",
+                  "Supra X 125",
+                  "Sonic 150R",
+                  "CB150R",
+                  "CB150X",
+                  "CBR150R",
+                  "CBR250RR",
+                  "CRF150L",
+                  "CRF250 Rally",
+                  "Monkey",
+                  "Super Cub C125",
+                  "Gold Wing",
+                  "Africa Twin",
+                  "Rebel 500",
+                  "CB500X",
+                  "CB650R",
+                  "CBR650R"
+            ],
+            "Yamaha": [
+                  "Mio",
+                  "Mio M3",
+                  "Gear 125",
+                  "Fino",
+                  "FreeGo",
+                  "X-Ride",
+                  "Fazzio",
+                  "Filano",
+                  "Lexi",
+                  "Aerox",
+                  "NMAX",
+                  "XMAX",
+                  "TMAX",
+                  "Jupiter Z1",
+                  "Vega Force",
+                  "MX King",
+                  "Vixion",
+                  "R15",
+                  "R25",
+                  "MT-15",
+                  "MT-25",
+                  "MT-07",
+                  "MT-09",
+                  "WR155R",
+                  "XSR155",
+                  "XSR700",
+                  "XSR900",
+                  "Tenere 700"
+            ],
+            "Suzuki": [
+                  "Address",
+                  "Nex II",
+                  "Avenis",
+                  "Burgman Street",
+                  "Satria F150",
+                  "Smash",
+                  "Shogun",
+                  "Thunder 125",
+                  "GSX-R150",
+                  "GSX-S150",
+                  "Gixxer",
+                  "V-Strom 250SX",
+                  "V-Strom 650",
+                  "Hayabusa",
+                  "Burgman 400"
+            ],
+            "Kawasaki": [
+                  "Ninja 250",
+                  "Ninja ZX-25R",
+                  "Ninja ZX-4RR",
+                  "Ninja 400",
+                  "Ninja 650",
+                  "Ninja ZX-6R",
+                  "Ninja ZX-10R",
+                  "Z125 Pro",
+                  "Z250",
+                  "Z400",
+                  "Z650",
+                  "Z900",
+                  "Z H2",
+                  "Versys-X 250",
+                  "Versys 650",
+                  "Versys 1000",
+                  "KLX150",
+                  "KLX230",
+                  "KLX250",
+                  "D-Tracker",
+                  "W175",
+                  "W800",
+                  "Vulcan S"
+            ],
+            "Ducati": [
+                  "Scrambler Icon",
+                  "Scrambler Desert Sled",
+                  "Monster",
+                  "Streetfighter V2",
+                  "Streetfighter V4",
+                  "Panigale V2",
+                  "Panigale V4",
+                  "Multistrada V2",
+                  "Multistrada V4",
+                  "Diavel",
+                  "XDiavel",
+                  "Hypermotard",
+                  "SuperSport"
+            ],
+            "BMW Motorrad": [
+                  "G 310 R",
+                  "G 310 GS",
+                  "F 750 GS",
+                  "F 850 GS",
+                  "F 900 R",
+                  "F 900 XR",
+                  "R 1250 GS",
+                  "R 1250 RT",
+                  "R 18",
+                  "S 1000 R",
+                  "S 1000 RR",
+                  "S 1000 XR",
+                  "C 400 X",
+                  "CE 04"
+            ],
+            "Harley-Davidson": [
+                  "Sportster S",
+                  "Nightster",
+                  "Iron 883",
+                  "Forty-Eight",
+                  "Street Bob",
+                  "Fat Bob",
+                  "Fat Boy",
+                  "Heritage Classic",
+                  "Road King",
+                  "Street Glide",
+                  "Road Glide",
+                  "Pan America",
+                  "CVO"
+            ],
+            "Triumph": [
+                  "Bonneville T100",
+                  "Bonneville T120",
+                  "Street Twin",
+                  "Speed Twin",
+                  "Thruxton",
+                  "Trident 660",
+                  "Street Triple",
+                  "Speed Triple",
+                  "Tiger Sport 660",
+                  "Tiger 900",
+                  "Tiger 1200",
+                  "Rocket 3",
+                  "Scrambler 900",
+                  "Scrambler 1200"
+            ],
+            "KTM": [
+                  "Duke 125",
+                  "Duke 200",
+                  "Duke 250",
+                  "Duke 390",
+                  "Duke 790",
+                  "Duke 890",
+                  "Duke 1290",
+                  "RC 200",
+                  "RC 390",
+                  "Adventure 250",
+                  "Adventure 390",
+                  "Adventure 790",
+                  "Adventure 890",
+                  "Super Adventure 1290",
+                  "EXC",
+                  "SX-F"
+            ],
+            "Husqvarna": [
+                  "Svartpilen 125",
+                  "Svartpilen 250",
+                  "Svartpilen 401",
+                  "Vitpilen 250",
+                  "Vitpilen 401",
+                  "Norden 901",
+                  "FE 250",
+                  "FE 350",
+                  "FE 501"
+            ],
+            "Aprilia": [
+                  "SR GT",
+                  "RS 125",
+                  "RS 250",
+                  "RS 457",
+                  "RS 660",
+                  "RSV4",
+                  "Tuono 660",
+                  "Tuono V4",
+                  "Dorsoduro",
+                  "Shiver"
+            ],
+            "Vespa": [
+                  "LX",
+                  "S",
+                  "Primavera",
+                  "Sprint",
+                  "GTS",
+                  "GTV",
+                  "Elettrica",
+                  "946"
+            ],
+            "Piaggio": [
+                  "Liberty",
+                  "Medley",
+                  "Beverly",
+                  "MP3",
+                  "Zip",
+                  "Typhoon"
+            ],
+            "Moto Guzzi": [
+                  "V7",
+                  "V9",
+                  "V85 TT",
+                  "California",
+                  "Audace",
+                  "MGX-21",
+                  "Mandello"
+            ],
+            "Royal Enfield": [
+                  "Bullet 350",
+                  "Classic 350",
+                  "Meteor 350",
+                  "Hunter 350",
+                  "Himalayan",
+                  "Scram 411",
+                  "Interceptor 650",
+                  "Continental GT 650",
+                  "Super Meteor 650",
+                  "Shotgun 650"
+            ],
+            "Benelli": [
+                  "TNT 135",
+                  "TNT 249S",
+                  "TNT 600",
+                  "Leoncino 250",
+                  "Leoncino 500",
+                  "TRK 251",
+                  "TRK 502",
+                  "Imperiale 400",
+                  "752S"
+            ],
+            "CFMoto": [
+                  "Papio",
+                  "250SR",
+                  "300SR",
+                  "450SR",
+                  "650NK",
+                  "700CL-X",
+                  "800MT",
+                  "XO Papio",
+                  "1250TR-G"
+            ],
+            "QJMotor": [
+                  "SRK 250",
+                  "SRK 400",
+                  "SRK 600",
+                  "SRV 250",
+                  "SRT 550",
+                  "SRT 800"
+            ],
+            "SYM": [
+                  "Jet X",
+                  "Jet 14",
+                  "Cruisym",
+                  "Maxsym",
+                  "Joyride",
+                  "Fiddle",
+                  "Orbit"
+            ],
+            "Kymco": [
+                  "Like",
+                  "People",
+                  "Agility",
+                  "X-Town",
+                  "Downtown",
+                  "AK550",
+                  "Dink",
+                  "KRV"
+            ],
+            "TVS": [
+                  "Dazz",
+                  "Callisto",
+                  "Ntorq",
+                  "Neo",
+                  "Rockz",
+                  "XL100",
+                  "Apache RTR 160",
+                  "Apache RTR 200",
+                  "Apache RR310",
+                  "Ronin"
+            ],
+            "Bajaj": [
+                  "Pulsar 135",
+                  "Pulsar 150",
+                  "Pulsar 180",
+                  "Pulsar 200NS",
+                  "Pulsar 220F",
+                  "Dominar 250",
+                  "Dominar 400",
+                  "Avenger",
+                  "Boxer"
+            ],
+            "Hero": [
+                  "Splendor",
+                  "Passion",
+                  "Glamour",
+                  "Xtreme",
+                  "Xpulse",
+                  "Maestro",
+                  "Pleasure"
+            ],
+            "Mahindra Two Wheelers": [
+                  "Centuro",
+                  "Gusto",
+                  "Mojo",
+                  "Duro",
+                  "Rodeo"
+            ],
+            "BSA": [
+                  "Gold Star"
+            ],
+            "Norton": [
+                  "Commando",
+                  "V4SV",
+                  "Atlas"
+            ],
+            "MV Agusta": [
+                  "Brutale",
+                  "Dragster",
+                  "Turismo Veloce",
+                  "F3",
+                  "F4",
+                  "Superveloce",
+                  "Rush"
+            ],
+            "Indian Motorcycle": [
+                  "Scout",
+                  "Chief",
+                  "Chieftain",
+                  "Roadmaster",
+                  "FTR",
+                  "Pursuit",
+                  "Springfield"
+            ],
+            "Buell": [
+                  "Hammerhead",
+                  "SuperTouring",
+                  "1190SX"
+            ],
+            "Zero Motorcycles": [
+                  "S",
+                  "SR",
+                  "SR/F",
+                  "SR/S",
+                  "DS",
+                  "DSR",
+                  "FX",
+                  "FXE"
+            ],
+            "Energica": [
+                  "Ego",
+                  "Eva Ribelle",
+                  "EsseEsse9",
+                  "Experia"
+            ],
+            "LiveWire": [
+                  "One",
+                  "S2 Del Mar",
+                  "S2 Mulholland"
+            ],
+            "NIU": [
+                  "NQi",
+                  "MQi",
+                  "UQi",
+                  "RQi",
+                  "YQi"
+            ],
+            "Gogoro": [
+                  "Gogoro 1",
+                  "Gogoro 2",
+                  "Gogoro 3",
+                  "Viva",
+                  "S1",
+                  "S2"
+            ],
+            "Alva": [
+                  "One",
+                  "Cervo",
+                  "N3"
+            ],
+            "Gesits": [
+                  "G1",
+                  "Raya"
+            ],
+            "United": [
+                  "T1800",
+                  "TX1800",
+                  "TX3000",
+                  "MX1200"
+            ],
+            "Viar": [
+                  "Q1",
+                  "Q1 Electric",
+                  "EV1",
+                  "Cross X",
+                  "Karya",
+                  "Vortex"
+            ],
+            "Selis": [
+                  "E-Max",
+                  "Agats",
+                  "Go Plus",
+                  "Neo Scootic",
+                  "Bromo"
+            ],
+            "Volta": [
+                  "401",
+                  "Mandala",
+                  "Virgo",
+                  "Ranger"
+            ],
+            "Polytron": [
+                  "Fox-R",
+                  "Fox-S"
+            ],
+            "Lambretta": [
+                  "V125",
+                  "V200",
+                  "X300",
+                  "G350"
+            ],
+            "Italjet": [
+                  "Dragster 125",
+                  "Dragster 200",
+                  "Dragster 300"
+            ],
+            "Zontes": [
+                  "Z2-310",
+                  "R310",
+                  "T310",
+                  "V310",
+                  "350T",
+                  "350E"
+            ],
+            "Keeway": [
+                  "RKV",
+                  "RKF",
+                  "V250FI",
+                  "K-Light",
+                  "Shiny",
+                  "Vieste"
+            ],
+            "Hyosung": [
+                  "GT250R",
+                  "GT650R",
+                  "GV250",
+                  "GV650"
+            ],
+            "Bimota": [
+                  "Tesi H2",
+                  "KB4",
+                  "DB8"
+            ],
+            "Can-Am": [
+                  "Ryker",
+                  "Spyder F3",
+                  "Spyder RT",
+                  "Origin",
+                  "Pulse"
+            ]
+      }
+};
+
     let selectedType = 'Semua';
     let compare = [];
     let wishlist = new Set();
 
     let cars = [
-      {id:1, brand:'Toyota', model:'Avanza 1.5 G CVT', type:'Bekas', body:'MPV', year:2022, km:32000, price:218000000, city:'Jakarta', trans:'Automatic', fuel:'Bensin', seller:'Oto Jaya Motor', badge:'Dealer', status:'Inspected', img:'https://images.unsplash.com/photo-1550355291-bbee04a92027?auto=format&fit=crop&w=900&q=80'},
-      {id:2, brand:'Honda', model:'HR-V SE 1.5', type:'Bekas', body:'SUV', year:2023, km:18000, price:365000000, city:'Tangerang', trans:'Automatic', fuel:'Bensin', seller:'Bintang Auto', badge:'Hot Deal', status:'Inspected', img:'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&w=900&q=80'},
-      {id:3, brand:'Mitsubishi', model:'Pajero Sport Dakar', type:'Bekas', body:'SUV', year:2021, km:41000, price:485000000, city:'Bogor', trans:'Automatic', fuel:'Diesel', seller:'KSA Auto', badge:'Dealer', status:'Dealer', img:'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=900&q=80'},
-      {id:4, brand:'Toyota', model:'Kijang Innova Zenix Hybrid', type:'Baru', body:'MPV', year:2025, km:0, price:492000000, city:'Bekasi', trans:'Automatic', fuel:'Hybrid', seller:'Toyota Official', badge:'New Car', status:'Dealer', img:'https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=900&q=80'},
-      {id:5, brand:'Hyundai', model:'Ioniq 5 Signature', type:'Listrik', body:'Hatchback', year:2024, km:6000, price:695000000, city:'Jakarta', trans:'Automatic', fuel:'EV', seller:'EV Center', badge:'EV', status:'Inspected', img:'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=900&q=80'},
-      {id:6, brand:'Daihatsu', model:'Gran Max Pick Up', type:'Bekas', body:'Pickup', year:2020, km:78000, price:112000000, city:'Tangerang', trans:'Manual', fuel:'Bensin', seller:'Niaga Motor', badge:'Murah', status:'Hot Deal', img:'https://images.unsplash.com/photo-1532974297617-c0f05fe48bff?auto=format&fit=crop&w=900&q=80'},
-      {id:7, brand:'Suzuki', model:'Ertiga GX Hybrid', type:'Baru', body:'MPV', year:2025, km:0, price:282000000, city:'Depok', trans:'Automatic', fuel:'Hybrid', seller:'Suzuki Official', badge:'Promo Baru', status:'Dealer', img:'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80'},
-      {id:8, brand:'BMW', model:'320i Sport', type:'Bekas', body:'Sedan', year:2021, km:24000, price:618000000, city:'Jakarta', trans:'Automatic', fuel:'Bensin', seller:'Premium Cars', badge:'Premium', status:'Inspected', img:'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=900&q=80'},
-      {id:9, brand:'Wuling', model:'Air EV Long Range', type:'Listrik', body:'Hatchback', year:2023, km:9000, price:205000000, city:'Tangerang', trans:'Automatic', fuel:'EV', seller:'Mobil Listrik ID', badge:'EV Deal', status:'Hot Deal', img:'https://images.unsplash.com/photo-1614200187524-dc4b892acf16?auto=format&fit=crop&w=900&q=80'}
+      {id:1, condition:'Bekas', category:'Mobil', brand:'Toyota', model:'Avanza 1.5 G CVT', type:'Mobil Bekas', body:'MPV', year:2022, km:32000, price:218000000, city:'Jakarta', trans:'Automatic', fuel:'Bensin', seller:'Oto Jaya Motor', badge:'Dealer', status:'Inspected', img:'https://images.unsplash.com/photo-1550355291-bbee04a92027?auto=format&fit=crop&w=900&q=80'},
+      {id:2, condition:'Bekas', category:'Mobil', brand:'Honda', model:'HR-V SE 1.5', type:'Mobil Bekas', body:'SUV', year:2023, km:18000, price:365000000, city:'Tangerang', trans:'Automatic', fuel:'Bensin', seller:'Bintang Auto', badge:'Hot Deal', status:'Inspected', img:'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&w=900&q=80'},
+      {id:3, condition:'Bekas', category:'Mobil', brand:'Mitsubishi', model:'Pajero Sport Dakar', type:'Mobil Bekas', body:'SUV', year:2021, km:41000, price:485000000, city:'Bogor', trans:'Automatic', fuel:'Diesel', seller:'KSA Auto', badge:'Dealer', status:'Dealer', img:'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=900&q=80'},
+      {id:4, condition:'Baru', category:'Mobil', brand:'Toyota', model:'Kijang Innova Zenix Hybrid', type:'Mobil Baru', body:'MPV', year:2025, km:0, price:492000000, city:'Bekasi', trans:'Automatic', fuel:'Hybrid', seller:'Toyota Official', badge:'Mobil Baru', status:'Dealer', img:'https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=900&q=80'},
+      {id:5, condition:'Bekas', category:'Mobil', brand:'Hyundai', model:'Ioniq 5 Signature', type:'Listrik', body:'Hatchback', year:2024, km:6000, price:695000000, city:'Jakarta', trans:'Automatic', fuel:'EV', seller:'EV Center', badge:'EV', status:'Inspected', img:'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=900&q=80'},
+      {id:6, condition:'Bekas', category:'Mobil', brand:'Daihatsu', model:'Gran Max Pick Up', type:'Mobil Bekas', body:'Pickup', year:2020, km:78000, price:112000000, city:'Tangerang', trans:'Manual', fuel:'Bensin', seller:'Niaga Motor', badge:'Murah', status:'Hot Deal', img:'https://images.unsplash.com/photo-1532974297617-c0f05fe48bff?auto=format&fit=crop&w=900&q=80'},
+      {id:7, condition:'Baru', category:'Mobil', brand:'Suzuki', model:'Ertiga GX Hybrid', type:'Mobil Baru', body:'MPV', year:2025, km:0, price:282000000, city:'Depok', trans:'Automatic', fuel:'Hybrid', seller:'Suzuki Official', badge:'Promo Baru', status:'Dealer', img:'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80'},
+      {id:8, condition:'Bekas', category:'Mobil', brand:'BMW', model:'320i Sport', type:'Mobil Bekas', body:'Sedan', year:2021, km:24000, price:618000000, city:'Jakarta', trans:'Automatic', fuel:'Bensin', seller:'Premium Cars', badge:'Premium', status:'Inspected', img:'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=900&q=80'},
+      {id:9, condition:'Bekas', category:'Mobil', brand:'Wuling', model:'Air EV Long Range', type:'Listrik', body:'Hatchback', year:2023, km:9000, price:205000000, city:'Tangerang', trans:'Automatic', fuel:'EV', seller:'Mobil Listrik ID', badge:'EV Deal', status:'Hot Deal', img:'https://images.unsplash.com/photo-1614200187524-dc4b892acf16?auto=format&fit=crop&w=900&q=80'},
+
+      {id:101, condition:'Bekas', category:'Motor', brand:'Yamaha', model:'NMAX Connected ABS', type:'Motor Bekas', body:'Skutik', year:2022, km:14500, price:28500000, city:'Tangerang', trans:'Automatic', fuel:'Bensin', seller:'Roda Dua Motor', badge:'Motor Bekas', status:'Inspected', img:'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=80'},
+      {id:102, condition:'Bekas', category:'Motor', brand:'Honda', model:'PCX 160 CBS', type:'Motor Bekas', body:'Skutik', year:2023, km:8200, price:31500000, city:'Jakarta', trans:'Automatic', fuel:'Bensin', seller:'Honda Motor Center', badge:'Hot Deal', status:'Inspected', img:'https://images.unsplash.com/photo-1609630875171-b1321377ee65?auto=format&fit=crop&w=900&q=80'},
+      {id:103, condition:'Baru', category:'Motor', brand:'Honda', model:'Vario 160 ABS', type:'Motor Baru', body:'Skutik', year:2026, km:0, price:30100000, city:'Bekasi', trans:'Automatic', fuel:'Bensin', seller:'Honda Official Dealer', badge:'Motor Baru', status:'Dealer', img:'https://images.unsplash.com/photo-1622185135505-2d795003994a?auto=format&fit=crop&w=900&q=80'},
+      {id:104, condition:'Baru', category:'Motor', brand:'Yamaha', model:'Aerox Alpha CyberCity', type:'Motor Baru', body:'Skutik', year:2026, km:0, price:29500000, city:'Depok', trans:'Automatic', fuel:'Bensin', seller:'Yamaha Official Dealer', badge:'Promo Baru', status:'Dealer', img:'https://images.unsplash.com/photo-1558981359-219d6364c9c8?auto=format&fit=crop&w=900&q=80'},
+      {id:105, condition:'Bekas', category:'Motor', brand:'Kawasaki', model:'Ninja 250 FI', type:'Motor Bekas', body:'Sport', year:2021, km:19000, price:52000000, city:'Bogor', trans:'Manual', fuel:'Bensin', seller:'Sport Bike Garage', badge:'Sport', status:'Dealer', img:'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=900&q=80'},
+      {id:106, condition:'Bekas', category:'Motor', brand:'Viar', model:'Q1 Electric', type:'Listrik', body:'EV Motor', year:2024, km:3500, price:18500000, city:'Jakarta', trans:'Automatic', fuel:'EV', seller:'EV Motor Indonesia', badge:'Motor Listrik', status:'Inspected', img:'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?auto=format&fit=crop&w=900&q=80'},
+      {id:107, condition:'Bekas', category:'Motor', brand:'Honda', model:'CRF150L', type:'Motor Bekas', body:'Trail', year:2022, km:11000, price:29800000, city:'Tangerang', trans:'Manual', fuel:'Bensin', seller:'Adventure Motor', badge:'Trail', status:'Hot Deal', img:'https://images.unsplash.com/photo-1547549082-6bc09f2049ae?auto=format&fit=crop&w=900&q=80'},
+      {id:108, condition:'Bekas', category:'Motor', brand:'Suzuki', model:'Satria F150', type:'Motor Bekas', body:'Bebek', year:2020, km:22000, price:17800000, city:'Jakarta', trans:'Manual', fuel:'Bensin', seller:'Racing Motor ID', badge:'Murah', status:'Dealer', img:'https://images.unsplash.com/photo-1571646750134-122c804f9f77?auto=format&fit=crop&w=900&q=80'}
     ];
 
+    function getActiveCategory(){
+      if(selectedType === 'Mobil' || selectedType === 'Motor') return selectedType;
+      return '';
+    }
+
+    function populateBrandOptions(selectId='brand', forcedCategory=''){
+      const select = document.getElementById(selectId);
+      if(!select) return;
+      const current = select.value;
+      const category = forcedCategory || getActiveCategory();
+      let brands = [];
+      if(category && vehicleDatabase[category]){
+        brands = Object.keys(vehicleDatabase[category]);
+      } else {
+        brands = [...new Set([...Object.keys(vehicleDatabase.Mobil), ...Object.keys(vehicleDatabase.Motor)])];
+      }
+      brands.sort((a,b)=>a.localeCompare(b));
+      select.innerHTML = `<option value="">${selectId==='sellBrand'?'Pilih Merek':'Semua Merek'}</option>` + brands.map(b=>`<option value="${b}">${b}</option>`).join('');
+      if(brands.includes(current)) select.value = current;
+    }
+
+    function populateModelOptions(brandSelectId='brand', modelSelectId='model', forcedCategory=''){
+      const brandSelect = document.getElementById(brandSelectId);
+      const modelSelect = document.getElementById(modelSelectId);
+      if(!brandSelect || !modelSelect) return;
+      const brand = brandSelect.value;
+      const category = forcedCategory || getActiveCategory();
+      let models = [];
+      if(brand){
+        if(category && vehicleDatabase[category]?.[brand]){
+          models = vehicleDatabase[category][brand];
+        } else {
+          models = [
+            ...(vehicleDatabase.Mobil?.[brand] || []),
+            ...(vehicleDatabase.Motor?.[brand] || [])
+          ];
+        }
+      }
+      models = [...new Set(models)].sort((a,b)=>a.localeCompare(b));
+      modelSelect.innerHTML = `<option value="">${modelSelectId==='sellModel'?'Pilih Tipe / Model':'Semua Tipe / Model'}</option>` + models.map(m=>`<option value="${m}">${m}</option>`).join('');
+    }
+
     function initOptions(){
-      const brands=[...new Set(cars.map(c=>c.brand))].sort();
+      populateBrandOptions('brand');
+      populateModelOptions('brand','model');
+      populateBrandOptions('sellBrand','Mobil');
+      populateModelOptions('sellBrand','sellModel','Mobil');
+
       const cities=[...new Set(cars.map(c=>c.city))].sort();
-      document.getElementById('brand').innerHTML='<option value="">Semua Merek</option>'+brands.map(x=>`<option>${x}</option>`).join('');
-      document.getElementById('city').innerHTML='<option value="">Semua Kota</option>'+cities.map(x=>`<option>${x}</option>`).join('');
+      const citySelect = document.getElementById('city');
+      if(citySelect) citySelect.innerHTML='<option value="">Semua Kota</option>'+cities.map(x=>`<option>${x}</option>`).join('');
+
       document.querySelectorAll('.tab').forEach(t=>{
         t.onclick=()=>{
           document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
           t.classList.add('active');
           selectedType=t.dataset.type;
+          populateBrandOptions('brand');
+          populateModelOptions('brand','model');
           renderCars();
         }
       });
@@ -956,22 +2284,26 @@
     function filteredCars(){
       const kw=(document.getElementById('keyword').value||'').toLowerCase();
       const brand=document.getElementById('brand').value;
+      const modelFilter=document.getElementById('model')?.value || '';
       const city=document.getElementById('city').value;
       const max=+document.getElementById('maxPrice').value;
       const trans=document.getElementById('transmission').value;
+      const condition=document.getElementById('vehicleCondition')?.value || '';
       const minYear=+document.getElementById('minYear').value;
       const body=document.getElementById('bodyType').value;
       const status=document.getElementById('status').value;
       const sort=document.getElementById('sortBy').value;
 
       let list=cars.filter(c=>{
-        const text=(c.brand+' '+c.model+' '+c.body+' '+c.fuel+' '+c.city+' '+c.type).toLowerCase();
+        const text=(c.category+' '+c.condition+' '+c.brand+' '+c.model+' '+c.body+' '+c.fuel+' '+c.city+' '+c.type).toLowerCase();
         return (!kw || text.includes(kw)) &&
-          (selectedType==='Semua' || c.type===selectedType) &&
+          ((selectedType==='Semua') || c.category===selectedType) &&
           (!brand || c.brand===brand) &&
+          (!modelFilter || c.model.toLowerCase().includes(modelFilter.toLowerCase())) &&
           (!city || c.city===city) &&
           (!max || c.price<=max) &&
           (!trans || c.trans===trans) &&
+          (!condition || c.condition===condition) &&
           (!minYear || c.year>=minYear) &&
           (!body || c.body===body) &&
           (!status || c.status===status || c.badge===status);
@@ -1006,7 +2338,8 @@
               <span>🛣️ ${c.km.toLocaleString('id-ID')} km</span>
               <span>⚙️ ${c.trans}</span>
               <span>⛽ ${c.fuel}</span>
-              <span>🚘 ${c.body}</span>
+              <span>${c.category==='Motor'?'🏍️':'🚘'} ${c.body}</span>
+              <span>📌 ${c.condition}</span>
               <span>📍 ${c.city}</span>
             </div>
             <div class="seller">
@@ -1050,6 +2383,8 @@
         <table class="compare-table">
           <thead><tr><th>Item</th>${rows.map(c=>`<th>${c.brand} ${c.model}</th>`).join('')}</tr></thead>
           <tbody>
+            <tr><td>Grup</td>${rows.map(c=>`<td>${c.category}</td>`).join('')}</tr>
+            <tr><td>Kondisi</td>${rows.map(c=>`<td>${c.condition}</td>`).join('')}</tr>
             <tr><td>Harga</td>${rows.map(c=>`<td>${rupiah(c.price)}</td>`).join('')}</tr>
             <tr><td>Tahun</td>${rows.map(c=>`<td>${c.year}</td>`).join('')}</tr>
             <tr><td>Kilometer</td>${rows.map(c=>`<td>${c.km.toLocaleString('id-ID')} km</td>`).join('')}</tr>
@@ -1062,6 +2397,12 @@
       `;
     }
 
+    function syncConditionFromSide(){
+      const side=document.getElementById('sideCondition');
+      const main=document.getElementById('vehicleCondition');
+      if(side && main){ main.value=side.value; renderCars(); }
+    }
+
     function quick(v){
       document.getElementById('keyword').value=v;
       renderCars();
@@ -1069,9 +2410,11 @@
     }
 
     function resetFilters(){
-      ['keyword','brand','city','maxPrice','transmission','minYear','bodyType','status'].forEach(id=>document.getElementById(id).value='');
+      ['keyword','brand','model','city','maxPrice','transmission','vehicleCondition','sideCondition','minYear','bodyType','status'].forEach(id=>document.getElementById(id).value='');
       selectedType='Semua';
       document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+      populateBrandOptions('brand');
+      populateModelOptions('brand','model');
       renderCars();
     }
 
@@ -1088,14 +2431,16 @@
     }
 
     function addListing(){
-      const brand=document.getElementById('sellBrand').value || 'Toyota';
-      const model=document.getElementById('sellModel').value || 'Unit Baru';
+      const category=document.getElementById('sellCategory')?.value || 'Mobil';
+      const brand=document.getElementById('sellBrand').value || (category==='Motor'?'Honda':'Toyota');
+      const model=document.getElementById('sellModel').value || (category==='Motor'?'Unit Motor':'Unit Mobil');
+      const condition=document.getElementById('sellCondition')?.value || 'Bekas';
       const year=+document.getElementById('sellYear').value || 2024;
       const price=+document.getElementById('sellPrice').value || 200000000;
       const city=document.getElementById('sellCity').value || 'Jakarta';
       const trans=document.getElementById('sellTrans').value || 'Automatic';
       cars.unshift({
-        id:Date.now(), brand, model, type:'Bekas', body:'MPV', year, km:25000, price, city, trans, fuel:'Bensin',
+        id:Date.now(), condition, category, brand, model, type:category+' '+condition, body:category==='Motor'?'Skutik':'MPV', year, km:25000, price, city, trans, fuel:'Bensin',
         seller:'Seller Terverifikasi', badge:'Listing Baru', status:'Dealer',
         img:'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=900&q=80'
       });
