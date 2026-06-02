@@ -621,6 +621,62 @@
     }
   </style>
 
+
+  <style id="otolink-live-functions-style">
+    .live-badge{
+      display:inline-flex;align-items:center;gap:7px;
+      border-radius:999px;padding:7px 10px;
+      background:#dcfce7;color:#166534;font-size:12px;font-weight:900;
+    }
+    .live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 6px rgba(34,197,94,.16)}
+    .mini-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+    .mini-actions button{
+      border:1px solid #fbcfe8;background:#fff;color:#9d174d;
+      border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;cursor:pointer;
+    }
+    .mini-actions button:hover{background:#fce7f3}
+    .admin-grid-live{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0}
+    .admin-mini-card{background:#fff1f7;border:1px solid #fbcfe8;border-radius:18px;padding:14px}
+    .admin-mini-card b{display:block;font-size:22px;color:#9d174d}
+    .admin-table{width:100%;border-collapse:collapse;font-size:13px}
+    .admin-table th,.admin-table td{padding:10px;border-bottom:1px solid #fbcfe8;text-align:left}
+    .admin-table th{color:#831843;background:#fff1f7}
+    .admin-pill{border-radius:999px;padding:5px 8px;font-size:11px;font-weight:900;display:inline-block;background:#fce7f3;color:#9d174d}
+    .admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+    .admin-tabs button{border:0;border-radius:999px;padding:9px 12px;font-weight:900;cursor:pointer;background:#f1f5f9;color:#334155}
+    .admin-tabs button.active{background:#ec4899;color:#fff}
+    .admin-section{display:none}
+    .admin-section.active{display:block}
+    .lead-drawer{
+      position:fixed;right:16px;bottom:92px;width:min(360px,calc(100% - 32px));
+      background:#fff;border:1px solid #fbcfe8;border-radius:24px;box-shadow:0 22px 55px rgba(131,24,67,.25);
+      z-index:110;padding:16px;display:none;
+    }
+    .lead-drawer.show{display:block}
+    .lead-drawer h3{margin:0 0 8px}
+    .notification-stack{position:fixed;top:86px;right:18px;z-index:160;display:flex;flex-direction:column;gap:10px}
+    .notification-card{
+      min-width:270px;max-width:340px;background:#fff;border:1px solid #fbcfe8;border-left:5px solid #ec4899;
+      border-radius:18px;padding:12px;box-shadow:0 14px 35px rgba(131,24,67,.16);
+      animation:slideIn .25s ease;
+    }
+    @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+    .status-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+    .status-line span{background:#f8fafc;border:1px solid #e5e7eb;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:800;color:#475569}
+    .active-input{position:relative}
+    .active-input:after{
+      content:"LIVE";position:absolute;right:9px;top:31px;background:#dcfce7;color:#166534;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:900
+    }
+    @media(max-width:720px){
+      .admin-grid-live{grid-template-columns:repeat(2,1fr)}
+      .notification-stack{top:72px;left:12px;right:12px}
+      .notification-card{min-width:0;max-width:none}
+      .lead-drawer{left:10px;right:10px;bottom:76px;width:auto;border-radius:20px}
+      .admin-table{font-size:11px}
+      .admin-table th,.admin-table td{padding:8px 6px}
+    }
+  </style>
+
 </head>
 <body>
   <header class="topbar">
@@ -670,6 +726,7 @@
       </div>
 
       <div class="search-card">
+        <div class="status-line"><span class="live-badge"><i class="live-dot"></i> Platform aktif</span><span id="liveClock">Memuat waktu...</span><span id="liveVisitors">Pengunjung online: 128</span></div>
         <div class="tabs">
           <button class="tab active" data-type="Semua">Semua</button>
           <button class="tab" data-type="Mobil">Mobil</button>
@@ -988,18 +1045,80 @@
         <h2>Admin Panel</h2>
         <button class="x" onclick="closeModal('adminModal')">×</button>
       </div>
-      <div class="dash-grid" style="color:#111">
-        <div class="dash-card" style="background:#f8fafc;border-color:#e5e7eb"><b id="admCars">0</b><span>Total Listing Kendaraan</span></div>
-        <div class="dash-card" style="background:#f8fafc;border-color:#e5e7eb"><b id="admLead">316</b><span>Lead</span></div>
-        <div class="dash-card" style="background:#f8fafc;border-color:#e5e7eb"><b>42</b><span>Dealer</span></div>
-        <div class="dash-card" style="background:#f8fafc;border-color:#e5e7eb"><b>8</b><span>Menunggu Review</span></div>
+
+      <div class="admin-grid-live">
+        <div class="admin-mini-card"><b id="admCars">0</b><span>Total Listing Kendaraan</span></div>
+        <div class="admin-mini-card"><b id="admLead">316</b><span>Lead Masuk</span></div>
+        <div class="admin-mini-card"><b id="admDealer">42</b><span>Dealer Aktif</span></div>
+        <div class="admin-mini-card"><b id="admReview">8</b><span>Menunggu Review</span></div>
       </div>
-      <br>
-      <div class="panel" style="box-shadow:none">
-        <h3>Menu Admin yang disiapkan</h3>
-        <p>Persetujuan listing, pengelolaan dealer, banner iklan, paket promosi, inspeksi, laporan lead, pengguna, artikel, dan data pembiayaan.</p>
-        <button class="btn btn-red" onclick="toast('Admin panel siap digunakan untuk pengelolaan listing, dealer, lead, dan promosi.')">Tes Notifikasi</button>
+
+      <div class="admin-tabs">
+        <button class="active" onclick="showAdminSection('listing', this)">Listing</button>
+        <button onclick="showAdminSection('leads', this)">Lead</button>
+        <button onclick="showAdminSection('dealer', this)">Dealer</button>
+        <button onclick="showAdminSection('banner', this)">Banner</button>
+        <button onclick="showAdminSection('settings', this)">Setting</button>
       </div>
+
+      <div id="admin-listing" class="admin-section active">
+        <h3>Pengelolaan Listing</h3>
+        <p style="color:#64748b">Setiap listing dapat dipublikasikan, dipromosikan, atau ditandai sebagai inspeksi.</p>
+        <div style="overflow:auto"><table class="admin-table" id="adminListingTable"></table></div>
+      </div>
+
+      <div id="admin-leads" class="admin-section">
+        <h3>Lead Masuk</h3>
+        <p style="color:#64748b">Semua minat pembeli dari chat, inspeksi, kredit, test drive, dan nego masuk ke daftar ini.</p>
+        <div style="overflow:auto"><table class="admin-table" id="adminLeadTable"></table></div>
+      </div>
+
+      <div id="admin-dealer" class="admin-section">
+        <h3>Dealer & Seller</h3>
+        <div class="form-grid">
+          <div class="field"><label>Nama Dealer</label><input id="dealerName" placeholder="Nama showroom / dealer"></div>
+          <div class="field"><label>Kota</label><input id="dealerCity" placeholder="Kota"></div>
+          <div class="field"><label>Nomor WA</label><input id="dealerPhone" placeholder="08xxxxxxxxxx"></div>
+          <button class="btn btn-red full" onclick="addDealer()">Tambah Dealer</button>
+        </div>
+        <div style="overflow:auto;margin-top:14px"><table class="admin-table" id="adminDealerTable"></table></div>
+      </div>
+
+      <div id="admin-banner" class="admin-section">
+        <h3>Banner Promosi</h3>
+        <div class="form-grid">
+          <div class="field"><label>Judul Banner</label><input id="bannerTitle" value="Promo Kendaraan Pilihan"></div>
+          <div class="field"><label>Subjudul</label><input id="bannerSub" value="Mobil dan motor siap transaksi"></div>
+          <button class="btn btn-red full" onclick="updateHeroBanner()">Terapkan Banner</button>
+        </div>
+      </div>
+
+      <div id="admin-settings" class="admin-section">
+        <h3>Setting Operasional</h3>
+        <div class="form-grid">
+          <div class="field"><label>Nama Platform</label><input id="setPlatform" value="OtoLink Indonesia"></div>
+          <div class="field"><label>Nomor Customer Service</label><input id="setWa" value="081296629033"></div>
+          <div class="field"><label>Status Website</label><select id="setStatus"><option>Online</option><option>Maintenance</option><option>Private</option></select></div>
+          <button class="btn btn-red full" onclick="saveSettings()">Simpan Setting</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="notification-stack" id="notificationStack"></div>
+
+  <div class="lead-drawer" id="leadDrawer">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h3 id="leadTitle">Lead Kendaraan</h3>
+      <button class="x" onclick="closeLeadDrawer()">×</button>
+    </div>
+    <p id="leadDesc" style="color:#64748b;margin-top:0">Detail lead akan tampil di sini.</p>
+    <div class="form-grid">
+      <div class="field full"><label>Nama Calon Pembeli</label><input id="leadName" placeholder="Nama lengkap"></div>
+      <div class="field full"><label>Nomor WhatsApp</label><input id="leadPhone" placeholder="08xxxxxxxxxx"></div>
+      <div class="field full"><label>Minat</label><select id="leadInterest"><option>Chat Penjual</option><option>Booking Inspeksi</option><option>Ajukan Kredit</option><option>Test Drive</option><option>Nego Harga</option></select></div>
+      <button class="btn btn-red full" onclick="submitLead()">Kirim Lead</button>
     </div>
   </div>
 
@@ -2392,9 +2511,15 @@
               <span>✅</span>
             </div>
             <div class="card-actions">
-              <button class="btn-red" onclick="toast('WhatsApp untuk ${c.model} dibuka')">Chat</button>
+              <button class="btn-red" onclick="openLeadDrawer(${c.id}, 'Chat Penjual')">Chat</button>
               <button class="compare" onclick="toggleCompare(${c.id})">Compare</button>
               <button class="wish ${wishlist.has(c.id)?'active':''}" onclick="toggleWish(${c.id})">♥</button>
+            </div>
+            <div class="mini-actions">
+              <button onclick="openLeadDrawer(${c.id}, 'Booking Inspeksi')">Inspeksi</button>
+              <button onclick="fillCreditFromVehicle(${c.id})">Hitung Kredit</button>
+              <button onclick="openLeadDrawer(${c.id}, 'Test Drive')">Test Drive</button>
+              <button onclick="openLeadDrawer(${c.id}, 'Nego Harga')">Nego</button>
             </div>
           </div>
         </article>
@@ -2489,10 +2614,10 @@
         seller:'Seller Terverifikasi', badge:'Listing Baru', status:'Dealer',
         img:'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=900&q=80'
       });
-      initOptions(); renderCars(); closeModal('sellModal'); toast('Listing berhasil ditambahkan');
+      initOptions(); renderCars(); renderAdminTables(); closeModal('sellModal'); notify('Listing baru ditambahkan', `${brand} ${model} berhasil masuk marketplace`); toast('Listing berhasil ditambahkan');
     }
 
-    function openModal(id){document.getElementById(id).classList.add('show'); if(id==='compareModal') renderCompare();}
+    
     function closeModal(id){document.getElementById(id).classList.remove('show')}
     function toggleMenu(){document.getElementById('menu').classList.toggle('open')}
     function toast(msg){
@@ -2529,6 +2654,169 @@
       }
     });
 
+    
+    let leads = [
+      {name:'Andi Pratama', phone:'0812xxxx9901', vehicle:'Toyota Avanza 1.5 G CVT', interest:'Chat Penjual', status:'Baru'},
+      {name:'Maya Sari', phone:'0857xxxx2109', vehicle:'Honda PCX 160 CBS', interest:'Booking Inspeksi', status:'Diproses'},
+      {name:'Rizky Auto', phone:'0821xxxx3377', vehicle:'Hyundai Ioniq 5 Signature', interest:'Ajukan Kredit', status:'Baru'}
+    ];
+    let dealers = [
+      {name:'Oto Jaya Motor', city:'Jakarta', phone:'081296629033', status:'Verified'},
+      {name:'Bintang Auto', city:'Tangerang', phone:'081296629033', status:'Verified'},
+      {name:'Roda Dua Motor', city:'Tangerang', phone:'081296629033', status:'Verified'}
+    ];
+    let activeVehicleId = null;
+
+    function notify(title, message){
+      const stack = document.getElementById('notificationStack');
+      if(!stack) return;
+      const card = document.createElement('div');
+      card.className = 'notification-card';
+      card.innerHTML = `<b>${title}</b><div style="color:#64748b;margin-top:4px">${message}</div>`;
+      stack.prepend(card);
+      setTimeout(()=>card.remove(), 5200);
+    }
+
+    function updateLiveClock(){
+      const el = document.getElementById('liveClock');
+      if(el){
+        const now = new Date();
+        el.textContent = 'Online • ' + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+      }
+      const visitor = document.getElementById('liveVisitors');
+      if(visitor){
+        const base = 118 + Math.floor(Math.random()*38);
+        visitor.textContent = 'Pengunjung online: ' + base;
+      }
+    }
+
+    function openLeadDrawer(id, interest='Chat Penjual'){
+      activeVehicleId = id;
+      const c = cars.find(x=>x.id===id);
+      if(!c) return;
+      document.getElementById('leadTitle').textContent = interest;
+      document.getElementById('leadDesc').textContent = `${c.category} ${c.brand} ${c.model} • ${rupiah(c.price)} • ${c.city}`;
+      document.getElementById('leadInterest').value = interest;
+      document.getElementById('leadDrawer').classList.add('show');
+    }
+
+    function closeLeadDrawer(){
+      document.getElementById('leadDrawer')?.classList.remove('show');
+    }
+
+    function submitLead(){
+      const c = cars.find(x=>x.id===activeVehicleId);
+      const name = document.getElementById('leadName').value || 'Calon Pembeli';
+      const phone = document.getElementById('leadPhone').value || 'Belum diisi';
+      const interest = document.getElementById('leadInterest').value;
+      const vehicle = c ? `${c.brand} ${c.model}` : 'Kendaraan';
+      leads.unshift({name, phone, vehicle, interest, status:'Baru'});
+      document.getElementById('leadName').value = '';
+      document.getElementById('leadPhone').value = '';
+      closeLeadDrawer();
+      renderAdminTables();
+      notify('Lead baru masuk', `${name} tertarik pada ${vehicle}`);
+      toast('Lead berhasil dikirim');
+    }
+
+    function fillCreditFromVehicle(id){
+      const c = cars.find(x=>x.id===id);
+      if(!c) return;
+      const input = document.getElementById('calcPrice');
+      if(input) input.value = c.price;
+      calculateCredit();
+      document.querySelector('#kredit')?.scrollIntoView({behavior:'smooth'});
+      notify('Simulasi kredit diperbarui', `${c.brand} ${c.model} masuk ke kalkulator kredit`);
+    }
+
+    function showAdminSection(name, btn){
+      document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+      document.querySelectorAll('.admin-tabs button').forEach(b=>b.classList.remove('active'));
+      document.getElementById('admin-'+name)?.classList.add('active');
+      btn?.classList.add('active');
+      renderAdminTables();
+    }
+
+    function renderAdminTables(){
+      const admCars = document.getElementById('admCars');
+      const admLead = document.getElementById('admLead');
+      const admDealer = document.getElementById('admDealer');
+      if(admCars) admCars.textContent = cars.length;
+      if(admLead) admLead.textContent = leads.length;
+      if(admDealer) admDealer.textContent = dealers.length;
+
+      const listingTable = document.getElementById('adminListingTable');
+      if(listingTable){
+        listingTable.innerHTML = `<thead><tr><th>Kendaraan</th><th>Grup</th><th>Harga</th><th>Status</th><th>Aksi</th></tr></thead><tbody>` +
+          cars.slice(0,12).map(c=>`<tr><td><b>${c.brand} ${c.model}</b><br><small>${c.city} • ${c.year}</small></td><td>${c.category}</td><td>${rupiah(c.price)}</td><td><span class="admin-pill">${c.status}</span></td><td><button onclick="promoteListing(${c.id})">Promosi</button></td></tr>`).join('') +
+          `</tbody>`;
+      }
+
+      const leadTable = document.getElementById('adminLeadTable');
+      if(leadTable){
+        leadTable.innerHTML = `<thead><tr><th>Nama</th><th>Kontak</th><th>Kendaraan</th><th>Minat</th><th>Status</th></tr></thead><tbody>` +
+          leads.map(l=>`<tr><td>${l.name}</td><td>${l.phone}</td><td>${l.vehicle}</td><td>${l.interest}</td><td><span class="admin-pill">${l.status}</span></td></tr>`).join('') +
+          `</tbody>`;
+      }
+
+      const dealerTable = document.getElementById('adminDealerTable');
+      if(dealerTable){
+        dealerTable.innerHTML = `<thead><tr><th>Dealer</th><th>Kota</th><th>WA</th><th>Status</th></tr></thead><tbody>` +
+          dealers.map(d=>`<tr><td>${d.name}</td><td>${d.city}</td><td>${d.phone}</td><td><span class="admin-pill">${d.status}</span></td></tr>`).join('') +
+          `</tbody>`;
+      }
+    }
+
+    function promoteListing(id){
+      const c = cars.find(x=>x.id===id);
+      if(!c) return;
+      c.badge = 'Featured';
+      c.status = 'Hot Deal';
+      renderCars();
+      renderAdminTables();
+      notify('Listing dipromosikan', `${c.brand} ${c.model} masuk Hot Deal`);
+    }
+
+    function addDealer(){
+      const name = document.getElementById('dealerName').value || 'Dealer Baru';
+      const city = document.getElementById('dealerCity').value || 'Jakarta';
+      const phone = document.getElementById('dealerPhone').value || '081296629033';
+      dealers.unshift({name, city, phone, status:'Verified'});
+      document.getElementById('dealerName').value = '';
+      document.getElementById('dealerCity').value = '';
+      document.getElementById('dealerPhone').value = '';
+      renderAdminTables();
+      notify('Dealer ditambahkan', `${name} aktif di ${city}`);
+    }
+
+    function updateHeroBanner(){
+      const title = document.getElementById('bannerTitle').value || 'Promo Kendaraan Pilihan';
+      const sub = document.getElementById('bannerSub').value || 'Mobil dan motor siap transaksi';
+      const h1 = document.querySelector('.hero h1');
+      const p = document.querySelector('.hero p');
+      if(h1) h1.textContent = title;
+      if(p) p.textContent = sub;
+      notify('Banner diperbarui', 'Tampilan hero berhasil diganti');
+      toast('Banner aktif');
+    }
+
+    function saveSettings(){
+      const platform = document.getElementById('setPlatform').value || 'OtoLink Indonesia';
+      const status = document.getElementById('setStatus').value;
+      document.querySelectorAll('.brand-text span:first-child').forEach(el=>{
+        if(el) el.innerHTML = platform.replace(' ', ' <span style="font-weight:600">') + '</span>';
+      });
+      notify('Setting tersimpan', `Status website: ${status}`);
+      toast('Setting disimpan');
+    }
+
+    function openModal(id){
+      const m = document.getElementById(id);
+      if(m) m.classList.add('show');
+      if(id==='compareModal') renderCompare();
+      if(id==='adminModal') renderAdminTables();
+    }
+
     window.onclick=e=>{
       document.querySelectorAll('.modal').forEach(m=>{if(e.target===m)m.classList.remove('show')})
     }
@@ -2536,6 +2824,10 @@
     initOptions();
     renderCars();
     calculateCredit();
+    renderAdminTables();
+    updateLiveClock();
+    setInterval(updateLiveClock, 30000);
+    setTimeout(()=>notify('Sistem aktif', 'Pencarian, lead, kredit, inspeksi, dan admin panel siap digunakan'), 900);
   </script>
 </body>
 </html>
