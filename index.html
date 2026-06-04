@@ -153,7 +153,7 @@
     .news-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
     .news{border:1px solid var(--line);border-radius:22px;padding:18px;background:#fff}
     .news b{color:var(--red);font-size:12px}
-    .floating{
+    .floating{display:none!important;
       position:fixed;right:18px;bottom:18px;z-index:70;display:flex;flex-direction:column;gap:10px
     }
     .float-btn{
@@ -1011,6 +1011,139 @@
     }
   </style>
 
+
+  <style id="otolink-user-bottom-menu-style">
+    .bottom-user-nav{
+      position:fixed;
+      left:14px;
+      right:14px;
+      bottom:12px;
+      z-index:120;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:7px;
+      padding:8px;
+      border-radius:26px;
+      background:rgba(255,255,255,.90);
+      backdrop-filter:blur(18px);
+      border:1px solid rgba(236,72,153,.20);
+      box-shadow:0 18px 44px rgba(131,24,67,.24);
+    }
+    .bottom-user-nav button{
+      border:0;
+      background:transparent;
+      color:#831843;
+      border-radius:18px;
+      min-height:52px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:3px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .bottom-user-nav button span{
+      font-size:20px;
+      line-height:1;
+    }
+    .bottom-user-nav button small{
+      font-size:10.5px;
+      line-height:1;
+    }
+    .bottom-user-nav button.primary{
+      background:linear-gradient(135deg,#be185d,#ec4899);
+      color:#fff;
+      box-shadow:0 10px 20px rgba(190,24,93,.24);
+    }
+    .bottom-user-nav button:active{
+      transform:scale(.96);
+    }
+    .user-profile-card{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      background:linear-gradient(135deg,#fff1f7,#fff);
+      border:1px solid #fbcfe8;
+      border-radius:22px;
+      padding:14px;
+      margin-bottom:14px;
+    }
+    .user-avatar{
+      width:54px;
+      height:54px;
+      border-radius:18px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg,#be185d,#ec4899);
+      color:#fff;
+      font-size:28px;
+      box-shadow:0 12px 24px rgba(190,24,93,.22);
+    }
+    .user-profile-card h3{
+      margin:0;
+      color:#831843;
+    }
+    .user-profile-card p{
+      margin:4px 0 0;
+      color:#64748b;
+      line-height:1.35;
+    }
+    .user-menu-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      margin-top:14px;
+    }
+    .user-menu-grid button{
+      border:1px solid #fbcfe8;
+      background:#fff;
+      color:#9d174d;
+      border-radius:16px;
+      padding:11px 8px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .user-menu-grid button:hover{
+      background:#fce7f3;
+    }
+    @media(max-width:720px){
+      body{padding-bottom:92px!important}
+      .bottom-user-nav{
+        left:8px;
+        right:8px;
+        bottom:8px;
+        border-radius:24px;
+        padding:7px;
+        gap:5px;
+      }
+      .bottom-user-nav button{
+        min-height:50px;
+        border-radius:17px;
+      }
+      .bottom-user-nav button span{font-size:19px}
+      .bottom-user-nav button small{font-size:9.8px}
+      .user-menu-grid{
+        grid-template-columns:repeat(2,1fr);
+      }
+      .user-account-box{
+        padding-bottom:96px!important;
+      }
+      .admin-secret-bar{
+        bottom:78px!important;
+      }
+    }
+    @media(min-width:721px){
+      .bottom-user-nav{
+        max-width:560px;
+        left:50%;
+        right:auto;
+        width:560px;
+        transform:translateX(-50%);
+      }
+    }
+  </style>
+
 </head>
 <body>
   <header class="topbar">
@@ -1346,6 +1479,16 @@
   </footer>
 
   
+  
+  <nav class="bottom-user-nav" id="bottomUserNav">
+    <button onclick="goHome()" aria-label="Beranda"><span>⌂</span><small>Beranda</small></button>
+    <button onclick="showVehicleGroup('Mobil')" aria-label="Mobil"><span>🚗</span><small>Mobil</small></button>
+    <button onclick="showVehicleGroup('Motor')" aria-label="Motor"><span>🏍️</span><small>Motor</small></button>
+    <button class="primary" onclick="openModal('sellModal')" aria-label="Jual"><span>＋</span><small>Jual</small></button>
+    <button onclick="openUserMenu()" aria-label="Akun Saya"><span>👤</span><small>Akun</small></button>
+  </nav>
+
+
   <div class="admin-secret-bar" id="adminSecretBar">
     <button class="admin-secret-btn" onclick="openModal('adminModal')">🔐 Admin Panel</button>
   </div>
@@ -1385,6 +1528,46 @@
       <div id="compareContent"></div>
     </div>
   </div>
+
+  
+  <div class="modal" id="userModal">
+    <div class="modal-box user-account-box">
+      <div class="modal-head">
+        <h2>Akun Saya</h2>
+        <button class="x" onclick="closeModal('userModal')">×</button>
+      </div>
+
+      <div class="user-profile-card">
+        <div class="user-avatar">👤</div>
+        <div>
+          <h3 id="userDisplayName">Pengguna OtoLink</h3>
+          <p id="userDisplayStatus">Masuk sebagai buyer / seller untuk mengelola aktivitas kendaraan.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field"><label>Nama</label><input id="userName" placeholder="Nama lengkap"></div>
+        <div class="field"><label>Nomor WhatsApp</label><input id="userPhone" placeholder="08xxxxxxxxxx"></div>
+        <div class="field full"><label>Email</label><input id="userEmail" placeholder="email@domain.com"></div>
+        <button class="btn btn-red full" onclick="saveUserProfile()">Simpan Profil</button>
+      </div>
+
+      <div class="user-menu-grid">
+        <button onclick="openModal('sellModal'); closeModal('userModal')">+ Pasang Iklan</button>
+        <button onclick="showVehicleGroup('Mobil'); closeModal('userModal')">Daftar Mobil</button>
+        <button onclick="showVehicleGroup('Motor'); closeModal('userModal')">Daftar Motor</button>
+        <button onclick="openModal('compareModal'); closeModal('userModal')">Compare</button>
+        <button onclick="showWishlistPanel()">Wishlist</button>
+        <button onclick="showUserLeads()">Lead Saya</button>
+      </div>
+
+      <div class="panel" style="box-shadow:none;margin-top:14px">
+        <h3 id="userPanelTitle">Aktivitas Akun</h3>
+        <div id="userPanelContent" style="color:#64748b">Wishlist, compare, dan lead akan tampil di sini.</div>
+      </div>
+    </div>
+  </div>
+
 
   <div class="modal" id="adminModal">
     <div class="modal-box">
@@ -2936,6 +3119,92 @@
     }
 
     
+    
+    function goHome(){
+      document.querySelector('.hero')?.scrollIntoView({behavior:'smooth', block:'start'});
+      const menu = document.getElementById('menu');
+      if(menu) menu.classList.remove('open');
+    }
+
+    function openUserMenu(){
+      openModal('userModal');
+      renderUserPanelDefault();
+    }
+
+    function saveUserProfile(){
+      const name = document.getElementById('userName')?.value || 'Pengguna OtoLink';
+      const phone = document.getElementById('userPhone')?.value || '';
+      const email = document.getElementById('userEmail')?.value || '';
+      const profile = {name, phone, email, status:'Aktif'};
+      localStorage.setItem('otolink_user_profile', JSON.stringify(profile));
+      const displayName = document.getElementById('userDisplayName');
+      const displayStatus = document.getElementById('userDisplayStatus');
+      if(displayName) displayName.textContent = name;
+      if(displayStatus) displayStatus.textContent = phone ? `Nomor aktif: ${phone}` : 'Profil tersimpan.';
+      cloudSet('otolink_users', phone || email || 'local_user', profile);
+      toast('Profil akun disimpan');
+    }
+
+    function loadUserProfile(){
+      try{
+        const profile = JSON.parse(localStorage.getItem('otolink_user_profile') || '{}');
+        if(profile.name){
+          const n = document.getElementById('userName');
+          const p = document.getElementById('userPhone');
+          const e = document.getElementById('userEmail');
+          if(n) n.value = profile.name || '';
+          if(p) p.value = profile.phone || '';
+          if(e) e.value = profile.email || '';
+          const displayName = document.getElementById('userDisplayName');
+          const displayStatus = document.getElementById('userDisplayStatus');
+          if(displayName) displayName.textContent = profile.name;
+          if(displayStatus) displayStatus.textContent = profile.phone ? `Nomor aktif: ${profile.phone}` : 'Profil tersimpan.';
+        }
+      }catch(err){}
+    }
+
+    function renderUserPanelDefault(){
+      loadUserProfile();
+      const title = document.getElementById('userPanelTitle');
+      const box = document.getElementById('userPanelContent');
+      if(title) title.textContent = 'Aktivitas Akun';
+      if(box){
+        box.innerHTML = `
+          <div class="status-line">
+            <span>Wishlist: ${wishlist ? wishlist.size : 0}</span>
+            <span>Compare: ${compare ? compare.length : 0}</span>
+            <span>Lead: ${leads ? leads.length : 0}</span>
+          </div>
+        `;
+      }
+    }
+
+    function showWishlistPanel(){
+      const title = document.getElementById('userPanelTitle');
+      const box = document.getElementById('userPanelContent');
+      if(title) title.textContent = 'Wishlist Saya';
+      const ids = wishlist ? [...wishlist] : [];
+      const items = ids.map(id=>cars.find(c=>String(c.id)===String(id))).filter(Boolean);
+      if(!box) return;
+      if(!items.length){
+        box.innerHTML = 'Belum ada kendaraan di wishlist.';
+        return;
+      }
+      box.innerHTML = items.map(c=>`<div style="padding:10px;border-bottom:1px solid #fbcfe8"><b>${c.brand} ${c.model}</b><br><small>${rupiah(c.price)} • ${c.city}</small></div>`).join('');
+    }
+
+    function showUserLeads(){
+      const title = document.getElementById('userPanelTitle');
+      const box = document.getElementById('userPanelContent');
+      if(title) title.textContent = 'Lead Saya';
+      if(!box) return;
+      if(!leads || !leads.length){
+        box.innerHTML = 'Belum ada lead.';
+        return;
+      }
+      box.innerHTML = leads.slice(0,8).map(l=>`<div style="padding:10px;border-bottom:1px solid #fbcfe8"><b>${l.interest}</b><br><small>${l.vehicle} • ${l.status}</small></div>`).join('');
+    }
+
     function showVehicleGroup(group){
       selectedType = group;
       document.querySelectorAll('.tab').forEach(t=>{
