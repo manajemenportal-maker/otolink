@@ -3,32 +3,526 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OtoLink - Sewa Mobil Aman & Cepat</title>
+    <title>OtoLink - Sewa Mobil Mudah</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; overflow-x: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Modal Scroll Fix */
+        .modal-overlay {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
         
+        /* Hide scrollbar for category */
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* Mencegah form bablas ke bawah (Memberikan batas padding) */
-        #modalOverlay { padding-top: 2rem; padding-bottom: 2rem; }
-        .modal-content { max-height: 90vh; overflow-y: auto; }
+        
+        /* Toast Animation */
+        #toast { transition: transform 0.3s ease, opacity 0.3s ease; }
+        .toast-show { transform: translateY(0); opacity: 1; }
+        .toast-hide { transform: translateY(-100%); opacity: 0; }
     </style>
 </head>
-<body class="text-gray-800 antialiased pb-20 md:pb-0">
+<body class="bg-gray-50 pb-20 md:pb-0 text-gray-800">
 
+    <!-- Header -->
+    <header class="bg-[#F05A28] text-white sticky top-0 z-40 shadow-md">
+        <!-- Top bar (Desktop) -->
+        <div class="hidden md:flex justify-between items-center px-8 py-2 text-xs border-b border-white/20">
+            <div class="flex gap-4">
+                <a href="#" id="desktopPartnerBtn" onclick="openPartnerForm()" class="hover:underline font-medium">Mulai Sewakan Mobil</a>
+                <a href="#" class="hover:underline">Download App</a>
+            </div>
+            <div class="flex gap-4 items-center">
+                <a href="#" onclick="openModal('notificationModal')" class="hover:underline flex items-center gap-1"><i class="ph ph-bell"></i> Notifikasi</a>
+                <a href="#" class="hover:underline flex items-center gap-1"><i class="ph ph-question"></i> Bantuan</a>
+            </div>
+        </div>
+
+        <!-- Main Header -->
+        <div class="px-4 md:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2 cursor-pointer" id="logoBtn" onclick="handleLogoClick()">
+                <i class="ph-fill ph-car-profile text-3xl md:text-4xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold tracking-tight">OtoLink</h1>
+            </div>
+            
+            <div class="hidden md:flex flex-1 max-w-2xl mx-8 relative">
+                <input type="text" placeholder="Cari mobil impianmu..." class="w-full py-2.5 px-4 pr-12 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-300">
+                <button class="absolute right-0 top-0 h-full px-4 bg-orange-600 rounded-r-lg hover:bg-orange-700 transition">
+                    <i class="ph ph-magnifying-glass text-white text-lg"></i>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div id="headerAuth" class="flex gap-3 items-center">
+                    <button onclick="openModal('authModal')" class="hidden md:block font-medium hover:underline">Daftar | Login</button>
+                    <button onclick="openModal('authModal')" class="md:hidden"><i class="ph ph-sign-in text-2xl"></i></button>
+                </div>
+                
+                <!-- Logged In State -->
+                <div id="headerUser" class="hidden flex gap-4 items-center">
+                    <div class="text-right hidden md:block">
+                        <p class="text-xs text-orange-100">Saldo OtoPay</p>
+                        <p class="font-bold text-sm" id="headerOtopayBalance">Rp 0</p>
+                    </div>
+                    <div class="flex items-center gap-2 cursor-pointer relative group">
+                        <i class="ph-fill ph-user-circle text-3xl"></i>
+                        <span id="headerUserName" class="font-medium hidden md:block">User</span>
+                        
+                        <!-- Dropdown -->
+                        <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl text-gray-800 hidden group-hover:block border overflow-hidden">
+                            <a href="#" onclick="openModal('ordersModal')" class="block px-4 py-2 hover:bg-gray-100 text-sm"><i class="ph ph-receipt mr-2"></i>Pesanan Saya</a>
+                            <a href="#" onclick="openModal('topupModal')" class="block px-4 py-2 hover:bg-gray-100 text-sm"><i class="ph ph-wallet mr-2"></i>Top Up OtoPay</a>
+                            <div class="border-t my-1"></div>
+                            <a href="#" onclick="logout()" class="block px-4 py-2 hover:bg-gray-100 text-sm text-red-600"><i class="ph ph-sign-out mr-2"></i>Keluar</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <main class="max-w-7xl mx-auto px-4 md:px-8 mt-4 md:mt-8">
+        <div class="bg-gradient-to-r from-gray-800 to-gray-600 rounded-2xl overflow-hidden relative h-[200px] md:h-[350px] shadow-lg">
+            <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Banner" class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay">
+            <div class="absolute inset-0 p-6 md:p-12 flex flex-col justify-center">
+                <h2 class="text-2xl md:text-5xl font-bold text-white mb-2 md:mb-4 max-w-lg leading-tight">Sewa Mobil Kini Lebih Cepat & Mudah!</h2>
+                <p class="text-white/90 text-sm md:text-lg max-w-md">Temukan mobil yang tepat untuk segala perjalananmu.</p>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="mt-8 mb-6 overflow-x-auto hide-scroll">
+            <div class="flex gap-6 min-w-max pb-2" id="categoryContainer">
+                <button onclick="filterCategory('Semua')" class="cat-btn active flex flex-col items-center gap-2 group w-16" data-cat="Semua">
+                    <div class="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl group-hover:bg-orange-200 transition"><i class="ph-fill ph-car"></i></div>
+                    <span class="text-xs font-medium text-gray-600">Semua Mobil</span>
+                </button>
+                <button onclick="filterCategory('Terlaris')" class="cat-btn flex flex-col items-center gap-2 group w-16" data-cat="Terlaris">
+                    <div class="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center text-2xl group-hover:bg-gray-200 transition"><i class="ph-fill ph-star"></i></div>
+                    <span class="text-xs font-medium text-gray-600">Terlaris</span>
+                </button>
+                <button onclick="filterCategory('Promo')" class="cat-btn flex flex-col items-center gap-2 group w-16" data-cat="Promo">
+                    <div class="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center text-2xl group-hover:bg-gray-200 transition"><i class="ph-fill ph-ticket-percent"></i></div>
+                    <span class="text-xs font-medium text-gray-600">Promo</span>
+                </button>
+                <button onclick="filterCategory('SUV')" class="cat-btn flex flex-col items-center gap-2 group w-16" data-cat="SUV">
+                    <div class="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center text-2xl group-hover:bg-gray-200 transition"><i class="ph-fill ph-jeep"></i></div>
+                    <span class="text-xs font-medium text-gray-600">SUV</span>
+                </button>
+                <button onclick="filterCategory('Keluarga')" class="cat-btn flex flex-col items-center gap-2 group w-16" data-cat="Keluarga">
+                    <div class="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center text-2xl group-hover:bg-gray-200 transition"><i class="ph-fill ph-users-three"></i></div>
+                    <span class="text-xs font-medium text-gray-600">Keluarga</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Section Title -->
+        <div class="flex justify-between items-end mb-4">
+            <h3 class="text-lg md:text-xl font-bold uppercase tracking-wide border-l-4 border-orange-500 pl-3">REKOMENDASI MOBIL</h3>
+        </div>
+
+        <!-- Car Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6" id="carGrid">
+            <!-- Rendered by JS -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 mt-16 pt-10 pb-24 md:pb-10 border-t">
+        <div class="max-w-7xl mx-auto px-4 md:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <h4 class="font-bold text-lg mb-4 text-orange-600">OtoLink</h4>
+                <p class="text-sm text-gray-500 mb-4">Platform sewa mobil peer-to-peer terpercaya di Indonesia.</p>
+                <div class="flex gap-4">
+                    <a href="#" class="text-gray-400 hover:text-orange-500 text-xl"><i class="ph-fill ph-instagram-logo"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-orange-500 text-xl"><i class="ph-fill ph-threads-logo"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-orange-500 text-xl"><i class="ph-fill ph-facebook-logo"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-orange-500 text-xl"><i class="ph-fill ph-twitter-logo"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-bold mb-4">Layanan</h4>
+                <ul class="text-sm text-gray-500 space-y-2">
+                    <li><a href="#" class="hover:text-orange-500">Sewa Mobil</a></li>
+                    <li><a href="#" class="hover:text-orange-500">Jadi Mitra</a></li>
+                    <li><a href="#" class="hover:text-orange-500">OtoPay</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold mb-4">Bantuan</h4>
+                <ul class="text-sm text-gray-500 space-y-2">
+                    <li><a href="#" class="hover:text-orange-500">Cara Pesan</a></li>
+                    <li><a href="#" class="hover:text-orange-500">Syarat & Ketentuan</a></li>
+                    <li><a href="#" class="hover:text-orange-500">Kebijakan Privasi</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold mb-4">Kontak Kami</h4>
+                <ul class="text-sm text-gray-500 space-y-2">
+                    <li><i class="ph ph-envelope-simple mr-2"></i>cskalimaja@gmail.com</li>
+                    <li><i class="ph ph-whatsapp-logo mr-2"></i>087811559627</li>
+                </ul>
+            </div>
+        </div>
+        <div class="text-center text-xs text-gray-400 mt-10">
+            &copy; 2026 PT OtoLink Nusantara. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="md:hidden fixed bottom-0 w-full bg-white border-t flex justify-around items-center py-2 z-40 pb-safe">
+        <a href="#" class="flex flex-col items-center text-orange-600 w-1/4">
+            <i class="ph-fill ph-house text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Beranda</span>
+        </a>
+        <a href="#" onclick="openModal('notificationModal')" class="flex flex-col items-center text-gray-400 hover:text-orange-600 w-1/4 transition">
+            <i class="ph ph-bell text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Notifikasi</span>
+        </a>
+        <a href="#" onclick="openModal('ordersModal')" class="flex flex-col items-center text-gray-400 hover:text-orange-600 w-1/4 transition">
+            <i class="ph ph-receipt text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Pesanan</span>
+        </a>
+        <a href="#" onclick="openMobileAccount()" class="flex flex-col items-center text-gray-400 hover:text-orange-600 w-1/4 transition">
+            <i class="ph ph-user text-2xl"></i>
+            <span class="text-[10px] font-medium mt-1">Akun Saya</span>
+        </a>
+    </nav>
+
+    <!-- Overlay -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black/60 z-50 hidden modal-overlay flex justify-center items-start opacity-0 transition-opacity duration-300" onclick="closeAllModals(event)">
+        
+        <!-- Auth Modal -->
+        <div id="authModal" class="modal-content bg-white w-[90%] md:w-[400px] rounded-2xl shadow-2xl scale-95 transition-transform duration-300 transform hidden" onclick="event.stopPropagation()">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">Daftar Akun Baru</h3>
+                    <button onclick="closeAllModals()" class="p-1 bg-gray-100 rounded-full hover:bg-gray-200"><i class="ph ph-x text-gray-600"></i></button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Nama Lengkap</label>
+                        <input type="text" id="authName" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-orange-300 outline-none" placeholder="Cth: Budi Santoso">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">No. HP / Email</label>
+                        <input type="text" id="authPhone" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-orange-300 outline-none" placeholder="0812xxxx atau email@anda.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Password</label>
+                        <input type="password" id="authPass" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-orange-300 outline-none" placeholder="••••••••">
+                    </div>
+                    <button onclick="handleLogin()" class="w-full bg-[#F05A28] text-white py-3 rounded-lg font-bold hover:bg-orange-700 transition">Daftar Sekarang</button>
+                </div>
+                <p class="text-center text-xs text-gray-500 mt-6">Sudah punya akun? <a href="#" class="text-orange-600 font-bold hover:underline">Masuk Sini</a></p>
+            </div>
+        </div>
+
+        <!-- Partner Registration Modal -->
+        <div id="partnerModal" class="modal-content bg-white w-[90%] md:w-[500px] rounded-2xl shadow-2xl scale-95 transition-transform duration-300 transform hidden" onclick="event.stopPropagation()">
+            <div class="bg-gray-900 text-white p-4 rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-lg font-bold flex items-center gap-2"><i class="ph-fill ph-handshake"></i> Pendaftaran Mitra</h3>
+                <button onclick="closeAllModals()" class="hover:text-gray-300"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Nomor HP / WhatsApp (Aktif)</label>
+                    <input type="text" id="partnerPhone" class="w-full border rounded-lg p-2.5 text-sm outline-none">
+                </div>
+                <div class="border p-4 rounded-xl bg-gray-50">
+                    <p class="text-xs font-bold mb-3 text-gray-700">Informasi Kendaraan Pertama</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-gray-500 mb-1">Merek & Tipe</label>
+                            <input type="text" id="partnerCar" class="w-full border rounded-lg p-2 text-sm outline-none" placeholder="Cth: Avanza G">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-500 mb-1">Plat Nomor</label>
+                            <input type="text" id="partnerPlat" class="w-full border rounded-lg p-2 text-sm outline-none" placeholder="CTH: B 1234 CD">
+                        </div>
+                    </div>
+                </div>
+                <div class="border border-orange-200 p-4 rounded-xl bg-orange-50">
+                    <p class="text-xs font-bold mb-3 text-orange-800">Rekening Pencairan Dana</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-orange-600 mb-1">Bank</label>
+                            <input type="text" id="partnerBank" class="w-full border rounded-lg p-2 text-sm outline-none" placeholder="Cth: BCA">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-orange-600 mb-1">Nomor Rekening</label>
+                            <input type="number" id="partnerRek" class="w-full border rounded-lg p-2 text-sm outline-none">
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-orange-600 mt-2">*Pastikan nama rekening sama dengan KTP untuk kelancaran pencairan dana (93% bagi hasil).</p>
+                </div>
+                <button onclick="submitPartner()" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition">Kirim Pendaftaran</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Mitra Modal -->
+        <div id="dashboardMitraModal" class="modal-content bg-white w-[90%] md:w-[600px] rounded-2xl shadow-2xl scale-95 transition-transform duration-300 transform hidden" onclick="event.stopPropagation()">
+            <div class="bg-orange-600 text-white p-4 rounded-t-2xl flex justify-between items-center sticky top-0 z-10">
+                <h3 class="text-lg font-bold flex items-center gap-2"><i class="ph-fill ph-storefront"></i> Dashboard Mitra</h3>
+                <button onclick="closeAllModals()" class="hover:text-gray-200"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="p-4 md:p-6 bg-gray-100">
+                <!-- Stats -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border">
+                        <p class="text-xs text-gray-500 mb-1">Pendapatan Bersih (93%)</p>
+                        <p class="text-lg font-bold text-green-600" id="mitraIncome">Rp 0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border">
+                        <p class="text-xs text-gray-500 mb-1">Pesanan Selesai</p>
+                        <p class="text-lg font-bold text-gray-800" id="mitraOrders">0</p>
+                    </div>
+                </div>
+
+                <!-- Active Cars List -->
+                <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border mb-4">
+                    <h4 class="font-bold text-sm mb-4 border-b pb-2">Daftar Mobil Anda</h4>
+                    <div id="mitraCarsList" class="space-y-3 max-h-60 overflow-y-auto hide-scroll">
+                        <p class="text-xs text-gray-400 text-center py-4">Memuat data...</p>
+                    </div>
+                </div>
+
+                <!-- Add Car Form (3 Photos + Compress) -->
+                <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border">
+                    <h4 class="font-bold text-sm mb-4 border-b pb-2">Tambah Unit Sewa Baru</h4>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Nama Mobil</label>
+                                <input type="text" id="newCarName" class="w-full border rounded-lg p-2 text-sm" placeholder="Cth: Innova Reborn">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Kategori</label>
+                                <select id="newCarCat" class="w-full border rounded-lg p-2 text-sm bg-white">
+                                    <option value="Semua">Pilih Kategori</option>
+                                    <option value="Keluarga">Keluarga (MPV)</option>
+                                    <option value="SUV">SUV</option>
+                                    <option value="Promo">Promo</option>
+                                    <option value="Terlaris">Terlaris</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Harga Sewa / Hari (Rp)</label>
+                            <input type="number" id="newCarPrice" class="w-full border rounded-lg p-2 text-sm" placeholder="Cth: 500000">
+                        </div>
+                        
+                        <!-- Upload Photos -->
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Upload 3 Foto (Otomatis Dikompres)</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="relative border-2 border-dashed rounded-lg h-24 flex flex-col items-center justify-center bg-gray-50 overflow-hidden group">
+                                    <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleImageUpload(event, 'previewImg1', 'valImg1')">
+                                    <img id="previewImg1" src="" class="absolute inset-0 w-full h-full object-cover hidden">
+                                    <i class="ph ph-camera text-gray-400 text-xl group-hover:text-orange-500"></i>
+                                    <span class="text-[9px] text-gray-500 mt-1">Depan</span>
+                                    <input type="hidden" id="valImg1">
+                                </div>
+                                <div class="relative border-2 border-dashed rounded-lg h-24 flex flex-col items-center justify-center bg-gray-50 overflow-hidden group">
+                                    <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleImageUpload(event, 'previewImg2', 'valImg2')">
+                                    <img id="previewImg2" src="" class="absolute inset-0 w-full h-full object-cover hidden">
+                                    <i class="ph ph-camera text-gray-400 text-xl group-hover:text-orange-500"></i>
+                                    <span class="text-[9px] text-gray-500 mt-1">Dalam 1</span>
+                                    <input type="hidden" id="valImg2">
+                                </div>
+                                <div class="relative border-2 border-dashed rounded-lg h-24 flex flex-col items-center justify-center bg-gray-50 overflow-hidden group">
+                                    <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleImageUpload(event, 'previewImg3', 'valImg3')">
+                                    <img id="previewImg3" src="" class="absolute inset-0 w-full h-full object-cover hidden">
+                                    <i class="ph ph-camera text-gray-400 text-xl group-hover:text-orange-500"></i>
+                                    <span class="text-[9px] text-gray-500 mt-1">Dalam 2</span>
+                                    <input type="hidden" id="valImg3">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="handlePartnerAddCar()" class="w-full bg-orange-600 text-white py-2.5 rounded-lg font-bold hover:bg-orange-700 text-sm">Pasang Iklan Mobil</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rental Modal (3 Images Viewer) -->
+        <div id="rentalModal" class="modal-content bg-white w-[90%] md:w-[450px] rounded-2xl shadow-2xl scale-95 transition-transform duration-300 transform hidden flex flex-col" onclick="event.stopPropagation()">
+            <div id="rentModalContent" class="flex-1 overflow-y-auto p-0">
+                <!-- Injected by JS -->
+            </div>
+        </div>
+
+        <!-- Top Up Modal -->
+        <div id="topupModal" class="modal-content bg-white w-[90%] md:w-[350px] rounded-2xl shadow-2xl scale-95 transition-transform duration-300 transform hidden" onclick="event.stopPropagation()">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">Top Up OtoPay</h3>
+                    <button onclick="closeAllModals()" class="hover:text-gray-500"><i class="ph ph-x"></i></button>
+                </div>
+                <div class="bg-gray-100 p-4 rounded-xl text-center mb-4">
+                    <p class="text-xs text-gray-500">Saldo Saat Ini</p>
+                    <p class="text-xl font-bold text-orange-600" id="topupCurrentBal">Rp 0</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <button onclick="selectTopup(50000)" class="border rounded-lg py-2 text-sm font-medium hover:border-orange-500 hover:text-orange-600 focus:bg-orange-50 focus:border-orange-500">50.000</button>
+                    <button onclick="selectTopup(100000)" class="border rounded-lg py-2 text-sm font-medium hover:border-orange-500 hover:text-orange-600 focus:bg-orange-50 focus:border-orange-500">100.000</button>
+                    <button onclick="selectTopup(250000)" class="border rounded-lg py-2 text-sm font-medium hover:border-orange-500 hover:text-orange-600 focus:bg-orange-50 focus:border-orange-500">250.000</button>
+                    <button onclick="selectTopup(500000)" class="border rounded-lg py-2 text-sm font-medium hover:border-orange-500 hover:text-orange-600 focus:bg-orange-50 focus:border-orange-500">500.000</button>
+                </div>
+                <input type="hidden" id="selectedTopupAmt" value="0">
+                <button onclick="processTopup()" class="w-full bg-[#F05A28] text-white py-3 rounded-lg font-bold hover:bg-orange-700 transition">Lanjut Pembayaran</button>
+            </div>
+        </div>
+
+        <!-- Payment Instruction Modal (Escrow BCA / Gopay) -->
+        <div id="paymentInstructionModal" class="modal-content bg-white w-[90%] md:w-[400px] rounded-2xl shadow-2xl scale-95 transition-transform duration-300 transform hidden" onclick="event.stopPropagation()">
+            <div class="bg-orange-600 text-white p-4 rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-lg font-bold">Instruksi Pembayaran</h3>
+                <button onclick="closeAllModals()" class="hover:text-gray-200"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="p-6 text-center space-y-4">
+                <p class="text-sm text-gray-600">Mohon transfer sesuai nominal ke rekening PT OtoLink Nusantara di bawah ini:</p>
+                
+                <div id="instructBCA" class="hidden border border-blue-200 bg-blue-50 p-4 rounded-xl">
+                    <p class="font-bold text-blue-800 mb-1">Bank BCA</p>
+                    <p class="text-2xl font-mono font-bold tracking-wider text-gray-800">7645 217 578</p>
+                    <p class="text-xs text-gray-500 mt-1">a.n PT OtoLink Nusantara</p>
+                </div>
+                
+                <div id="instructGopay" class="hidden border border-green-200 bg-green-50 p-4 rounded-xl">
+                    <p class="font-bold text-green-800 mb-1">GoPay</p>
+                    <p class="text-2xl font-mono font-bold tracking-wider text-gray-800">0818 761 761</p>
+                    <p class="text-xs text-gray-500 mt-1">a.n PT OtoLink Nusantara</p>
+                </div>
+
+                <div class="bg-gray-100 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500 mb-1">Total Tagihan:</p>
+                    <p class="text-lg font-bold text-orange-600" id="instructAmount">Rp 0</p>
+                </div>
+
+                <p class="text-xs text-red-500">*Pesanan/Saldo akan otomatis masuk setelah Admin memverifikasi dana Anda.</p>
+
+                <button onclick="closeAllModals(); showToast('Menunggu verifikasi Admin.')" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition">Saya Sudah Transfer</button>
+            </div>
+        </div>
+
+        <!-- Orders & Notification Modals -->
+        <div id="ordersModal" class="modal-content bg-white w-[90%] md:w-[450px] min-h-[300px] rounded-2xl shadow-2xl scale-95 transition-transform duration-300 transform hidden" onclick="event.stopPropagation()">
+            <div class="p-4 border-b flex justify-between items-center sticky top-0 bg-white rounded-t-2xl">
+                <h3 class="font-bold">Pesanan Saya</h3>
+                <button onclick="closeAllModals()"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="p-4 space-y-3" id="userOrdersList">
+                <p class="text-center text-sm text-gray-400 mt-10">Belum ada pesanan.</p>
+            </div>
+        </div>
+
+        <div id="notificationModal" class="modal-content bg-white w-[90%] md:w-[350px] min-h-[300px] rounded-2xl shadow-2xl scale-95 transition-transform duration-300 transform hidden" onclick="event.stopPropagation()">
+            <div class="p-4 border-b flex justify-between items-center sticky top-0 bg-white rounded-t-2xl">
+                <h3 class="font-bold">Notifikasi</h3>
+                <button onclick="closeAllModals()"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="p-4">
+                <p class="text-center text-sm text-gray-400 mt-10">Belum ada notifikasi baru.</p>
+            </div>
+        </div>
+
+        <!-- Mobile Account Modal -->
+        <div id="mobileAccountModal" class="modal-content bg-white w-full rounded-t-3xl shadow-2xl scale-95 transition-transform duration-300 transform hidden absolute bottom-0" onclick="event.stopPropagation()">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-lg">Akun Saya</h3>
+                    <button onclick="closeAllModals()"><i class="ph ph-x text-lg"></i></button>
+                </div>
+                <div class="bg-orange-50 border border-orange-100 p-4 rounded-xl mb-4 text-center">
+                    <p class="text-xs text-gray-600 mb-1">Saldo OtoPay</p>
+                    <p class="text-2xl font-bold text-orange-600" id="mobileOtopayBalance">Rp 0</p>
+                    <button onclick="closeAllModals(); setTimeout(()=>openModal('topupModal'),350);" class="mt-3 bg-white border border-orange-500 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full">Top Up</button>
+                </div>
+                <div class="space-y-2">
+                    <button id="mobileMitraBtn" class="w-full hidden bg-green-100 text-green-700 py-3 rounded-xl text-sm font-bold text-left px-4" onclick="closeAllModals(); setTimeout(()=>openMitraDashboard(),350);"><i class="ph-fill ph-storefront mr-2"></i> Akses Dashboard Mitra</button>
+                    <button onclick="logout()" class="w-full bg-red-50 text-red-600 py-3 rounded-xl text-sm font-bold text-left px-4"><i class="ph ph-sign-out mr-2"></i> Keluar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard Modal -->
+        <div id="adminModal" class="modal-content bg-white w-[95%] md:w-[800px] h-[80vh] rounded-2xl shadow-2xl scale-95 transition-transform duration-300 transform hidden flex flex-col" onclick="event.stopPropagation()">
+            <div class="bg-gray-900 text-white p-4 rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-lg font-bold flex items-center gap-2"><i class="ph-fill ph-shield-check"></i> Panel Admin Utama</h3>
+                <button onclick="closeAllModals()" class="hover:text-gray-300"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="flex border-b text-sm font-medium overflow-x-auto hide-scroll">
+                <button onclick="switchAdminTab('cars')" class="admin-tab px-4 py-3 border-b-2 border-transparent text-gray-500 hover:text-black whitespace-nowrap active-tab border-black text-black" data-tab="cars">Persetujuan Iklan</button>
+                <button onclick="switchAdminTab('orders')" class="admin-tab px-4 py-3 border-b-2 border-transparent text-gray-500 hover:text-black whitespace-nowrap" data-tab="orders">Daftar Pesanan</button>
+                <button onclick="switchAdminTab('topups')" class="admin-tab px-4 py-3 border-b-2 border-transparent text-gray-500 hover:text-black whitespace-nowrap" data-tab="topups">Verifikasi Top Up</button>
+                <button onclick="switchAdminTab('partners')" class="admin-tab px-4 py-3 border-b-2 border-transparent text-gray-500 hover:text-black whitespace-nowrap" data-tab="partners">Mitra & Pencairan</button>
+            </div>
+            
+            <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
+                <!-- Admin Cars Tab -->
+                <div id="admin-cars" class="admin-panel block">
+                    <table class="w-full text-left bg-white rounded-xl shadow-sm overflow-hidden text-sm">
+                        <thead class="bg-gray-100 text-gray-600 text-xs">
+                            <tr><th class="p-3">Mobil</th><th class="p-3">Harga</th><th class="p-3">Mitra ID</th><th class="p-3">Aksi</th></tr>
+                        </thead>
+                        <tbody id="adminCarTable"></tbody>
+                    </table>
+                </div>
+                
+                <!-- Admin Orders Tab (All Orders + Manage) -->
+                <div id="admin-orders" class="admin-panel hidden">
+                    <table class="w-full text-left bg-white rounded-xl shadow-sm overflow-hidden text-sm">
+                        <thead class="bg-gray-100 text-gray-600 text-xs">
+                            <tr><th class="p-3">ID</th><th class="p-3">Penyewa</th><th class="p-3">Mobil</th><th class="p-3">Total</th><th class="p-3">Status</th><th class="p-3">Aksi</th></tr>
+                        </thead>
+                        <tbody id="adminOrderTable"></tbody>
+                    </table>
+                </div>
+
+                <!-- Admin Topups Tab -->
+                <div id="admin-topups" class="admin-panel hidden">
+                    <table class="w-full text-left bg-white rounded-xl shadow-sm overflow-hidden text-sm">
+                        <thead class="bg-gray-100 text-gray-600 text-xs">
+                            <tr><th class="p-3">User</th><th class="p-3">Nominal</th><th class="p-3">Aksi</th></tr>
+                        </thead>
+                        <tbody id="adminTopupTable"></tbody>
+                    </table>
+                </div>
+
+                <!-- Admin Partners Tab (All Partners + Manage) -->
+                <div id="admin-partners" class="admin-panel hidden">
+                    <table class="w-full text-left bg-white rounded-xl shadow-sm overflow-hidden text-sm">
+                        <thead class="bg-gray-100 text-gray-600 text-xs">
+                            <tr><th class="p-3">HP</th><th class="p-3">Mobil Awal</th><th class="p-3">Rekening</th><th class="p-3">Status</th><th class="p-3">Aksi</th></tr>
+                        </thead>
+                        <tbody id="adminPartnerTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg text-sm font-medium toast-hide z-[100] flex items-center gap-2">
+        <i class="ph-fill ph-check-circle text-green-400 text-lg"></i> <span id="toastMsg">Berhasil!</span>
+    </div>
+
+    <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, updateDoc, doc, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCQ9wg4ezcqMgrSkL91wOVcx6JHN6PiUMU",
@@ -40,1254 +534,610 @@
             measurementId: "G-PYKSJ7Z6G2"
         };
 
-        const app = initializeApp(firebaseConfig);
-        window.db = getFirestore(app);
-        window.auth = getAuth(app);
-        
-        // Expose Firebase functions to window for global access
-        window.collection = collection;
-        window.addDoc = addDoc;
-        window.onSnapshot = onSnapshot;
-        window.query = query;
-        window.updateDoc = updateDoc;
-        window.doc = doc;
-        window.deleteDoc = deleteDoc;
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+            
+            window.db = db;
+            window.addDoc = addDoc;
+            window.updateDoc = updateDoc;
+            window.doc = doc;
+            window.collection = collection;
 
-        signInAnonymously(window.auth).then(() => {
-            console.log("Firebase Auth Ready");
-            initDataListeners(); // Start syncing data
-        }).catch((error) => {
-            console.error("Auth Error:", error);
-        });
+            signInAnonymously(auth).then(() => {
+                showToast("Firebase Connected!");
+                
+                // Real-time Sync Cars
+                onSnapshot(collection(db, "cars"), (snap) => {
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        const exists = window.cars.find(c => c.id === data.id);
+                        if(exists) { Object.assign(exists, data, {fbId: doc.id}); }
+                        else { window.cars.push({...data, fbId: doc.id}); }
+                    });
+                    window.renderCars(); window.renderAdminCars();
+                }, (e) => console.log("Firebase Rules restricted, using local data."));
+
+                // Real-time Sync Orders
+                onSnapshot(collection(db, "orders"), (snap) => {
+                    window.orders = []; // Reset and rebuild from cloud
+                    snap.forEach(doc => window.orders.push({...doc.data(), fbId: doc.id}));
+                    window.renderAdminOrders(); window.renderUserOrders(); window.updateMitraStats();
+                }, (e) => console.log("Firebase Rules restricted."));
+
+                // Real-time Sync Partners
+                onSnapshot(collection(db, "partners"), (snap) => {
+                    window.partners = [];
+                    snap.forEach(doc => window.partners.push({...doc.data(), fbId: doc.id}));
+                    window.renderAdminPartners();
+                    
+                    // Auto UI Update if current user just got approved
+                    if(window.currentUser) {
+                        const myPartnerData = window.partners.find(p => p.phone === window.currentUser.id && p.status === 'approved');
+                        if(myPartnerData) {
+                            window.currentUser.partnerId = myPartnerData.id;
+                            window.updateUserUI();
+                        }
+                    }
+                }, (e) => console.log("Firebase Rules restricted."));
+
+            }).catch(e => console.log(e));
+
+        } catch (error) {
+            console.log("Firebase init skipped.", error);
+        }
     </script>
 
-    <!-- Top Bar (Desktop) -->
-    <header class="bg-orange-600 text-white sticky top-0 z-40 shadow-md">
-        <div class="max-w-6xl mx-auto px-4 py-2 flex justify-between items-center text-xs font-medium">
-            <div class="flex gap-4">
-                <a href="#" class="hover:text-gray-200 hidden md:block" id="topPartnerLink" onclick="openPartnerReg()">🤝 Pendaftaran Mitra</a>
-            </div>
-            <div class="flex gap-4 items-center">
-                <button onclick="openModal('notificationModal')" class="hover:text-gray-200 flex items-center gap-1"><i class="ph ph-bell"></i> Notifikasi</button>
-                <a href="#" class="hover:text-gray-200 flex items-center gap-1"><i class="ph ph-question"></i> Bantuan</a>
-            </div>
-        </div>
-        
-        <!-- Main Navbar -->
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-2 cursor-pointer" onclick="handleAdminClick()">
-                <i class="ph-fill ph-car-profile text-3xl"></i>
-                <span class="text-2xl font-bold tracking-tight">OtoLink</span>
-            </div>
-            
-            <div class="flex-1 max-w-2xl hidden md:flex relative">
-                <input type="text" placeholder="Cari mobil impianmu... (Cth: Avanza, Brio)" class="w-full py-2.5 px-4 pr-12 rounded-sm text-gray-800 outline-none shadow-inner">
-                <button class="absolute right-0 top-0 h-full px-4 bg-gray-100 hover:bg-gray-200 text-orange-600 rounded-r-sm"><i class="ph ph-magnifying-glass text-lg"></i></button>
-            </div>
-            
-            <div class="flex items-center gap-4" id="navUserArea">
-                <button onclick="openModal('authModal')" class="hidden md:block font-bold hover:text-gray-100 text-sm">Daftar | Login</button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Mobile Search -->
-    <div class="md:hidden bg-white p-3 shadow-sm sticky top-[60px] z-30">
-        <div class="relative">
-            <input type="text" placeholder="Cari mobil..." class="w-full py-2 px-4 pr-10 border border-gray-300 rounded-md text-sm outline-none bg-gray-50">
-            <i class="ph ph-magnifying-glass absolute right-3 top-2.5 text-gray-400 text-lg"></i>
-        </div>
-    </div>
-
-    <main class="max-w-6xl mx-auto px-4 pt-4 pb-10">
-        <!-- Banner -->
-        <div class="rounded-lg overflow-hidden relative mb-6 shadow-sm group">
-            <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&q=80&w=1200&h=400" alt="Promo Banner" class="w-full h-[200px] md:h-[350px] object-cover transition-transform duration-500 group-hover:scale-105">
-            <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex items-center p-6 md:p-12">
-                <div class="text-white max-w-md">
-                    <h2 class="text-2xl md:text-4xl font-extrabold mb-2 leading-tight">Sewa Mobil Kini Lebih Cepat & Mudah!</h2>
-                    <p class="text-sm md:text-base text-gray-200">Temukan mobil yang tepat untuk segala perjalananmu.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Categories -->
-        <div class="overflow-x-auto hide-scroll mb-8">
-            <div class="flex gap-6 min-w-max pb-2" id="categoryContainer">
-                <div onclick="filterCategory('Semua', this)" class="category-btn cursor-pointer flex flex-col items-center gap-2 group text-orange-600">
-                    <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 shadow-sm border border-orange-200"><i class="ph ph-car text-2xl"></i></div>
-                    <span class="text-xs font-semibold">Semua Mobil</span>
-                </div>
-                <div onclick="filterCategory('Terlaris', this)" class="category-btn cursor-pointer flex flex-col items-center gap-2 group text-gray-600 hover:text-orange-600">
-                    <div class="w-12 h-12 rounded-xl bg-white group-hover:bg-orange-50 flex items-center justify-center text-gray-500 group-hover:text-orange-500 border border-gray-200 shadow-sm transition"><i class="ph-fill ph-star text-2xl"></i></div>
-                    <span class="text-xs font-medium">Terlaris</span>
-                </div>
-                <div onclick="filterCategory('Promo', this)" class="category-btn cursor-pointer flex flex-col items-center gap-2 group text-gray-600 hover:text-orange-600">
-                    <div class="w-12 h-12 rounded-xl bg-white group-hover:bg-orange-50 flex items-center justify-center text-gray-500 group-hover:text-orange-500 border border-gray-200 shadow-sm transition"><i class="ph-fill ph-ticket text-2xl"></i></div>
-                    <span class="text-xs font-medium">Promo</span>
-                </div>
-                <div onclick="filterCategory('SUV', this)" class="category-btn cursor-pointer flex flex-col items-center gap-2 group text-gray-600 hover:text-orange-600">
-                    <div class="w-12 h-12 rounded-xl bg-white group-hover:bg-orange-50 flex items-center justify-center text-gray-500 group-hover:text-orange-500 border border-gray-200 shadow-sm transition"><i class="ph ph-jeep text-2xl"></i></div>
-                    <span class="text-xs font-medium">SUV</span>
-                </div>
-                <div onclick="filterCategory('Keluarga', this)" class="category-btn cursor-pointer flex flex-col items-center gap-2 group text-gray-600 hover:text-orange-600">
-                    <div class="w-12 h-12 rounded-xl bg-white group-hover:bg-orange-50 flex items-center justify-center text-gray-500 group-hover:text-orange-500 border border-gray-200 shadow-sm transition"><i class="ph ph-users text-2xl"></i></div>
-                    <span class="text-xs font-medium">Keluarga</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-2 mb-4 border-l-4 border-orange-500 pl-2">
-            <h3 class="text-lg font-bold text-gray-800 uppercase" id="carSectionTitle">Rekomendasi Mobil</h3>
-        </div>
-        
-        <div id="carGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-            <!-- Cars rendered by JS -->
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-white border-t mt-10 pb-20 md:pb-6 pt-10">
-        <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-                <h4 class="font-bold text-lg mb-4 text-orange-600 flex items-center gap-1"><i class="ph-fill ph-car-profile"></i> OtoLink</h4>
-                <p class="text-gray-500 text-sm mb-4">Platform rental mobil terpercaya, menghubungkan Anda dengan ribuan mitra kendaraan di seluruh Indonesia.</p>
-            </div>
-            <div>
-                <h4 class="font-bold text-gray-800 mb-4">Layanan Pelanggan</h4>
-                <ul class="text-sm text-gray-500 space-y-2">
-                    <li><a href="#" class="hover:text-orange-500">Pusat Bantuan</a></li>
-                    <li><a href="#" class="hover:text-orange-500">Cara Pemesanan</a></li>
-                    <li><a href="#" class="hover:text-orange-500">Syarat & Ketentuan</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold text-gray-800 mb-4">Kontak Kami</h4>
-                <ul class="text-sm text-gray-500 space-y-2">
-                    <li class="flex items-center gap-2"><i class="ph ph-envelope"></i> cskalimaja@gmail.com</li>
-                    <li class="flex items-center gap-2"><i class="ph ph-whatsapp-logo"></i> 087811559627</li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold text-gray-800 mb-4">Ikuti Kami</h4>
-                <div class="flex gap-4">
-                    <a href="#" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-orange-500 hover:text-white transition"><i class="ph-fill ph-instagram-logo"></i></a>
-                    <a href="#" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-orange-500 hover:text-white transition"><i class="ph-fill ph-facebook-logo"></i></a>
-                    <a href="#" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-orange-500 hover:text-white transition"><i class="ph-fill ph-twitter-logo"></i></a>
-                    <a href="#" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-orange-500 hover:text-white transition"><i class="ph-fill ph-threads-logo"></i></a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Mobile Bottom Nav -->
-    <nav class="md:hidden fixed bottom-0 w-full bg-white border-t flex justify-around py-2 z-40 pb-safe">
-        <a href="#" class="flex flex-col items-center text-orange-600">
-            <i class="ph-fill ph-house text-2xl"></i>
-            <span class="text-[10px] font-medium mt-1">Beranda</span>
-        </a>
-        <a href="#" onclick="openModal('myOrdersModal')" class="flex flex-col items-center text-gray-500 hover:text-orange-500">
-            <i class="ph ph-receipt text-2xl"></i>
-            <span class="text-[10px] font-medium mt-1">Pesanan</span>
-        </a>
-        <a href="#" onclick="openModal('notificationModal')" class="flex flex-col items-center text-gray-500 hover:text-orange-500">
-            <i class="ph ph-bell text-2xl relative">
-                <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </i>
-            <span class="text-[10px] font-medium mt-1">Notifikasi</span>
-        </a>
-        <a href="#" onclick="openModal('authModal')" class="flex flex-col items-center text-gray-500 hover:text-orange-500" id="mobileUserBtn">
-            <i class="ph ph-user text-2xl"></i>
-            <span class="text-[10px] font-medium mt-1">Akun Saya</span>
-        </a>
-    </nav>
-
-    <!-- OVERLAY UTAMA UNTUK SEMUA MODAL -->
-    <div id="modalOverlay" class="fixed inset-0 bg-black/60 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center px-4" onclick="closeAllModals(event)">
-        
-        <!-- Notifikasi Toast (Pojok Atas) -->
-        <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg transform -translate-y-20 opacity-0 transition-all duration-300 z-[100] text-sm flex items-center gap-2">
-            <i class="ph-fill ph-info text-orange-400 text-lg"></i>
-            <span id="toastMsg">Message</span>
-        </div>
-
-        <!-- Auth Modal -->
-        <div id="authModal" class="modal-content w-full max-w-sm bg-white rounded-xl shadow-2xl transform scale-95 opacity-0 hidden transition-all duration-300 relative" onclick="event.stopPropagation()">
-            <button onclick="closeAllModals()" class="absolute right-4 top-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="ph ph-x"></i></button>
-            
-            <div id="loginFormArea" class="p-6">
-                <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-fill ph-user text-3xl"></i></div>
-                    <h3 class="text-xl font-bold text-gray-800">Daftar Akun Baru</h3>
-                    <p class="text-xs text-gray-500 mt-1">Dapatkan akses penuh ke OtoLink</p>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Nama Lengkap</label>
-                        <input type="text" id="loginName" placeholder="Cth: Budi Santoso" class="w-full mt-1 px-4 py-2 border rounded-md text-sm outline-none focus:border-orange-500">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">No. HP / Email</label>
-                        <input type="text" id="loginId" placeholder="0812xxxx atau email@anda.com" class="w-full mt-1 px-4 py-2 border rounded-md text-sm outline-none focus:border-orange-500">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Password</label>
-                        <input type="password" id="loginPass" placeholder="••••••••" class="w-full mt-1 px-4 py-2 border rounded-md text-sm outline-none focus:border-orange-500">
-                    </div>
-                    <button onclick="loginUser()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-md shadow-sm transition">Daftar Sekarang</button>
-                </div>
-                <div class="mt-4 text-center text-xs text-gray-500">
-                    Sudah punya akun? <a href="#" class="text-orange-500 font-semibold">Masuk Saja</a>
-                </div>
-            </div>
-
-            <!-- Profile Info Area (Shown when logged in) -->
-            <div id="profileInfoArea" class="p-6 hidden">
-                <div class="text-center mb-6">
-                    <div class="w-20 h-20 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center mx-auto mb-3 overflow-hidden border-2 border-orange-500">
-                        <i class="ph-fill ph-user text-4xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800" id="profName">Nama User</h3>
-                    <p class="text-sm text-gray-500" id="profId">08xxxx</p>
-                    <span id="profStatusBadge" class="inline-block mt-2 px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-full">Member Reguler</span>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div class="border rounded-lg p-3 bg-gray-50 cursor-pointer hover:bg-orange-50 transition" onclick="openModal('otopayModal')">
-                        <div class="flex items-center gap-1 text-orange-600 mb-1">
-                            <i class="ph-fill ph-wallet"></i> <span class="text-[10px] font-bold">OtoPay</span>
-                        </div>
-                        <div class="font-bold text-gray-800" id="profBalance">Rp 0</div>
-                        <div class="text-[9px] text-gray-500 mt-1">Klik untuk Top Up</div>
-                    </div>
-                    <div class="border rounded-lg p-3 bg-gray-50">
-                        <div class="flex items-center gap-1 text-blue-600 mb-1">
-                            <i class="ph-fill ph-ticket"></i> <span class="text-[10px] font-bold">Kupon</span>
-                        </div>
-                        <div class="font-bold text-gray-800">2 <span class="text-xs font-normal">Tersedia</span></div>
-                    </div>
-                </div>
-
-                <div class="space-y-2 mb-6">
-                    <button id="btnAccessDashboard" onclick="openPartnerDashboard()" class="w-full hidden bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold py-2.5 rounded-md text-sm border border-orange-200 shadow-sm mb-2 flex items-center justify-center gap-2"><i class="ph-fill ph-storefront"></i> Akses Dashboard Mitra</button>
-                    <button class="w-full flex items-center justify-between p-3 rounded-md hover:bg-gray-50 text-sm font-medium border text-gray-700">
-                        <div class="flex items-center gap-2"><i class="ph ph-gear text-lg text-gray-500"></i> Pengaturan Akun</div>
-                        <i class="ph ph-caret-right text-gray-400"></i>
-                    </button>
-                    <button class="w-full flex items-center justify-between p-3 rounded-md hover:bg-gray-50 text-sm font-medium border text-gray-700">
-                        <div class="flex items-center gap-2"><i class="ph ph-headset text-lg text-gray-500"></i> Pusat Bantuan</div>
-                        <i class="ph ph-caret-right text-gray-400"></i>
-                    </button>
-                </div>
-                
-                <button onclick="logout()" class="w-full border border-red-500 text-red-500 hover:bg-red-50 font-bold py-2 rounded-md text-sm transition">Keluar Akun</button>
-            </div>
-        </div>
-
-        <!-- Rental Checkout Modal -->
-        <div id="rentalModal" class="modal-content w-full max-w-lg bg-white rounded-xl shadow-2xl transform scale-95 opacity-0 hidden transition-all duration-300 relative" onclick="event.stopPropagation()">
-            <div class="bg-gray-50 border-b p-4 flex justify-between items-center rounded-t-xl sticky top-0 z-10">
-                <h3 class="font-bold text-gray-800">Detail Penyewaan</h3>
-                <button onclick="closeAllModals()" class="w-8 h-8 bg-white rounded-full border flex items-center justify-center text-gray-500 hover:bg-gray-100"><i class="ph ph-x"></i></button>
-            </div>
-            <div class="p-4" id="rentalContent">
-                <!-- Content generated by JS -->
-            </div>
-        </div>
-
-        <!-- Payment Instruction Modal -->
-        <div id="paymentInstructionModal" class="modal-content w-full max-w-sm bg-white rounded-xl shadow-2xl transform scale-95 opacity-0 hidden transition-all duration-300 relative" onclick="event.stopPropagation()">
-            <div class="bg-orange-500 text-white p-4 rounded-t-xl flex justify-between items-center">
-                <h3 class="font-bold">Instruksi Pembayaran</h3>
-                <button onclick="closeAllModals()" class="text-white hover:text-gray-200"><i class="ph ph-x text-xl"></i></button>
-            </div>
-            <div class="p-6 text-center">
-                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-bank text-3xl"></i></div>
-                <p class="text-sm text-gray-600 mb-2">Silakan transfer sesuai tagihan ke rekening perusahaan kami:</p>
-                <div class="bg-gray-100 p-4 rounded-lg mb-4 text-left border">
-                    <div id="rekDetail">
-                        <!-- Injected via JS based on payment method -->
-                    </div>
-                </div>
-                <p class="text-[10px] text-gray-500 mb-4">*Pesanan akan diproses otomatis setelah admin memverifikasi mutasi bank.</p>
-                <button onclick="closeAllModals(); showToast('Pesanan & Bukti Menunggu Verifikasi Admin')" class="w-full bg-gray-800 text-white font-bold py-2 rounded">Saya Sudah Transfer</button>
-            </div>
-        </div>
-
-        <!-- Partner Registration Modal -->
-        <div id="partnerRegModal" class="modal-content w-full max-w-md bg-white rounded-xl shadow-2xl transform scale-95 opacity-0 hidden transition-all duration-300 relative" onclick="event.stopPropagation()">
-            <div class="bg-gray-900 text-white p-4 rounded-t-xl flex justify-between items-center sticky top-0 z-10">
-                <h3 class="font-bold flex items-center gap-2"><i class="ph-fill ph-handshake text-orange-500"></i> Pendaftaran Mitra</h3>
-                <button onclick="closeAllModals()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
-            </div>
-            <div class="p-6">
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Nomor HP / WhatsApp (Aktif)</label>
-                        <input type="text" id="regPhone" class="w-full mt-1 px-3 py-2 border rounded text-sm outline-none focus:border-gray-900">
-                    </div>
-                    <div class="border p-3 rounded-lg bg-gray-50 space-y-3">
-                        <h4 class="text-xs font-bold text-gray-800 border-b pb-2">Informasi Kendaraan Pertama</h4>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-[10px] text-gray-500">Merek & Tipe</label>
-                                <input type="text" id="regCarName" placeholder="Cth: Avanza G" class="w-full mt-1 p-2 border rounded text-xs outline-none">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-gray-500">Plat Nomor</label>
-                                <input type="text" placeholder="CTH: B 1234 CD" class="w-full mt-1 p-2 border rounded text-xs outline-none">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="border border-orange-100 p-3 rounded-lg bg-orange-50/30 space-y-3">
-                        <h4 class="text-xs font-bold text-gray-800 border-b pb-2">Rekening Pencairan Dana</h4>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-[10px] text-gray-500">Bank</label>
-                                <input type="text" id="regBank" placeholder="Cth: BCA" class="w-full mt-1 p-2 border rounded text-xs outline-none bg-white">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-gray-500">Nomor Rekening</label>
-                                <input type="text" class="w-full mt-1 p-2 border rounded text-xs outline-none bg-white">
-                            </div>
-                        </div>
-                        <p class="text-[9px] text-gray-500 leading-tight">*Pastikan nama rekening sama dengan KTP untuk kelancaran pencairan dana (93% bagi hasil).</p>
-                    </div>
-                    <button onclick="submitPartner()" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 rounded-lg shadow-md transition text-sm">Kirim Pendaftaran</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- My Orders Modal -->
-        <div id="myOrdersModal" class="modal-content w-full max-w-md bg-white rounded-xl shadow-2xl transform scale-95 opacity-0 hidden transition-all duration-300 relative" onclick="event.stopPropagation()">
-            <div class="bg-white border-b p-4 flex justify-between items-center rounded-t-xl sticky top-0 z-10">
-                <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="ph-fill ph-receipt text-orange-500"></i> Pesanan Saya</h3>
-                <button onclick="closeAllModals()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="ph ph-x"></i></button>
-            </div>
-            <div class="p-4 bg-gray-50 min-h-[300px]" id="myOrdersList">
-                <div class="text-center py-10 text-gray-400">
-                    <i class="ph ph-receipt text-4xl mb-2"></i>
-                    <p class="text-sm">Silakan login untuk melihat pesanan.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Notifications Modal -->
-        <div id="notificationModal" class="modal-content w-full max-w-sm bg-white rounded-xl shadow-2xl transform scale-95 opacity-0 hidden transition-all duration-300 relative" onclick="event.stopPropagation()">
-            <div class="bg-white border-b p-4 flex justify-between items-center rounded-t-xl sticky top-0 z-10">
-                <h3 class="font-bold text-gray-800">Notifikasi</h3>
-                <button onclick="closeAllModals()" class="text-gray-400 hover:text-gray-600"><i class="ph ph-x text-xl"></i></button>
-            </div>
-            <div class="p-0">
-                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer flex gap-3">
-                    <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center shrink-0"><i class="ph-fill ph-ticket text-xl"></i></div>
-                    <div>
-                        <h4 class="text-sm font-bold text-gray-800">Diskon Spesial 20%</h4>
-                        <p class="text-xs text-gray-500 mt-1">Gunakan kode OTOMURAH untuk sewa pertama kamu minggu ini!</p>
-                        <span class="text-[9px] text-gray-400 mt-1 block">2 jam yang lalu</span>
-                    </div>
-                </div>
-                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer flex gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center shrink-0"><i class="ph-fill ph-car text-xl"></i></div>
-                    <div>
-                        <h4 class="text-sm font-bold text-gray-800">Mitra Baru Bergabung</h4>
-                        <p class="text-xs text-gray-500 mt-1">Puluhan unit Avanza dan Xpander baru tersedia di kotamu.</p>
-                        <span class="text-[9px] text-gray-400 mt-1 block">Kemarin</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- OtoPay Modal -->
-        <div id="otopayModal" class="modal-content w-full max-w-sm bg-white rounded-xl shadow-2xl transform scale-95 opacity-0 hidden transition-all duration-300 relative" onclick="event.stopPropagation()">
-            <div class="bg-orange-500 p-6 rounded-t-xl text-white relative">
-                <button onclick="closeAllModals()" class="absolute right-4 top-4 text-white hover:text-orange-200"><i class="ph ph-x text-xl"></i></button>
-                <div class="flex items-center gap-2 mb-2">
-                    <i class="ph-fill ph-wallet text-2xl"></i>
-                    <h3 class="font-bold">Saldo OtoPay</h3>
-                </div>
-                <div class="text-3xl font-extrabold" id="topupCurrentBal">Rp 0</div>
-            </div>
-            <div class="p-6">
-                <h4 class="text-sm font-bold text-gray-700 mb-3">Pilih Nominal Top Up</h4>
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <button onclick="processTopUp(50000)" class="border rounded-md p-2 text-sm font-semibold hover:border-orange-500 hover:text-orange-500 transition">Rp 50.000</button>
-                    <button onclick="processTopUp(100000)" class="border rounded-md p-2 text-sm font-semibold hover:border-orange-500 hover:text-orange-500 transition">Rp 100.000</button>
-                    <button onclick="processTopUp(250000)" class="border rounded-md p-2 text-sm font-semibold hover:border-orange-500 hover:text-orange-500 transition">Rp 250.000</button>
-                    <button onclick="processTopUp(500000)" class="border rounded-md p-2 text-sm font-semibold hover:border-orange-500 hover:text-orange-500 transition">Rp 500.000</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Partner Dashboard -->
-        <div id="partnerDashboardModal" class="modal-content w-full max-w-4xl h-[90vh] bg-white rounded-xl shadow-2xl transform scale-95 opacity-0 hidden transition-all duration-300 relative flex flex-col" onclick="event.stopPropagation()">
-            <div class="bg-gray-900 text-white p-4 flex justify-between items-center rounded-t-xl shrink-0">
-                <h3 class="font-bold flex items-center gap-2"><i class="ph-fill ph-storefront text-orange-500 text-xl"></i> Dasbor Mitra</h3>
-                <button onclick="closeAllModals()" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center text-gray-300 hover:bg-gray-700"><i class="ph ph-x"></i></button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50 flex flex-col md:flex-row gap-6">
-                <!-- Sidebar Partner -->
-                <div class="w-full md:w-64 shrink-0 space-y-4">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border">
-                        <div class="text-[10px] text-gray-500 font-bold uppercase mb-1">Pendapatan Bersih (93%)</div>
-                        <div class="text-2xl font-black text-green-600" id="pDashboardEarn">Rp 0</div>
-                        <button class="w-full mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded border">Tarik Dana</button>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border flex justify-between items-center">
-                        <div>
-                            <div class="text-[10px] text-gray-500 font-bold uppercase mb-1">Pesanan Aktif</div>
-                            <div class="text-xl font-bold text-gray-800" id="pDashboardOrders">0</div>
-                        </div>
-                        <i class="ph-fill ph-receipt text-3xl text-orange-200"></i>
-                    </div>
-                    <button onclick="document.getElementById('addCarForm').classList.toggle('hidden')" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg shadow-md flex items-center justify-center gap-2 text-sm">
-                        <i class="ph ph-plus-circle text-lg"></i> Tambah Unit Mobil
-                    </button>
-                </div>
-
-                <!-- Main Content Partner -->
-                <div class="flex-1 space-y-4">
-                    <!-- Add Car Form -->
-                    <div id="addCarForm" class="hidden bg-white p-5 rounded-xl shadow-sm border border-orange-200 relative">
-                        <button onclick="document.getElementById('addCarForm').classList.add('hidden')" class="absolute right-4 top-4 text-gray-400 hover:text-gray-700"><i class="ph ph-x"></i></button>
-                        <h4 class="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2"><i class="ph ph-car"></i> Data Kendaraan Baru</h4>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="text-[10px] font-semibold text-gray-500">Nama Kendaraan (Cth: Honda Brio 2022)</label>
-                                <input type="text" id="pCarName" class="w-full border rounded p-2 text-sm outline-none bg-gray-50 focus:bg-white">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-semibold text-gray-500">Kategori</label>
-                                <select id="pCarCategory" class="w-full border rounded p-2 text-sm outline-none bg-gray-50 focus:bg-white">
-                                    <option value="Keluarga">Keluarga</option>
-                                    <option value="SUV">SUV</option>
-                                    <option value="Promo">Promo</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="text-[10px] font-semibold text-gray-500">Harga Sewa / Hari (Rp)</label>
-                            <input type="number" id="pCarPrice" placeholder="Cth: 250000" class="w-full border rounded p-2 text-sm outline-none bg-gray-50 focus:bg-white">
-                        </div>
-
-                        <!-- SISTEM UPLOAD 3 FOTO DENGAN PREVIEW -->
-                        <div class="border rounded-lg p-4 bg-gray-50 mb-4">
-                            <label class="text-xs font-bold text-gray-700 block border-b pb-2 mb-3"><i class="ph ph-camera"></i> Upload Foto Unit Asli</label>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <!-- Depan -->
-                                <div>
-                                    <label class="text-[10px] text-gray-500 mb-1 block">Depan (Utama) *Wajib</label>
-                                    <div class="relative border-2 border-dashed border-gray-300 rounded-lg h-24 flex items-center justify-center bg-white overflow-hidden cursor-pointer hover:bg-gray-50 transition" onclick="document.getElementById('pCarImgFront').click()">
-                                        <input type="file" id="pCarImgFront" accept="image/*" class="hidden" onchange="previewUpload(this, 'previewFront')">
-                                        <div id="phFront" class="text-center text-gray-400 pointer-events-none">
-                                            <i class="ph ph-upload-simple text-xl"></i><div class="text-[9px]">Pilih Foto</div>
-                                        </div>
-                                        <img id="previewFront" class="hidden absolute inset-0 w-full h-full object-cover z-10 pointer-events-none">
-                                    </div>
-                                </div>
-                                <!-- Dalam 1 -->
-                                <div>
-                                    <label class="text-[10px] text-gray-500 mb-1 block">Interior Depan (Opsional)</label>
-                                    <div class="relative border-2 border-dashed border-gray-300 rounded-lg h-24 flex items-center justify-center bg-white overflow-hidden cursor-pointer hover:bg-gray-50 transition" onclick="document.getElementById('pCarImgIn1').click()">
-                                        <input type="file" id="pCarImgIn1" accept="image/*" class="hidden" onchange="previewUpload(this, 'previewIn1')">
-                                        <div id="phIn1" class="text-center text-gray-400 pointer-events-none">
-                                            <i class="ph ph-upload-simple text-xl"></i><div class="text-[9px]">Pilih Foto</div>
-                                        </div>
-                                        <img id="previewIn1" class="hidden absolute inset-0 w-full h-full object-cover z-10 pointer-events-none">
-                                    </div>
-                                </div>
-                                <!-- Dalam 2 -->
-                                <div>
-                                    <label class="text-[10px] text-gray-500 mb-1 block">Interior Belakang (Opsional)</label>
-                                    <div class="relative border-2 border-dashed border-gray-300 rounded-lg h-24 flex items-center justify-center bg-white overflow-hidden cursor-pointer hover:bg-gray-50 transition" onclick="document.getElementById('pCarImgIn2').click()">
-                                        <input type="file" id="pCarImgIn2" accept="image/*" class="hidden" onchange="previewUpload(this, 'previewIn2')">
-                                        <div id="phIn2" class="text-center text-gray-400 pointer-events-none">
-                                            <i class="ph ph-upload-simple text-xl"></i><div class="text-[9px]">Pilih Foto</div>
-                                        </div>
-                                        <img id="previewIn2" class="hidden absolute inset-0 w-full h-full object-cover z-10 pointer-events-none">
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="text-[9px] text-orange-500 mt-2">*Foto akan dikompresi otomatis agar hemat kuota.</p>
-                        </div>
-                        
-                        <button onclick="handlePartnerAddCar()" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 rounded-lg shadow-sm text-sm transition">Ajukan Iklan ke Admin</button>
-                    </div>
-
-                    <!-- List Mobil Mitra -->
-                    <div class="bg-white p-5 rounded-xl shadow-sm border">
-                        <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="ph-fill ph-car-profile text-gray-400"></i> Unit Mobil Saya</h4>
-                        <div id="partnerCarList" class="space-y-3">
-                            <!-- Diisi oleh JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Admin Dashboard (Hidden) -->
-        <div id="adminDashboardModal" class="modal-content w-full max-w-5xl h-[90vh] bg-white rounded-xl shadow-2xl transform scale-95 opacity-0 hidden transition-all duration-300 flex-col overflow-hidden" onclick="event.stopPropagation()">
-            <!-- Admin Header -->
-            <div class="bg-indigo-900 text-white p-4 flex justify-between items-center shrink-0">
-                <h2 class="font-bold text-lg flex items-center gap-2"><i class="ph-fill ph-shield-check text-indigo-400"></i> Otoritas Admin</h2>
-                <button onclick="closeAllModals()" class="w-8 h-8 bg-indigo-800 rounded-full flex items-center justify-center text-indigo-200 hover:bg-indigo-700"><i class="ph ph-x"></i></button>
-            </div>
-            
-            <div class="flex flex-1 overflow-hidden">
-                <!-- Admin Sidebar -->
-                <div class="w-48 bg-indigo-50 border-r flex flex-col text-sm font-medium">
-                    <button onclick="switchAdminTab('adCars')" id="tab-adCars" class="admin-tab p-4 text-left border-b hover:bg-indigo-100 bg-indigo-100 text-indigo-800 border-l-4 border-l-indigo-600">🚗 Persetujuan Iklan</button>
-                    <button onclick="switchAdminTab('adOrders')" id="tab-adOrders" class="admin-tab p-4 text-left border-b hover:bg-indigo-100 text-gray-600 border-l-4 border-l-transparent">📝 Daftar Pesanan</button>
-                    <button onclick="switchAdminTab('adPartners')" id="tab-adPartners" class="admin-tab p-4 text-left border-b hover:bg-indigo-100 text-gray-600 border-l-4 border-l-transparent">🤝 Mitra & Pencairan</button>
-                    <button onclick="switchAdminTab('adTopups')" id="tab-adTopups" class="admin-tab p-4 text-left border-b hover:bg-indigo-100 text-gray-600 border-l-4 border-l-transparent">💰 Verifikasi Top Up</button>
-                </div>
-                
-                <!-- Admin Content -->
-                <div class="flex-1 bg-white p-6 overflow-y-auto">
-                    <!-- Tab Cars -->
-                    <div id="content-adCars" class="admin-content-section">
-                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Menunggu Persetujuan Iklan</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs text-gray-500 uppercase bg-gray-50">
-                                    <tr><th>Mobil</th><th>Mitra</th><th>Harga</th><th>Status</th><th>Aksi</th></tr>
-                                </thead>
-                                <tbody id="adminCarTable" class="divide-y"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <!-- Tab Orders -->
-                    <div id="content-adOrders" class="admin-content-section hidden">
-                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Semua Pesanan</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs text-gray-500 uppercase bg-gray-50">
-                                    <tr><th>ID</th><th>User</th><th>Mobil</th><th>Total</th><th>Status</th><th>Aksi</th></tr>
-                                </thead>
-                                <tbody id="adminOrderTable" class="divide-y"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Tab Partners -->
-                    <div id="content-adPartners" class="admin-content-section hidden">
-                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Pendaftaran Mitra Baru</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs text-gray-500 uppercase bg-gray-50">
-                                    <tr><th>No. HP</th><th>Mobil Info</th><th>Bank</th><th>Status</th><th>Aksi</th></tr>
-                                </thead>
-                                <tbody id="adminPartnerTable" class="divide-y"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Tab Topups -->
-                    <div id="content-adTopups" class="admin-content-section hidden">
-                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Verifikasi Mutasi Top Up</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs text-gray-500 uppercase bg-gray-50">
-                                    <tr><th>User ID</th><th>Nominal</th><th>Tanggal</th><th>Status</th><th>Aksi</th></tr>
-                                </thead>
-                                <tbody id="adminTopupTable" class="divide-y"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
+    <!-- Main Application Logic -->
     <script>
-        // --- DATA STATE (Local Fallback & Sync) ---
-        let cars = [
-            { id: 1, name: 'Toyota Avanza', price: 250000, img: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=400&h=300', seat: 7, trans: 'Manual', rating: 4.8, partnerId: 'sys', status: 'approved', category: 'Keluarga' },
-            { id: 2, name: 'Honda Brio', price: 200000, img: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&q=80&w=400&h=300', seat: 5, trans: 'Otomatis', rating: 4.9, partnerId: 'sys', status: 'approved', category: 'Terlaris' },
-            { id: 3, name: 'Mitsubishi Xpander', price: 300000, img: 'https://images.unsplash.com/photo-1550355291-bbee04a92027?auto=format&fit=crop&q=80&w=400&h=300', seat: 7, trans: 'Otomatis', rating: 4.7, partnerId: 'sys', status: 'approved', category: 'Keluarga' },
-            { id: 4, name: 'Toyota Innova Reborn', price: 400000, img: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=400&h=300', seat: 7, trans: 'Otomatis', rating: 5.0, partnerId: 'sys', status: 'approved', category: 'Terlaris' },
-            { id: 5, name: 'Pajero Sport', price: 600000, img: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=400&h=300', seat: 7, trans: 'Otomatis', rating: 4.9, partnerId: 'sys', status: 'approved', category: 'SUV' },
-            { id: 6, name: 'Daihatsu Ayla', price: 150000, img: 'https://images.unsplash.com/photo-1620288118042-4fdbf7dc480a?auto=format&fit=crop&q=80&w=400&h=300', seat: 5, trans: 'Manual', rating: 4.5, partnerId: 'sys', status: 'approved', category: 'Promo' }
+        // Data Store (Will merge with Firebase)
+        window.users = {
+            '08123456789': { id: '08123456789', name: 'Budi (Demo Mitra)', pass: 'bebas', balance: 0, partnerId: 999 } // Demo account
+        };
+        window.currentUser = null;
+        
+        window.partners = [
+            { id: 999, phone: '08123456789', carInfo: 'Innova', plat: 'B 123 CD', bank: 'BCA', rek: '1234', status: 'approved' }
         ];
         
-        // Akun Demo Mitra (Budi) sudah disetujui otomatis untuk mempermudah tes
-        let partners = [
-            { id: 'P001', phone: '08123456789', carInfo: 'Akun Demo Budi', bank: 'BCA', status: 'approved', date: new Date().toISOString() }
+        window.cars = [
+            { id: 1, name: 'Toyota Avanza', price: 350000, img: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=400&q=80', partnerId: 0, status: 'approved', category: 'Keluarga', img2: '', img3: '' },
+            { id: 2, name: 'Honda Brio', price: 250000, img: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=400&q=80', partnerId: 0, status: 'approved', category: 'Promo', img2: '', img3: '' },
+            { id: 3, name: 'Mitsubishi Pajero', price: 800000, img: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80', partnerId: 0, status: 'approved', category: 'SUV', img2: '', img3: '' }
         ];
+        window.orders = [];
+        window.topups = [];
         
-        let orders = [];
-        let topups = [];
-        let currentUser = null; // null if not logged in
-        let users = {
-            '08123456789': { name: 'Budi (Mitra Demo)', balance: 0, partnerId: 'P001' } // Akun Demo terdaftar
-        };
+        let formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
+        let activeCategory = 'Semua';
         
-        let secretClickCount = 0;
-        let secretTimeout;
-        const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
-
-        // --- FIREBASE SYNC LISTENER ---
-        // Jika internet terputus atau rules firebase salah, gunakan data lokal (fallback)
-        window.initDataListeners = function() {
-            try {
-                // Listen to Cars
-                window.onSnapshot(window.collection(window.db, 'cars'), (snapshot) => {
-                    let cloudCars = [];
-                    snapshot.forEach(doc => cloudCars.push({ fbId: doc.id, ...doc.data() }));
-                    if(cloudCars.length > 0) {
-                        cars = [...cars.filter(c => c.partnerId === 'sys'), ...cloudCars];
-                        renderCars();
-                        if(currentUser && currentUser.partnerId) renderPartnerDashboard();
-                    }
-                }, (error) => {
-                    console.log("Firestore Fallback: Menggunakan data lokal (Aturan mungkin belum 'true').", error);
-                    renderCars(); // Render local cars
-                });
-
-                // Listen to Orders
-                window.onSnapshot(window.collection(window.db, 'orders'), (snapshot) => {
-                    orders = [];
-                    snapshot.forEach(doc => orders.push({ fbId: doc.id, ...doc.data() }));
-                    renderAdminOrders();
-                    if(currentUser && currentUser.partnerId) renderPartnerDashboard();
-                }, e => console.log("Orders Sync off."));
-
-                // Listen to Partners
-                window.onSnapshot(window.collection(window.db, 'partners'), (snapshot) => {
-                    let cloudPartners = [];
-                    snapshot.forEach(doc => cloudPartners.push({ fbId: doc.id, ...doc.data() }));
-                    if(cloudPartners.length > 0) {
-                        // Gabung demo dgn cloud
-                        partners = [partners[0], ...cloudPartners]; 
-                        renderAdminPartners();
-                    }
-                }, e => console.log("Partners Sync off."));
-
-            } catch(e) {
-                console.log("Firebase sync fail, using local memory.", e);
-                renderCars();
-            }
-        };
-
-        // --- UI UTILS & MODALS ---
-        const modals = ['authModal', 'rentalModal', 'partnerRegModal', 'partnerDashboardModal', 'adminDashboardModal', 'myOrdersModal', 'notificationModal', 'otopayModal', 'paymentInstructionModal'];
+        // UI Helpers
         let modalTimeout;
+        window.openModal = function(id) {
+            clearTimeout(modalTimeout);
+            const overlay = document.getElementById('modalOverlay');
+            overlay.classList.remove('hidden');
+            
+            // Hide all modals first
+            const modals = ['authModal', 'partnerModal', 'dashboardMitraModal', 'rentalModal', 'topupModal', 'adminModal', 'ordersModal', 'notificationModal', 'mobileAccountModal', 'paymentInstructionModal'];
+            modals.forEach(m => {
+                const el = document.getElementById(m);
+                el.classList.add('hidden');
+                el.classList.remove('scale-100');
+                el.classList.add('scale-95');
+                if(m === 'mobileAccountModal') el.classList.remove('translate-y-0');
+            });
 
-        window.openModal = function(modalId) {
-            clearTimeout(modalTimeout); // Cegah konflik flash timeout
-            document.getElementById('modalOverlay').classList.remove('hidden');
-            // Sedikit delay agar transisi css berjalan
+            // Show requested modal
+            const el = document.getElementById(id);
+            el.classList.remove('hidden');
+            
+            // Trigger animation
             setTimeout(() => {
-                document.getElementById('modalOverlay').classList.remove('opacity-0');
-                modals.forEach(id => {
-                    const el = document.getElementById(id);
-                    if(id === modalId) {
-                        el.classList.remove('hidden');
-                        setTimeout(() => {
-                            el.classList.remove('scale-95', 'opacity-0');
-                        }, 50);
-                    } else {
-                        el.classList.add('hidden', 'scale-95', 'opacity-0');
-                    }
-                });
+                overlay.classList.remove('opacity-0');
+                if(id === 'mobileAccountModal') {
+                    el.classList.remove('translate-y-full');
+                    el.classList.add('translate-y-0');
+                } else {
+                    el.classList.remove('scale-95');
+                    el.classList.add('scale-100');
+                }
             }, 10);
         }
 
-        window.closeAllModals = function(event) {
-            // Jika diklik di area content modal (bukan background), jangan tutup
-            if(event && event.target.closest('.modal-content')) return;
-
-            modals.forEach(id => {
-                const el = document.getElementById(id);
-                el.classList.add('scale-95', 'opacity-0');
-            });
-            document.getElementById('modalOverlay').classList.add('opacity-0');
+        window.closeAllModals = function(e) {
+            if(e && e.target !== document.getElementById('modalOverlay')) return;
             
+            const overlay = document.getElementById('modalOverlay');
+            overlay.classList.add('opacity-0');
+            
+            const modals = document.querySelectorAll('.modal-content');
+            modals.forEach(el => {
+                if(el.id === 'mobileAccountModal') el.classList.add('translate-y-full');
+                else el.classList.remove('scale-100');
+            });
+
             modalTimeout = setTimeout(() => {
-                modals.forEach(id => document.getElementById(id).classList.add('hidden'));
-                document.getElementById('modalOverlay').classList.add('hidden');
+                overlay.classList.add('hidden');
             }, 300);
         }
 
         window.showToast = function(msg) {
-            const toast = document.getElementById('toast');
+            const t = document.getElementById('toast');
             document.getElementById('toastMsg').innerText = msg;
-            toast.classList.remove('-translate-y-20', 'opacity-0');
+            t.classList.remove('toast-hide');
+            t.classList.add('toast-show');
             setTimeout(() => {
-                toast.classList.add('-translate-y-20', 'opacity-0');
+                t.classList.remove('toast-show');
+                t.classList.add('toast-hide');
             }, 3000);
         }
 
-        // --- AUTH LOGIC ---
-        window.loginUser = function() {
-            const id = document.getElementById('loginId').value;
-            const name = document.getElementById('loginName').value || 'User ' + id;
-            if(!id) return showToast("Masukkan No HP/Email!");
-            
-            if(!users[id]) {
-                users[id] = { name: name, balance: 0 };
-            }
-            // Check if this number is an approved partner
-            const p = partners.find(x => x.phone === id && x.status === 'approved');
-            if(p) {
-                users[id].partnerId = p.id;
-            }
+        // Filters
+        window.filterCategory = function(cat) {
+            activeCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                if(btn.dataset.cat === cat) {
+                    btn.querySelector('div').classList.replace('bg-gray-100', 'bg-orange-100');
+                    btn.querySelector('div').classList.replace('text-gray-600', 'text-orange-600');
+                } else {
+                    btn.querySelector('div').classList.replace('bg-orange-100', 'bg-gray-100');
+                    btn.querySelector('div').classList.replace('text-orange-600', 'text-gray-600');
+                }
+            });
+            renderCars();
+        }
 
-            currentUser = { id: id, ...users[id] };
+        window.renderCars = function() {
+            const grid = document.getElementById('carGrid');
+            let filtered = window.cars.filter(c => c.status === 'approved');
+            if(activeCategory !== 'Semua') {
+                filtered = filtered.filter(c => c.category === activeCategory || (activeCategory === 'Terlaris' && c.price < 400000));
+            }
+            
+            if(filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-2 md:col-span-4 text-center py-10 text-gray-400">Belum ada mobil di kategori ini.</div>`;
+                return;
+            }
+            
+            grid.innerHTML = filtered.map(c => `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
+                    <img src="${c.img}" alt="${c.name}" class="w-full h-32 md:h-48 object-cover">
+                    <div class="p-3 md:p-4">
+                        <h4 class="font-bold text-sm md:text-lg mb-1 truncate">${c.name}</h4>
+                        <p class="text-orange-600 font-bold text-sm md:text-lg mb-3">${formatter.format(c.price)} <span class="text-[10px] text-gray-400 font-normal">/hari</span></p>
+                        <button onclick="openRentalForm(${c.id})" class="w-full bg-orange-50 text-orange-600 py-2 rounded-lg font-bold text-xs md:text-sm hover:bg-orange-100 transition">Pesan Sekarang</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Auth
+        window.handleLogin = function() {
+            const name = document.getElementById('authName').value;
+            const phone = document.getElementById('authPhone').value;
+            if(!phone) return alert("Isi No. HP");
+            
+            if(!window.users[phone]) {
+                window.users[phone] = { id: phone, name: name || 'User', balance: 0, partnerId: null };
+            }
+            window.currentUser = window.users[phone];
             updateUserUI();
             closeAllModals();
-            showToast("Berhasil Masuk!");
+            showToast("Berhasil Masuk");
         }
 
         window.logout = function() {
-            currentUser = null;
+            window.currentUser = null;
             updateUserUI();
             closeAllModals();
             showToast("Berhasil Keluar");
         }
 
         window.updateUserUI = function() {
-            const navArea = document.getElementById('navUserArea');
-            const mobileBtn = document.getElementById('mobileUserBtn');
-            const topPartnerLink = document.getElementById('topPartnerLink');
-            
-            if (currentUser) {
-                navArea.innerHTML = `
-                    <div class="flex items-center gap-2 bg-orange-700/50 py-1 px-3 rounded-full cursor-pointer hover:bg-orange-700" onclick="openModal('authModal')">
-                        <div class="text-right hidden md:block">
-                            <div class="text-xs font-bold leading-none">${currentUser.name}</div>
-                            <div class="text-[10px] text-orange-200">Rp ${currentUser.balance.toLocaleString('id-ID')}</div>
-                        </div>
-                        <div class="w-7 h-7 rounded-full bg-white text-orange-600 flex items-center justify-center font-bold text-xs"><i class="ph-fill ph-user"></i></div>
-                    </div>
-                `;
-                mobileBtn.innerHTML = `<i class="ph-fill ph-user text-2xl text-orange-500"></i><span class="text-[10px] font-medium mt-1 text-orange-500">Akun</span>`;
+            if(window.currentUser) {
+                document.getElementById('headerAuth').classList.add('hidden');
+                document.getElementById('headerUser').classList.remove('hidden');
+                document.getElementById('headerUser').classList.add('flex');
+                document.getElementById('headerUserName').innerText = window.currentUser.name;
+                document.getElementById('headerOtopayBalance').innerText = formatter.format(window.currentUser.balance);
+                document.getElementById('mobileOtopayBalance').innerText = formatter.format(window.currentUser.balance);
                 
-                document.getElementById('loginFormArea').classList.add('hidden');
-                document.getElementById('profileInfoArea').classList.remove('hidden');
-                document.getElementById('profName').innerText = currentUser.name;
-                document.getElementById('profId').innerText = currentUser.id;
-                document.getElementById('profBalance').innerText = formatter.format(currentUser.balance);
-                
-                // Jika Mitra, ubah tulisan kiri atas jadi Akses Dashboard
-                if(currentUser.partnerId) {
-                    document.getElementById('profStatusBadge').innerText = "Mitra Aktif";
-                    document.getElementById('profStatusBadge').classList.replace('bg-gray-100', 'bg-orange-100');
-                    document.getElementById('profStatusBadge').classList.replace('text-gray-600', 'text-orange-600');
-                    document.getElementById('btnAccessDashboard').classList.remove('hidden');
-                    
-                    if(topPartnerLink) {
-                        topPartnerLink.innerHTML = "🤝 Dashboard Mitra";
-                        topPartnerLink.onclick = openPartnerDashboard;
-                        topPartnerLink.classList.add('text-yellow-300', 'font-bold');
-                    }
-                } else {
-                    document.getElementById('profStatusBadge').innerText = "Member Reguler";
-                    document.getElementById('btnAccessDashboard').classList.add('hidden');
-                    if(topPartnerLink) {
-                        topPartnerLink.innerHTML = "🤝 Pendaftaran Mitra";
-                        topPartnerLink.onclick = openPartnerReg;
-                        topPartnerLink.classList.remove('text-yellow-300', 'font-bold');
-                    }
+                if(window.currentUser.partnerId) {
+                    document.getElementById('desktopPartnerBtn').innerHTML = '🤝 Dashboard Mitra';
+                    document.getElementById('desktopPartnerBtn').onclick = window.openMitraDashboard;
+                    document.getElementById('mobileMitraBtn').classList.remove('hidden');
                 }
             } else {
-                navArea.innerHTML = `<button onclick="openModal('authModal')" class="hidden md:block font-bold hover:text-gray-100 text-sm">Daftar | Login</button>`;
-                mobileBtn.innerHTML = `<i class="ph ph-user text-2xl"></i><span class="text-[10px] font-medium mt-1">Akun Saya</span>`;
-                document.getElementById('loginFormArea').classList.remove('hidden');
-                document.getElementById('profileInfoArea').classList.add('hidden');
-                
-                if(topPartnerLink) {
-                    topPartnerLink.innerHTML = "🤝 Pendaftaran Mitra";
-                    topPartnerLink.onclick = openPartnerReg;
-                    topPartnerLink.classList.remove('text-yellow-300', 'font-bold');
-                }
+                document.getElementById('headerAuth').classList.remove('hidden');
+                document.getElementById('headerUser').classList.add('hidden');
+                document.getElementById('headerUser').classList.remove('flex');
+                document.getElementById('desktopPartnerBtn').innerHTML = 'Mulai Sewakan Mobil';
+                document.getElementById('desktopPartnerBtn').onclick = openPartnerForm;
+                document.getElementById('mobileMitraBtn').classList.add('hidden');
             }
         }
 
-        // --- STREAMING_CHUNK:Category Filter Logic ---
-        window.filterCategory = function(cat, element) {
-            // Ganti warna tombol yang aktif
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.classList.remove('text-orange-600');
-                btn.classList.add('text-gray-600');
-                btn.children[0].classList.remove('bg-orange-100', 'text-orange-600');
-                btn.children[0].classList.add('bg-white', 'text-gray-500');
-            });
-            
-            element.classList.remove('text-gray-600');
-            element.classList.add('text-orange-600');
-            element.children[0].classList.remove('bg-white', 'text-gray-500');
-            element.children[0].classList.add('bg-orange-100', 'text-orange-600');
-
-            document.getElementById('carSectionTitle').innerText = cat === 'Semua' ? 'Semua Mobil' : 'Kategori: ' + cat;
-            
-            renderCars(cat);
+        window.openPartnerForm = function() {
+            if(!window.currentUser) return openModal('authModal');
+            openModal('partnerModal');
         }
-
-        // --- RENDER CARS ---
-        window.renderCars = function(filterCat = 'Semua') {
-            const grid = document.getElementById('carGrid');
-            grid.innerHTML = '';
-            
-            // Filter mobil yang approved saja, dan sesuai kategori
-            let displayCars = cars.filter(c => c.status === 'approved');
-            if (filterCat !== 'Semua') {
-                displayCars = displayCars.filter(c => c.category === filterCat);
-            }
-
-            if(displayCars.length === 0) {
-                grid.innerHTML = `<div class="col-span-2 md:col-span-4 lg:col-span-5 text-center py-10 text-gray-400">Belum ada mobil di kategori ini.</div>`;
-                return;
-            }
-
-            displayCars.forEach(car => {
-                const isPartner = car.partnerId !== 'sys';
-                // Gunakan gambar pertama jika ada multiple images
-                const mainImg = car.img || 'https://via.placeholder.com/400x300?text=No+Image';
-                
-                grid.innerHTML += `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition flex flex-col h-full group">
-                        <div class="relative h-32 md:h-40 overflow-hidden bg-gray-100">
-                            <img src="${mainImg}" alt="${car.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                            ${isPartner ? `<span class="absolute top-2 left-2 bg-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow">Mitra OtoLink</span>` : ''}
-                        </div>
-                        <div class="p-3 flex flex-col flex-1">
-                            <h3 class="font-bold text-gray-800 text-sm md:text-base line-clamp-1">${car.name}</h3>
-                            <div class="flex items-center gap-1 text-[10px] md:text-xs text-gray-500 mt-1 mb-2">
-                                <i class="ph-fill ph-star text-yellow-400"></i> ${car.rating} • ${car.trans} • ${car.seat} Seat
-                            </div>
-                            <div class="mt-auto">
-                                <div class="text-orange-600 font-extrabold text-sm md:text-base">${formatter.format(car.price)}<span class="text-[10px] font-normal text-gray-500">/hari</span></div>
-                                <button onclick="openRentalForm('${car.id}')" class="w-full mt-2 bg-orange-100 hover:bg-orange-500 text-orange-600 hover:text-white font-semibold py-1.5 rounded text-xs transition">Pesan Sekarang</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
+        
+        window.openMitraDashboard = function() {
+            updateMitraStats();
+            openModal('dashboardMitraModal');
         }
-
-        // --- STREAMING_CHUNK:Rental Logic with Gallery ---
-        window.openRentalForm = function(carId) {
-            if(!currentUser) {
-                showToast("Silakan login terlebih dahulu!");
-                openModal('authModal');
-                return;
-            }
-            const car = cars.find(c => c.id == carId || c.fbId == carId);
-            if(!car) return;
-
-            // Galeri Foto (3 Foto jika ada)
-            const img1 = car.img || 'https://via.placeholder.com/400x300?text=No+Image';
-            let galleryHTML = `<img id="mainRentalImg" src="${img1}" class="w-full h-40 object-cover rounded-lg mb-2">`;
-            
-            if(car.imgIn1 || car.imgIn2) {
-                galleryHTML += `<div class="flex gap-2 overflow-x-auto hide-scroll pb-1">`;
-                galleryHTML += `<img src="${img1}" onclick="document.getElementById('mainRentalImg').src=this.src" class="w-16 h-12 object-cover rounded border cursor-pointer hover:opacity-80">`;
-                if(car.imgIn1) galleryHTML += `<img src="${car.imgIn1}" onclick="document.getElementById('mainRentalImg').src=this.src" class="w-16 h-12 object-cover rounded border cursor-pointer hover:opacity-80">`;
-                if(car.imgIn2) galleryHTML += `<img src="${car.imgIn2}" onclick="document.getElementById('mainRentalImg').src=this.src" class="w-16 h-12 object-cover rounded border cursor-pointer hover:opacity-80">`;
-                galleryHTML += `</div>`;
-            }
-
-            const html = `
-                ${galleryHTML}
-                <div class="mb-4">
-                    <h2 class="text-lg font-bold text-gray-800 leading-tight">${car.name}</h2>
-                    <p class="text-xs text-gray-500">${car.trans} • ${car.seat} Penumpang</p>
-                </div>
-                
-                <div class="space-y-3 mb-4">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-[10px] font-semibold text-gray-600">Tgl Mulai</label>
-                            <input type="date" id="rentStart" class="w-full border rounded p-1.5 text-xs outline-none">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-semibold text-gray-600">Tgl Selesai</label>
-                            <input type="date" id="rentEnd" class="w-full border rounded p-1.5 text-xs outline-none">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border-t border-b py-3 mb-4 space-y-2">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-gray-600">Harga per hari</span>
-                        <span class="font-semibold">${formatter.format(car.price)}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-gray-600">Total Tagihan (1 Hari)</span>
-                        <span class="font-bold text-orange-600 text-lg">${formatter.format(car.price)}</span>
-                    </div>
-                </div>
-
-                <h4 class="text-xs font-bold text-gray-700 mb-2">Metode Pembayaran</h4>
-                <div class="space-y-2 mb-6">
-                    <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-orange-50 bg-white">
-                        <input type="radio" name="payMethod" value="otopay" checked class="text-orange-500 accent-orange-500">
-                        <div class="flex-1">
-                            <div class="text-sm font-bold flex items-center gap-1"><i class="ph-fill ph-wallet text-orange-500"></i> OtoPay</div>
-                            <div class="text-[10px] text-gray-500">Saldo: ${formatter.format(currentUser.balance)}</div>
-                        </div>
-                    </label>
-                    <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 bg-white">
-                        <input type="radio" name="payMethod" value="bca" class="accent-gray-800">
-                        <div class="text-sm font-bold flex items-center gap-2"><i class="ph-fill ph-bank text-blue-600"></i> Transfer BCA</div>
-                    </label>
-                    <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 bg-white">
-                        <input type="radio" name="payMethod" value="gopay" class="accent-gray-800">
-                        <div class="text-sm font-bold flex items-center gap-2"><i class="ph-fill ph-device-mobile text-green-500"></i> GoPay / QRIS</div>
-                    </label>
-                </div>
-
-                <button onclick="processPayment('${carId}', ${car.price})" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 rounded-lg shadow-md transition">Bayar & Pesan Sekarang</button>
-            `;
-            document.getElementById('rentalContent').innerHTML = html;
-            
-            // Set default date to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('rentStart').value = today;
-            document.getElementById('rentEnd').value = today;
-            
-            openModal('rentalModal');
-        }
-
-        window.processPayment = async function(carId, price) {
-            const start = document.getElementById('rentStart').value;
-            const end = document.getElementById('rentEnd').value;
-            if(!start || !end) return showToast("Pilih tanggal sewa!");
-
-            const method = document.querySelector('input[name="payMethod"]:checked').value;
-            const car = cars.find(c => c.id == carId || c.fbId == carId);
-            
-            const orderData = {
-                id: 'INV' + Math.floor(Math.random()*10000),
-                userId: currentUser.id,
-                userName: currentUser.name,
-                carId: car.id || car.fbId,
-                carName: car.name,
-                partnerId: car.partnerId,
-                total: price,
-                method: method,
-                date: start + ' to ' + end,
-                status: method === 'otopay' ? 'pending' : 'waiting_payment', // Jika TF, tunggu tf
-                createdAt: new Date().toISOString()
-            };
-
-            if(method === 'otopay') {
-                if(currentUser.balance < price) return showToast("Saldo OtoPay tidak cukup!");
-                currentUser.balance -= price;
-                users[currentUser.id].balance = currentUser.balance;
-                updateUserUI();
-                
-                try {
-                    await window.addDoc(window.collection(window.db, 'orders'), orderData);
-                } catch(e) {
-                    orders.push(orderData); // fallback
-                }
-                
-                showToast("Pembayaran Berhasil! Menunggu persetujuan.");
-                closeAllModals();
-                
-            } else {
-                // Munculkan Instruksi Pembayaran Rekening
-                try {
-                    await window.addDoc(window.collection(window.db, 'orders'), orderData);
-                } catch(e) {
-                    orders.push(orderData); // fallback
-                }
-
-                const rekDetail = document.getElementById('rekDetail');
-                if(method === 'bca') {
-                    rekDetail.innerHTML = `
-                        <div class="text-xs text-gray-500 mb-1">Bank BCA</div>
-                        <div class="text-xl font-black tracking-widest text-gray-800">7645217578</div>
-                        <div class="text-xs font-bold text-gray-600 mt-1">a.n PT OtoLink Nusantara</div>
-                    `;
-                } else {
-                    rekDetail.innerHTML = `
-                        <div class="text-xs text-gray-500 mb-1">GoPay / e-Wallet</div>
-                        <div class="text-xl font-black tracking-widest text-gray-800">0818761761</div>
-                        <div class="text-xs font-bold text-gray-600 mt-1">a.n PT OtoLink Nusantara</div>
-                    `;
-                }
-                openModal('paymentInstructionModal');
-            }
-        }
-
-        // --- STREAMING_CHUNK:TopUp & OtoPay Logic ---
-        window.processTopUp = function(amount) {
-            const reqData = {
-                id: 'TOP' + Math.floor(Math.random()*10000),
-                userId: currentUser.id,
-                userName: currentUser.name,
-                amount: amount,
-                status: 'pending',
-                date: new Date().toISOString()
-            };
-            
-            topups.push(reqData); // Simpan sementara, Admin setujui baru masuk
-            
-            const rekDetail = document.getElementById('rekDetail');
-            rekDetail.innerHTML = `
-                <div class="text-xs text-gray-500 mb-1">Bank BCA (OtoPay TopUp)</div>
-                <div class="text-xl font-black tracking-widest text-gray-800">7645217578</div>
-                <div class="text-xs font-bold text-gray-600 mt-1">a.n PT OtoLink Nusantara</div>
-                <div class="mt-2 text-sm">Nominal: <strong class="text-orange-600">Rp ${amount.toLocaleString('id-ID')}</strong></div>
-            `;
-            openModal('paymentInstructionModal');
-        }
-
-        // --- STREAMING_CHUNK:Partner Registration & Image Uploads ---
-        window.openPartnerReg = function() {
-            if(!currentUser) {
-                showToast("Login dulu untuk mendaftar Mitra");
-                openModal('authModal');
-                return;
-            }
-            if(currentUser.partnerId) {
-                openPartnerDashboard();
-                return;
-            }
-            document.getElementById('regPhone').value = currentUser.id;
-            openModal('partnerRegModal');
+        
+        window.openMobileAccount = function() {
+            if(!window.currentUser) return openModal('authModal');
+            openModal('mobileAccountModal');
         }
 
         window.submitPartner = async function() {
-            const phone = document.getElementById('regPhone').value;
-            const carName = document.getElementById('regCarName').value;
-            const bank = document.getElementById('regBank').value;
+            const phone = document.getElementById('partnerPhone').value;
+            if(!phone) return;
             
-            if(!phone || !carName || !bank) return showToast("Harap isi semua data!");
-            
-            const newData = {
+            const pData = {
+                id: Date.now(),
                 phone: phone,
-                carInfo: carName,
-                bank: bank,
-                status: 'pending',
-                date: new Date().toISOString()
+                carInfo: document.getElementById('partnerCar').value,
+                plat: document.getElementById('partnerPlat').value,
+                bank: document.getElementById('partnerBank').value,
+                rek: document.getElementById('partnerRek').value,
+                status: 'pending'
             };
 
-            try {
-                await window.addDoc(window.collection(window.db, 'partners'), newData);
-                showToast("Pendaftaran dikirim ke Admin!");
-            } catch(e) {
-                console.log(e);
-                partners.push({ id: 'P'+Math.floor(Math.random()*100), ...newData });
-                showToast("Tersimpan (Mode Offline)");
+            if(window.db) {
+                try {
+                    await window.addDoc(window.collection(window.db, 'partners'), pData);
+                } catch(e) { console.log(e); window.partners.push(pData); }
+            } else {
+                window.partners.push(pData);
             }
             
             closeAllModals();
+            showToast("Pendaftaran dikirim! Menunggu ACC Admin.");
+            renderAdminPartners();
         }
 
-        window.openPartnerDashboard = function() {
-            if(!currentUser || !currentUser.partnerId) return;
-            openModal('partnerDashboardModal');
-            renderPartnerDashboard();
-        }
+        // Image Compression helper
+        window.handleImageUpload = function(event, previewId, valueId) {
+            const file = event.target.files[0];
+            if(!file) return;
 
-        // FUNGSI KOMPRESI & PREVIEW GAMBAR
-        window.previewUpload = function(input, previewId) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.getElementById(previewId);
-                    img.src = e.target.result;
-                    img.classList.remove('hidden');
-                    // Sembunyikan ikon placeholder
-                    const ph = document.getElementById('ph' + previewId.replace('preview', ''));
-                    if(ph) ph.classList.add('hidden');
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
-        };
-
-        async function compressImage(file) {
-            return new Promise((resolve) => {
-                if (!file) return resolve('');
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = event => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800; // Ukuran aman Firebase Gratis
-                        const scaleSize = MAX_WIDTH / img.width;
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
-                        
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.6)); // Kualitas 60%
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
                     }
-                };
-            });
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // Compress
+                    document.getElementById(previewId).src = dataUrl;
+                    document.getElementById(previewId).classList.remove('hidden');
+                    document.getElementById(valueId).value = dataUrl;
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
         }
 
         window.handlePartnerAddCar = async function() {
-            const name = document.getElementById('pCarName').value;
-            const price = parseInt(document.getElementById('pCarPrice').value);
-            const category = document.getElementById('pCarCategory').value;
+            const name = document.getElementById('newCarName').value;
+            const price = document.getElementById('newCarPrice').value;
+            const cat = document.getElementById('newCarCat').value;
             
-            const fileFront = document.getElementById('pCarImgFront').files[0];
-            const fileIn1 = document.getElementById('pCarImgIn1').files[0];
-            const fileIn2 = document.getElementById('pCarImgIn2').files[0];
+            const img1 = document.getElementById('valImg1').value;
+            const img2 = document.getElementById('valImg2').value;
+            const img3 = document.getElementById('valImg3').value;
 
-            if(!name || !price || !fileFront) return showToast("Nama, Harga, dan Foto Utama wajib diisi!");
-
-            showToast("Memproses & Kompresi Foto... Mohon tunggu!");
-
-            try {
-                const imgFrontBase64 = await compressImage(fileFront);
-                const imgIn1Base64 = fileIn1 ? await compressImage(fileIn1) : '';
-                const imgIn2Base64 = fileIn2 ? await compressImage(fileIn2) : '';
-
-                const newCar = { 
-                    name, price, category,
-                    img: imgFrontBase64, 
-                    imgIn1: imgIn1Base64, 
-                    imgIn2: imgIn2Base64, 
-                    seat: 5, trans: 'Otomatis', rating: 0, 
-                    partnerId: currentUser.partnerId, 
-                    status: 'pending',
-                    createdAt: new Date().toISOString()
-                };
-                
-                await window.addDoc(window.collection(window.db, 'cars'), newCar);
-                showToast("Iklan diajukan! Menunggu acc Admin.");
-                
-                // Reset Form
-                document.getElementById('pCarName').value = '';
-                document.getElementById('pCarPrice').value = '';
-                ['Front', 'In1', 'In2'].forEach(pos => {
-                    document.getElementById(`pCarImg${pos}`).value = '';
-                    document.getElementById(`preview${pos}`).classList.add('hidden');
-                    document.getElementById(`preview${pos}`).src = '';
-                    const ph = document.getElementById(`ph${pos}`);
-                    if(ph) ph.classList.remove('hidden');
-                });
-                document.getElementById('addCarForm').classList.add('hidden');
-                
-            } catch(e) {
-                console.log(e);
-                showToast("Gagal menyimpan. Pastikan koneksi stabil.");
+            if(!name || !price || !img1) {
+                showToast("Gagal: Nama, harga, dan foto Depan wajib diisi!");
+                return;
             }
+            
+            const carData = {
+                id: Date.now(),
+                name: name,
+                price: parseInt(price),
+                category: cat,
+                img: img1,
+                img2: img2,
+                img3: img3,
+                partnerId: window.currentUser.partnerId,
+                status: 'pending'
+            };
+
+            if(window.db) {
+                try {
+                    await window.addDoc(window.collection(window.db, 'cars'), carData);
+                } catch(e) { window.cars.push(carData); }
+            } else {
+                window.cars.push(carData);
+            }
+
+            // PERBAIKAN: Bersihkan form agar kosong kembali setelah upload berhasil
+            document.getElementById('newCarName').value = '';
+            document.getElementById('newCarPrice').value = '';
+            document.getElementById('valImg1').value = '';
+            document.getElementById('valImg2').value = '';
+            document.getElementById('valImg3').value = '';
+            document.getElementById('previewImg1').classList.add('hidden');
+            document.getElementById('previewImg2').classList.add('hidden');
+            document.getElementById('previewImg3').classList.add('hidden');
+
+            // PERBAIKAN: Jangan tutup dashboard. Langsung update daftarnya!
+            showToast("Mobil diajukan! Menunggu acc Admin.");
+            renderMitraCars();
+            if(window.renderAdminCars) renderAdminCars();
         }
 
-        window.renderPartnerDashboard = function() {
-            if(!currentUser || !currentUser.partnerId) return;
+        window.updateMitraStats = function() {
+            if(!window.currentUser || !window.currentUser.partnerId) return;
+            const pid = window.currentUser.partnerId;
             
-            // Hitung Pendapatan & Order (Total pesanan selesai * 93%)
-            let totalEarn = 0;
+            let totalIncome = 0;
             let activeOrders = 0;
             
-            orders.filter(o => o.partnerId === currentUser.partnerId).forEach(o => {
-                if(o.status === 'completed') totalEarn += (o.total * 0.93);
-                if(o.status === 'pending' || o.status === 'approved') activeOrders++;
+            window.orders.forEach(o => {
+                if(o.partnerId == pid && o.status === 'completed') totalIncome += (o.total * 0.93);
+                // Hitung pesanan yang sedang berjalan sebagai pesanan aktif
+                if(o.partnerId == pid && (o.status === 'approved' || o.status === 'waiting_payment' || o.status === 'pending')) activeOrders++;
             });
-
-            document.getElementById('pDashboardEarn').innerText = formatter.format(totalEarn);
-            document.getElementById('pDashboardOrders').innerText = activeOrders;
-
-            // Render Mobil Mitra
-            const list = document.getElementById('partnerCarList');
-            const myCars = cars.filter(c => c.partnerId === currentUser.partnerId);
             
+            document.getElementById('mitraIncome').innerText = formatter.format(totalIncome);
+            document.getElementById('mitraOrders').innerText = activeOrders;
+            
+            if(window.renderMitraCars) window.renderMitraCars();
+        }
+
+        window.renderMitraCars = function() {
+            if(!window.currentUser || !window.currentUser.partnerId) return;
+            const list = document.getElementById('mitraCarsList');
+            if(!list) return;
+            
+            // PERBAIKAN: Filter mobil yang tidak dihapus
+            const myCars = window.cars.filter(c => c.partnerId == window.currentUser.partnerId && c.status !== 'deleted');
+
             if(myCars.length === 0) {
-                list.innerHTML = `<div class="text-sm text-gray-500 text-center py-4">Belum ada mobil yang diiklankan.</div>`;
+                list.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">Belum ada iklan mobil.</p>`;
                 return;
             }
 
             list.innerHTML = myCars.map(c => `
-                <div class="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
-                    <img src="${c.img || 'https://via.placeholder.com/100'}" class="w-16 h-12 object-cover rounded">
+                <div class="flex gap-3 border rounded-lg p-2 items-center bg-gray-50">
+                    <img src="${c.img}" class="w-16 h-12 object-cover rounded">
                     <div class="flex-1">
-                        <div class="font-bold text-sm text-gray-800">${c.name}</div>
-                        <div class="text-[10px] text-gray-500">Harga: ${formatter.format(c.price)} | Kategori: ${c.category}</div>
+                        <p class="font-bold text-xs">${c.name}</p>
+                        <p class="text-orange-600 text-[10px] font-bold">${formatter.format(c.price)}/hari</p>
                     </div>
-                    <div class="text-right">
-                        ${c.status === 'pending' ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-1 rounded font-bold">Menunggu</span>' : '<span class="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded font-bold">Aktif</span>'}
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="text-[9px] px-2 py-1 rounded font-bold uppercase ${c.status === 'approved' ? 'bg-green-100 text-green-600' : (c.status === 'pending' ? 'bg-orange-100 text-orange-600' : 'bg-red-100 text-red-600')}">${c.status}</span>
+                        <button onclick="deleteMitraCar('${c.fbId || c.id}')" class="text-[10px] text-red-500 hover:bg-red-100 px-2 py-0.5 rounded transition"><i class="ph ph-trash"></i> Hapus</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- STREAMING_CHUNK:Admin Panel (Hidden System) ---
-        window.handleAdminClick = function() {
-            secretClickCount++;
-            clearTimeout(secretTimeout);
-            secretTimeout = setTimeout(() => secretClickCount = 0, 1000);
-            
-            if (secretClickCount === 3) {
-                secretClickCount = 0;
-                openModal('adminDashboardModal');
-                renderAdminCars();
-                renderAdminOrders();
-                renderAdminPartners();
-                renderAdminTopups();
-                showToast("Mode Admin Terbuka");
+        // FITUR BARU: Menghapus iklan yang salah input
+        window.deleteMitraCar = async function(id) {
+            if(window.db && isNaN(id)) {
+                try { await window.updateDoc(window.doc(window.db, 'cars', id), { status: 'deleted' }); } 
+                catch(e) { console.log(e); }
+            } else {
+                const c = window.cars.find(x => x.id == id);
+                if(c) c.status = 'deleted';
+            }
+            showToast("Iklan mobil dihapus.");
+            renderMitraCars();
+            if(window.renderCars) renderCars();
+            if(window.renderAdminCars) renderAdminCars();
+        }
+
+        window.openRentalForm = function(carId) {
+            if(!window.currentUser) return openModal('authModal');
+            const car = window.cars.find(c => c.id === carId);
+            if(!car) return;
+
+            let imgsHtml = `<img src="${car.img}" class="w-full h-48 object-cover rounded-t-2xl">`;
+            if(car.img2 || car.img3) {
+                imgsHtml = `
+                <div class="flex overflow-x-auto hide-scroll snap-x">
+                    <img src="${car.img}" class="w-full shrink-0 h-48 object-cover snap-center">
+                    ${car.img2 ? `<img src="${car.img2}" class="w-full shrink-0 h-48 object-cover snap-center">` : ''}
+                    ${car.img3 ? `<img src="${car.img3}" class="w-full shrink-0 h-48 object-cover snap-center">` : ''}
+                </div>
+                <p class="text-[10px] text-center text-gray-400 mt-1 absolute right-2 top-2 bg-black/50 text-white px-2 rounded-full">Geser <i class="ph ph-arrow-right"></i></p>
+                `;
+            }
+
+            document.getElementById('rentModalContent').innerHTML = `
+                <div class="relative">
+                    ${imgsHtml}
+                    <button onclick="closeAllModals()" class="absolute top-2 left-2 bg-black/50 text-white p-1 rounded-full"><i class="ph ph-x"></i></button>
+                </div>
+                <div class="p-5">
+                    <h3 class="font-bold text-lg">${car.name}</h3>
+                    <p class="text-orange-600 font-bold mb-4">${formatter.format(car.price)} <span class="text-xs font-normal text-gray-500">/hari</span></p>
+                    
+                    <div class="space-y-3 mb-6">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Tanggal & Waktu Sewa</label>
+                            <input type="datetime-local" id="rentDate" class="w-full border p-2 rounded-lg text-sm outline-none focus:border-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Metode Pembayaran</label>
+                            <select id="rentPayment" class="w-full border p-2 rounded-lg text-sm bg-white outline-none focus:border-orange-500">
+                                <option value="otopay">OtoPay (Saldo: ${formatter.format(window.currentUser.balance)})</option>
+                                <option value="bca">Transfer BCA (Manual)</option>
+                                <option value="gopay">GoPay (Manual)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="processPayment(${car.id}, ${car.price}, ${car.partnerId})" class="w-full bg-gray-900 text-white py-3 rounded-lg font-bold hover:bg-gray-800">Bayar Sekarang</button>
+                </div>
+            `;
+            openModal('rentalModal');
+        }
+
+        window.processPayment = async function(carId, price, partnerId) {
+            const date = document.getElementById('rentDate').value;
+            const payMethod = document.getElementById('rentPayment').value;
+            if(!date) return alert("Pilih tanggal sewa!");
+
+            const orderData = {
+                id: 'ORD' + Date.now(),
+                carId: carId,
+                carName: window.cars.find(c=>c.id==carId).name,
+                partnerId: partnerId,
+                userId: window.currentUser.id,
+                userName: window.currentUser.name,
+                total: price,
+                date: date,
+                method: payMethod,
+                status: payMethod === 'otopay' ? 'pending' : 'waiting_payment'
+            };
+
+            if(payMethod === 'otopay') {
+                if(window.currentUser.balance < price) return alert("Saldo OtoPay tidak cukup!");
+                window.currentUser.balance -= price;
+                updateUserUI();
+            }
+
+            if(window.db) {
+                try { await window.addDoc(window.collection(window.db, 'orders'), orderData); }
+                catch(e) { window.orders.push(orderData); }
+            } else {
+                window.orders.push(orderData);
+            }
+
+            renderUserOrders();
+            renderAdminOrders();
+
+            if(payMethod === 'otopay') {
+                closeAllModals();
+                showToast("Pesanan Berhasil! Menunggu ACC.");
+            } else {
+                // Show Escrow Instruction
+                document.getElementById('instructAmount').innerText = formatter.format(price);
+                document.getElementById('instructBCA').classList.add('hidden');
+                document.getElementById('instructGopay').classList.add('hidden');
+                
+                if(payMethod === 'bca') document.getElementById('instructBCA').classList.remove('hidden');
+                if(payMethod === 'gopay') document.getElementById('instructGopay').classList.remove('hidden');
+                
+                openModal('paymentInstructionModal');
             }
         }
 
-        window.switchAdminTab = function(tabId) {
-            document.querySelectorAll('.admin-tab').forEach(el => {
-                el.classList.remove('bg-indigo-100', 'text-indigo-800', 'border-l-indigo-600');
-                el.classList.add('text-gray-600', 'border-l-transparent');
-            });
-            document.getElementById('tab-' + tabId).classList.add('bg-indigo-100', 'text-indigo-800', 'border-l-indigo-600');
-            document.getElementById('tab-' + tabId).classList.remove('text-gray-600', 'border-l-transparent');
+        window.renderUserOrders = function() {
+            if(!window.currentUser) return;
+            const list = document.getElementById('userOrdersList');
+            const myOrders = window.orders.filter(o => o.userId === window.currentUser.id);
             
-            document.querySelectorAll('.admin-content-section').forEach(el => el.classList.add('hidden'));
-            document.getElementById('content-' + tabId).classList.remove('hidden');
+            if(myOrders.length === 0) {
+                list.innerHTML = `<p class="text-center text-sm text-gray-400 mt-10">Belum ada pesanan.</p>`;
+                return;
+            }
+
+            list.innerHTML = myOrders.map(o => `
+                <div class="border rounded-xl p-3 bg-gray-50">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold text-sm">${o.carName}</p>
+                            <p class="text-[10px] text-gray-500">${o.id} • ${new Date(o.date).toLocaleDateString()}</p>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-1 rounded bg-white border uppercase ${o.status==='pending'||o.status==='waiting_payment'?'text-orange-500':(o.status==='approved'||o.status==='completed'?'text-green-500':'text-red-500')}">${o.status}</span>
+                    </div>
+                    <p class="font-bold text-orange-600 text-sm">${formatter.format(o.total)}</p>
+                </div>
+            `).join('');
+        }
+
+        // Topup
+        window.selectTopup = function(amt) {
+            document.getElementById('selectedTopupAmt').value = amt;
+            // Visual feedback
+            event.target.classList.add('bg-orange-50', 'border-orange-500');
+        }
+        
+        window.processTopup = function() {
+            const amt = parseInt(document.getElementById('selectedTopupAmt').value);
+            if(!amt) return alert("Pilih nominal topup!");
+            
+            document.getElementById('instructAmount').innerText = formatter.format(amt);
+            document.getElementById('instructBCA').classList.remove('hidden');
+            document.getElementById('instructGopay').classList.add('hidden');
+            openModal('paymentInstructionModal');
+            
+            window.topups.push({ user: window.currentUser.name, phone: window.currentUser.id, amount: amt, status: 'pending' });
+            renderAdminTopups();
+        }
+
+        // Admin Features
+        let secretClickCount = 0;
+        let secretTimer;
+        window.handleLogoClick = function() {
+            secretClickCount++;
+            clearTimeout(secretTimer);
+            if(secretClickCount >= 3) {
+                secretClickCount = 0;
+                openModal('adminModal');
+                renderAdminCars(); renderAdminOrders(); renderAdminTopups(); renderAdminPartners();
+            }
+            secretTimer = setTimeout(() => { secretClickCount = 0; }, 1000);
+        }
+
+        window.switchAdminTab = function(tab) {
+            document.querySelectorAll('.admin-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`admin-${tab}`).classList.remove('hidden');
+            document.querySelectorAll('.admin-tab').forEach(b => {
+                b.classList.remove('border-black', 'text-black');
+                if(b.dataset.tab === tab) b.classList.add('border-black', 'text-black');
+            });
         }
 
         window.renderAdminCars = function() {
             const tb = document.getElementById('adminCarTable');
-            const pendingCars = cars.filter(c => c.status === 'pending');
-            if(pendingCars.length===0) tb.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400">Tidak ada pengajuan.</td></tr>`;
-            else {
-                tb.innerHTML = pendingCars.map((c, i) => `
-                    <tr class="hover:bg-gray-50">
-                        <td class="py-2 flex items-center gap-2"><img src="${c.img}" class="w-10 h-8 object-cover rounded"> ${c.name}</td>
-                        <td class="py-2">${c.partnerId}</td>
-                        <td class="py-2 text-xs font-bold text-gray-700">${formatter.format(c.price)}</td>
-                        <td class="py-2"><span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-[10px] rounded font-bold">Pending</span></td>
-                        <td class="py-2 text-xs">
-                            <button onclick="approveCar('${c.fbId || c.id}')" class="text-green-600 font-bold hover:underline">Setujui</button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
+            tb.innerHTML = window.cars.filter(c => c.status === 'pending').map(c => `
+                <tr class="border-b"><td class="py-2">${c.name}</td><td>${c.price}</td><td>${c.partnerId}</td>
+                <td><button onclick="approveCar(${c.id})" class="text-blue-600 font-bold hover:underline text-xs">Acc</button></td></tr>
+            `).join('');
         }
-
+        
         window.approveCar = async function(id) {
-            try {
-                if(window.db && isNaN(id)) {
-                    await window.updateDoc(window.doc(window.db, 'cars', id), { status: 'approved' });
-                } else {
-                    const c = cars.find(x => x.id == id);
-                    if(c) c.status = 'approved';
-                }
-                showToast("Mobil disetujui!");
-                renderAdminCars(); renderCars();
-            } catch(e) { console.log(e); }
+            if(window.db && isNaN(id)) { await window.updateDoc(window.doc(window.db, 'cars', id), { status: 'approved' }); }
+            else { const c = window.cars.find(x => x.id == id); if(c) c.status = 'approved'; }
+            showToast("Mobil disetujui!"); renderAdminCars(); renderCars();
         }
 
+        // NEW FIX: Show ALL Orders in Admin with management buttons
         window.renderAdminOrders = function() {
             const tb = document.getElementById('adminOrderTable');
-            tb.innerHTML = orders.map((o, i) => `
-                <tr class="hover:bg-gray-50 border-b text-xs">
-                    <td class="py-2 font-mono">${o.id}</td>
-                    <td class="py-2">${o.userName}</td>
-                    <td class="py-2">${o.carName}</td>
-                    <td class="py-2 font-bold">${formatter.format(o.total)}</td>
-                    <td class="py-2">${o.status}</td>
-                    <td class="py-2">
-                        ${o.status === 'pending' || o.status === 'waiting_payment' ? `<button onclick="updateOrderStatus(${i}, 'approved')" class="text-blue-600 font-bold hover:underline">Acc & Jalan</button>` : ''}
+            tb.innerHTML = window.orders.map((o, i) => `
+                <tr class="border-b hover:bg-gray-50 text-xs">
+                    <td class="py-2">${o.id}</td>
+                    <td>${o.userName}</td>
+                    <td>${o.carName}</td>
+                    <td class="font-bold text-orange-600">${formatter.format(o.total)}</td>
+                    <td class="uppercase font-bold ${o.status==='completed'?'text-green-500':(o.status==='rejected'?'text-red-500':'text-blue-500')}">${o.status}</td>
+                    <td>
+                        ${o.status === 'pending' || o.status === 'waiting_payment' ? `
+                            <button onclick="updateOrderStatus(${i}, 'approved')" class="text-blue-600 font-bold hover:underline mr-1">Acc</button>
+                            <button onclick="updateOrderStatus(${i}, 'rejected')" class="text-red-600 font-bold hover:underline">Tolak</button>
+                        ` : ''}
                         ${o.status === 'approved' ? `<button onclick="updateOrderStatus(${i}, 'completed')" class="text-green-600 font-bold hover:underline">Selesai (Cair)</button>` : ''}
                     </td>
                 </tr>
@@ -1295,85 +1145,84 @@
         }
 
         window.updateOrderStatus = async function(idx, status) {
-            const o = orders[idx];
+            const o = window.orders[idx];
             try {
-                if(o.fbId) await window.updateDoc(window.doc(window.db, 'orders', o.fbId), { status: status });
+                if(o.fbId && window.db) await window.updateDoc(window.doc(window.db, 'orders', o.fbId), { status: status });
                 else o.status = status;
-                showToast("Status Pesanan Diperbarui");
-                renderAdminOrders();
-            } catch(e) { console.log(e); }
-        }
-
-        window.renderAdminPartners = function() {
-            const tb = document.getElementById('adminPartnerTable');
-            const pending = partners.filter(p => p.status === 'pending');
-            if(pending.length===0) tb.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400">Kosong.</td></tr>`;
-            else {
-                tb.innerHTML = pending.map((p, i) => `
-                    <tr class="hover:bg-gray-50 border-b">
-                        <td class="py-2 text-xs">${p.phone}</td>
-                        <td class="py-2 text-xs">${p.carInfo}</td>
-                        <td class="py-2 text-xs">${p.bank}</td>
-                        <td class="py-2"><span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-[10px] rounded font-bold">Pending</span></td>
-                        <td class="py-2 text-xs">
-                            <button onclick="accPartner('${p.fbId || p.id}')" class="text-green-600 font-bold hover:underline mr-2">Setuju</button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        window.accPartner = async function(id) {
-            try {
-                if(isNaN(id) && window.db) {
-                    await window.updateDoc(window.doc(window.db, 'partners', id), { status: 'approved' });
-                } else {
-                    const p = partners.find(x => x.id == id);
-                    if(p) p.status = 'approved';
-                }
-                showToast("Mitra Disetujui!");
-                renderAdminPartners();
-                
-                // Jika mitra yg di-acc sedang login, otomatis buka fiturnya
-                if(currentUser && partners.find(x => x.phone === currentUser.id && (x.id == id || x.fbId == id))) {
-                    currentUser.partnerId = id;
-                    users[currentUser.id].partnerId = id;
-                    updateUserUI();
-                }
+                showToast("Status Pesanan Diupdate");
+                renderAdminOrders(); updateMitraStats(); renderUserOrders();
             } catch(e) { console.log(e); }
         }
 
         window.renderAdminTopups = function() {
             const tb = document.getElementById('adminTopupTable');
-            const pending = topups.filter(t => t.status === 'pending');
-            tb.innerHTML = pending.map((t, i) => `
-                <tr class="border-b hover:bg-gray-50 text-xs">
-                    <td class="py-2">${t.userName} (${t.userId})</td>
-                    <td class="py-2 font-bold text-orange-600">${formatter.format(t.amount)}</td>
-                    <td class="py-2">${t.date.split('T')[0]}</td>
-                    <td class="py-2">Pending TF</td>
-                    <td class="py-2"><button onclick="accTopup(${i})" class="text-green-600 font-bold hover:underline">Dana Masuk (Acc)</button></td>
+            tb.innerHTML = window.topups.filter(t => t.status === 'pending').map((t, i) => `
+                <tr class="border-b"><td class="py-2 text-xs">${t.user}</td><td class="font-bold text-xs">${formatter.format(t.amount)}</td>
+                <td><button onclick="approveTopup(${i})" class="text-green-600 font-bold hover:underline text-xs">Sah</button></td></tr>
+            `).join('');
+        }
+        
+        window.approveTopup = function(idx) {
+            const t = window.topups[idx];
+            t.status = 'approved';
+            if(window.users[t.phone]) window.users[t.phone].balance += t.amount;
+            updateUserUI(); renderAdminTopups(); showToast("Topup disahkan!");
+        }
+
+        // NEW FIX: Show ALL Partners in Admin with management buttons
+        window.renderAdminPartners = function() {
+            const tb = document.getElementById('adminPartnerTable');
+            tb.innerHTML = window.partners.map((p, i) => `
+                <tr class="border-b hover:bg-gray-50 text-[10px]">
+                    <td class="py-2">${p.phone}</td>
+                    <td>${p.carInfo}</td>
+                    <td>${p.bank} - ${p.rek}</td>
+                    <td class="uppercase font-bold ${p.status==='approved'?'text-green-500':(p.status==='rejected'?'text-red-500':'text-orange-500')}">${p.status}</td>
+                    <td>
+                        ${p.status === 'pending' ? `
+                            <button onclick="accPartner('${p.fbId || p.id}')" class="text-blue-600 font-bold hover:underline mr-1">Acc</button>
+                            <button onclick="rejPartner('${p.fbId || p.id}')" class="text-red-600 font-bold hover:underline">Tolak</button>
+                        ` : ''}
+                        ${p.status === 'approved' ? `
+                            <button onclick="rejPartner('${p.fbId || p.id}')" class="text-red-600 font-bold hover:underline">Nonaktifkan</button>
+                        ` : ''}
+                        ${p.status === 'rejected' ? `
+                            <button onclick="accPartner('${p.fbId || p.id}')" class="text-green-600 font-bold hover:underline">Aktifkan</button>
+                        ` : ''}
+                    </td>
                 </tr>
             `).join('');
         }
 
-        window.accTopup = function(idx) {
-            const t = topups[idx];
-            t.status = 'approved';
-            if(users[t.userId]) users[t.userId].balance += t.amount;
-            if(currentUser && currentUser.id === t.userId) {
-                currentUser.balance += t.amount;
-                updateUserUI();
-            }
-            showToast("Saldo ditambahkan ke User!");
-            renderAdminTopups();
+        window.accPartner = async function(id) {
+            try {
+                if(isNaN(id) && window.db) { await window.updateDoc(window.doc(window.db, 'partners', id), { status: 'approved' }); }
+                else { const p = window.partners.find(x => x.id == id); if(p) p.status = 'approved'; }
+                showToast("Mitra Disetujui!"); renderAdminPartners();
+
+                // FIX: Langsung munculkan tombol dashboard mitra jika admin meng-acc akun yang sedang dipakai
+                if(window.currentUser) {
+                    const myPartner = window.partners.find(p => p.phone === window.currentUser.id && p.status === 'approved');
+                    if(myPartner) {
+                        window.currentUser.partnerId = myPartner.fbId || myPartner.id;
+                        window.updateUserUI();
+                    }
+                }
+            } catch(e) { console.log(e); }
+        }
+        
+        window.rejPartner = async function(id) {
+            try {
+                if(isNaN(id) && window.db) { await window.updateDoc(window.doc(window.db, 'partners', id), { status: 'rejected' }); }
+                else { const p = window.partners.find(x => x.id == id); if(p) p.status = 'rejected'; }
+                showToast("Mitra Dinonaktifkan!"); renderAdminPartners();
+            } catch(e) { console.log(e); }
         }
 
-        // --- INIT APP ---
+        // Init App
         window.onload = () => {
             renderCars();
         }
-
     </script>
 </body>
 </html>
