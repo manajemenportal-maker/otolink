@@ -976,35 +976,88 @@
         function addOtopayHistory(desc, amount) { const t = new Date(); userTransactions.unshift({desc: desc, amount: amount, time: `${t.getDate()}/${t.getMonth()+1} ${t.getHours()}:${t.getMinutes()}`}); }
 
         function openPartnerRegister() { openModal('partnerModal'); }
-        function submitPartner(e) {
+        
+        async function submitPartner(e) {
             e.preventDefault();
-            const p = { name: document.getElementById('pName').value, nik: document.getElementById('pNIK').value, phone: document.getElementById('pPhone').value, bank: document.getElementById('pBank').value, rek: document.getElementById('pRek').value, status: "Menunggu" };
-            partners.unshift(p); renderPartners();
-            showToast("Pendaftaran berhasil! Menunggu persetujuan Admin."); closeAllModals();
-        }
+            if(!window.firebaseReady) { showToast("Koneksi server sedang disiapkan. Tunggu sebentar.", false); return; }
 
-        function handleSecretAdminClick() {
-            secretClickCount++;
-            if (secretClickCount === 3) { if(isAdminLoggedIn) { showAdminPanel(); } else { openModal('adminAuthModal'); } secretClickCount = 0; }
-            clearTimeout(secretClickTimer); secretClickTimer = setTimeout(() => { secretClickCount = 0; }, 1000); 
-        }
-
-        function handleAdminLogin(e) { e.preventDefault(); isAdminLoggedIn = true; showToast("Selamat Datang Admin!"); closeAllModals(); showAdminPanel(); }
-
-        function showMainPage() { document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('partnerPanel').classList.add('hidden'); document.getElementById('appContainer').classList.remove('hidden'); window.scrollTo(0, 0); }
-        function showAdminPanel() { document.getElementById('appContainer').classList.add('hidden'); document.getElementById('partnerPanel').classList.add('hidden'); document.getElementById('adminPanel').classList.remove('hidden'); updateAdminStats(); renderOrders(); renderPartners(); renderPayouts(); renderBanner(); renderAdminAds(); renderAdminTopups(); window.scrollTo(0, 0); }
-        function closeAdminPanel() { showMainPage(); }
-
-        function switchAdminTab(tabId) {
-            document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden')); document.getElementById(tabId).classList.remove('hidden');
-            document.querySelectorAll('[id^="btn-tab-"]').forEach(btn => { btn.classList.remove('border-gray-900', 'text-gray-900'); btn.classList.add('border-transparent', 'text-gray-500'); });
-            document.getElementById('btn-' + tabId).classList.add('border-gray-900', 'text-gray-900'); document.getElementById('btn-' + tabId).classList.remove('border-transparent', 'text-gray-500');
+            const p = { 
+                name: document.getElementById('pName').value, 
+                nik: document.getElementById('pNIK').value, 
+                phone: document.getElementById('pPhone').value, 
+                bank: document.getElementById('pBank').value, 
+                rek: document.getElementById('pRek').value, 
+                status: "Menunggu",
+                createdAt: new Date().toISOString()
+            };
+            
+            try {
+                // Simpan data permanen ke Firestore Database
+                await window.fs.addDoc(getPartnersCollection(), p);
+                showToast("Pendaftaran berhasil! Menunggu persetujuan Admin."); 
+                closeAllModals();
+            } catch(err) {
+                console.error("Firebase Error:", err);
+                showToast("Terjadi kesalahan saat mendaftar.", false);
+            }
         }
 
         function updateAdminStats() {
             let pending = 0, active = 0, done = 0;
             orders.forEach(o => { if(o.status === "Pending") pending++; else if(o.status === "Active") active++; else if(o.status === "Done") done++; });
             document.getElementById('stat-pending').innerText = pending; document.getElementById('stat-active').innerText = active; document.getElementById('stat-done').innerText = done;
+        }
+
+        function handleSecretAdminClick() {
+            secretClickCount++;
+            clearTimeout(secretClickTimer);
+            secretClickTimer = setTimeout(() => { secretClickCount = 0; }, 1000);
+            if(secretClickCount >= 3) {
+                secretClickCount = 0;
+                if(!isAdminLoggedIn) { openModal('adminAuthModal'); }
+                else { showAdminPanel(); }
+            }
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            isAdminLoggedIn = true;
+            closeAllModals(); showToast("Login Admin Berhasil!");
+            showAdminPanel();
+        }
+
+        function showAdminPanel() {
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            updateAdminStats(); renderOrders(); renderAdminPartners(); renderPayouts(); renderAdminAds(); renderAdminTopups();
+            window.scrollTo(0, 0);
+        }
+
+        function closeAdminPanel() {
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+        }
+
+        function switchAdminTab(tabId) {
+            const tabs = ['tab-orders', 'tab-partners', 'tab-ads', 'tab-topup', 'tab-banner'];
+            tabs.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                document.getElementById('btn-' + id).classList.replace('border-gray-900', 'border-transparent');
+                document.getElementById('btn-' + id).classList.replace('text-gray-900', 'text-gray-500');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.replace('border-transparent', 'border-gray-900');
+            document.getElementById('btn-' + tabId).classList.replace('text-gray-500', 'text-gray-900');
+        }
+
+        function renderAdminPartners() {
+            const container = document.getElementById('adminPartnerList');
+            const pendingPartners = partners.filter(p => p.status !== 'Disetujui');
+            if(pendingPartners.length === 0) { container.innerHTML = `<div class="p-6 text-center text-gray-500 italic">Tidak ada antrean pendaftar baru.</div>`; return; }
+            container.innerHTML = '';
+            pendingPartners.forEach((p, idx) => {
+                container.innerHTML += `<div class="border rounded-lg p-4 bg-white shadow-sm"><div class="flex justify-between items-start mb-2"><div><h4 class="font-bold text-gray-800 text-base">${p.name}</h4><p class="text-xs text-gray-500">NIK: ${p.nik} • HP: ${p.phone}</p></div><span class="bg-yellow-100 text-yellow-800 py-1 px-2 rounded-full text-[10px] font-bold">Menunggu</span></div><div class="bg-gray-50 p-2 rounded text-xs text-gray-600 mb-3 border border-gray-100"><span class="font-bold">Bank:</span> ${p.bank} - ${p.rek}</div><div class="flex gap-2"><button onclick="accPartner(${idx})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded text-sm font-bold shadow-sm transition">Setujui</button><button onclick="rejPartner(${idx})" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 py-1.5 rounded text-sm font-bold transition">Tolak</button></div></div>`;
+            });
         }
 
         function renderOrders() {
@@ -1038,19 +1091,45 @@
             updateAdminStats(); renderOrders();
         }
 
-        function accPartner(idx) { 
-            partners[idx].status = 'Disetujui'; 
-            
-            // Tambahan: Langsung jadikan akun pengguna aktif sebagai Mitra saat itu juga (tanpa perlu relogin)
-            if(currentUser && currentUser.email === partners[idx].phone) {
-                currentUser.isPartner = true;
-                updateUserUI();
+        async function accPartner(idx) { 
+            const partner = partners[idx];
+            if(!partner.docId) {
+                // Khusus jika yang disetujui adalah akun Demo Budi (yang tidak ada di database)
+                partners[idx].status = 'Disetujui';
+                renderAdminPartners();
+                showToast("Akun Demo Budi Disetujui!");
+                return;
             }
             
-            renderPartners(); 
-            showToast("Mitra Disetujui! Pengguna kini bisa mengakses Dashboard."); 
+            try {
+                // Update dokumen di Firestore
+                const docRef = window.fs.doc(window.firebaseDB, "partners", partner.docId);
+                await window.fs.updateDoc(docRef, { status: 'Disetujui' });
+                
+                if(currentUser && currentUser.email === partner.phone) {
+                    currentUser.isPartner = true;
+                    updateUserUI();
+                }
+                showToast("Mitra Disetujui! Status di Database telah diperbarui."); 
+            } catch (err) {
+                console.error("Firebase Error:", err);
+                showToast("Gagal menyetujui mitra.", false);
+            }
         }
-        function rejPartner(idx) { partners[idx].status = 'Ditolak'; renderPartners(); showToast("Mitra Ditolak.", false); }
+
+        async function rejPartner(idx) { 
+            const partner = partners[idx];
+            if(!partner.docId) return;
+            
+            try {
+                const docRef = window.fs.doc(window.firebaseDB, "partners", partner.docId);
+                await window.fs.updateDoc(docRef, { status: 'Ditolak' });
+                showToast("Mitra Ditolak.", false); 
+            } catch (err) {
+                console.error("Firebase Error:", err);
+                showToast("Gagal menolak mitra.", false);
+            }
+        }
 
         function renderPayouts() {
             const container = document.getElementById('adminPayoutList');
