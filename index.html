@@ -209,7 +209,6 @@
         </nav>
     </div>
 
-    <!-- PANEL ADMIN -->
     <div id="adminPanel" class="hidden min-h-screen bg-gray-100 pb-20 w-full relative z-50">
         <div class="bg-gray-900 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
             <div class="flex items-center gap-2"><i class="ph-fill ph-shield-check text-2xl text-blue-400"></i><h2 class="font-bold text-xl">Dashboard Admin</h2></div>
@@ -303,7 +302,6 @@
         </div>
     </div>
 
-    <!-- PANEL MITRA -->
     <div id="partnerPanel" class="hidden min-h-screen bg-gray-100 pb-20 w-full relative z-50">
         <div class="bg-green-600 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
             <div class="flex items-center gap-2"><i class="ph-fill ph-handshake text-2xl"></i><h2 class="font-bold text-xl">Dashboard Mitra</h2></div>
@@ -405,7 +403,6 @@
         </div>
     </div>
 
-    <!-- SEMUA MODALS (POP-UP) -->
     <div id="modalOverlay" class="fixed inset-0 bg-black/70 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm transition-opacity duration-300 opacity-0">
         
         <!-- Auth Modal (Login / Register) -->
@@ -658,7 +655,7 @@
         </div>
 
         <!-- Modal Konfirmasi Cantik (Ganti Alert Bawaan) -->
-        <div id="confirmModal" class="bg-white w-[90%] md:w-80 rounded-xl shadow-2xl overflow-hidden hidden flex-col absolute">
+        <div id="confirmModal" class="bg-white w-[90%] md:w-80 rounded-xl shadow-2xl overflow-hidden hidden flex-col absolute z-[110]">
             <div class="p-5 text-center">
                 <div class="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-fill ph-warning text-3xl"></i></div>
                 <h3 class="font-bold text-gray-800 text-lg mb-2" id="confirmTitle">Konfirmasi</h3>
@@ -682,6 +679,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Environment variables mapping
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'otolink-master';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
@@ -690,8 +688,10 @@
         const getDocRef = (name, id) => doc(db, 'artifacts', appId, 'public', 'data', name, id);
 
         window.currentUser = null; 
-        window.usersData = []; window.carsData = []; 
-        window.ordersData = []; window.withdrawalsData = [];
+        window.usersData = []; 
+        window.carsData = []; 
+        window.ordersData = []; 
+        window.withdrawalsData = [];
         
         const formatRp = (num) => "Rp " + parseInt(num).toLocaleString('id-ID');
         const generateId = (prefix) => prefix + '-' + Math.floor(Math.random() * 10000);
@@ -703,7 +703,7 @@
 
         async function startApp() {
             try {
-                // Paksa lempar error untuk mengaktifkan Local Mode jika config tidak ada
+                // Paksa lempar error untuk mengaktifkan Local Mode jika config tidak ada (offline/diluar preview)
                 if (typeof __firebase_config === 'undefined' || Object.keys(firebaseConfig).length === 0) {
                     throw new Error("No Cloud Config"); 
                 }
@@ -713,10 +713,19 @@
                 db = getFirestore(app); 
                 auth = getAuth(app);
 
-                if (typeof __initial_auth_token !== 'undefined') await signInWithCustomToken(auth, __initial_auth_token);
-                else await signInAnonymously(auth);
+                // ATURAN 3: Wajib Auth sebelum Query agar koneksi tidak ditolak (putus)
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
-                // Sinkronisasi Real-Time
+                // Callback penangkap error agar tidak silent fail jika server goyah
+                const handleDbError = (err) => { 
+                    console.error("Firebase Sync Error (Auto-recovering):", err); 
+                };
+
+                // Sinkronisasi Real-Time Ketat
                 onSnapshot(getColl('users'), (snapshot) => {
                     window.usersData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                     if(window.currentUser) {
@@ -725,26 +734,26 @@
                         window.updateUserUI();
                     }
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminUsers();
-                });
+                }, handleDbError);
 
                 onSnapshot(getColl('cars'), (snapshot) => {
                     window.carsData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                     window.renderCars(); 
                     if(window.currentUser && !document.getElementById('partnerPanel').classList.contains('hidden')) window.renderMitraCars();
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) { window.loadAdminData(); window.loadAdminAllCars(); }
-                });
+                }, handleDbError);
 
                 onSnapshot(getColl('orders'), (snapshot) => {
                     window.ordersData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                     if(window.currentUser && !document.getElementById('partnerPanel').classList.contains('hidden')) window.renderMitraCars();
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminOrders();
-                });
+                }, handleDbError);
 
                 onSnapshot(getColl('withdrawals'), (snapshot) => {
                     window.withdrawalsData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                     if(window.currentUser && !document.getElementById('partnerPanel').classList.contains('hidden')) window.renderMitraCars();
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminWithdrawals();
-                });
+                }, handleDbError);
 
                 setTimeout(seedInitialDataIfNeeded, 2500);
 
@@ -821,8 +830,6 @@
             }
         }
 
-        // ================== UTILITAS TAMPILAN ==================
-        
         window.showToast = function(msg, isSuccess = true) {
             const t = document.getElementById('toast');
             document.getElementById('toastMsg').innerText = msg;
@@ -864,8 +871,6 @@
         document.getElementById('confirmYesBtn').addEventListener('click', () => { if(confirmAction) confirmAction(); window.closeConfirm(); });
 
 
-        // ================== LOGIN & USER ==================
-        
         let isRegisterMode = false;
         window.toggleAuthMode = function(mode) {
             isRegisterMode = mode === 'register';
@@ -957,8 +962,6 @@
             } 
         };
 
-        // ================== OTOPAY & PEMBAYARAN ==================
-
         window.updateOtopayBalanceUI = function() {
             if(!window.currentUser) return; 
             const bf = formatRp(window.currentUser.balance || 0);
@@ -1027,8 +1030,6 @@
 
         window.openMyOrders = function() { window.showToast("Pesanan berhasil masuk ke riwayat! Admin akan segera memproses."); window.closeAllModals(); };
 
-
-        // ================== SISTEM MITRA (PASANG IKLAN DLL) ==================
 
         window.handlePartnerClick = function() {
             if(!window.currentUser) { window.showToast("Silakan login dulu.", false); window.openAuthModal(); return; }
@@ -1124,7 +1125,7 @@
                 document.getElementById('prevImg1').classList.add('hidden'); 
                 document.getElementById('prevImg1').src = "";
                 
-                // Form tetap terbuka agar bisa unggah lagi, atau bisa ditutup otomatis
+                // Form otomatis dibersihkan dan siap lagi
                 window.renderMitraCars();
             } catch (err) { 
                 window.showToast("Gagal mengunggah iklan.", false); 
@@ -1190,8 +1191,6 @@
             }
         };
 
-
-        // ================== SISTEM ADMIN (SUPER USER) ==================
 
         let adminClickCount = 0; let adminClickTimer = null;
         window.handleAdminClick = function() {
@@ -1427,8 +1426,6 @@
         };
 
 
-        // ================== MESIN RENDER HALAMAN UTAMA ==================
-
         window.renderCars = function(cat = "") {
             const c = document.getElementById('carListContainer'); if(!c) return; c.innerHTML = '';
             const f = window.carsData.filter(car => { 
@@ -1473,6 +1470,7 @@
             window.renderCars(cat); 
         };
 
+        // Mulai aplikasi
         window.onload = function() { startApp(); };
     </script>
 </body>
