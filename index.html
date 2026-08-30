@@ -559,7 +559,7 @@
                         <option value="1000000">Rp 1.000.000</option>
                     </select>
                 </div>
-                <button onclick="processTopUp()" id="btnTopUp" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold p-3.5 rounded shadow-md transition text-sm">Top Up Otomatis</button>
+                <button onclick="processTopUp()" id="btnTopUp" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold p-3.5 rounded shadow-md transition text-sm">Lanjutkan Transfer</button>
             </div>
         </div>
 
@@ -977,16 +977,24 @@
         };
 
         window.processTopUp = async function() {
-            const btn = document.getElementById('btnTopUp'); btn.innerText = "Mengirim..."; btn.disabled = true;
-            try {
-                const amount = parseInt(document.getElementById('topupAmount').value);
-                await window.fsUpdateDoc('users', window.currentUser.id, { balance: (window.currentUser.balance || 0) + amount });
-                window.showToast("Top Up Berhasil!"); window.closeAllModals();
-            } catch(e) { 
-                window.showToast("Gagal top up.", false); 
-            } finally { 
-                btn.innerText = "Top Up Otomatis"; btn.disabled = false; 
-            }
+            const amount = parseInt(document.getElementById('topupAmount').value);
+            const amtRp = formatRp(amount);
+            
+            window.showConfirm(
+                "Instruksi Transfer", 
+                `Silakan transfer nominal ${amtRp} ke rekening perusahaan:\n\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah transfer, klik 'Ya, Yakin' untuk konfirmasi.`, 
+                async () => {
+                    const btn = document.getElementById('btnTopUp'); btn.innerText = "Memproses..."; btn.disabled = true;
+                    try {
+                        await window.fsUpdateDoc('users', window.currentUser.id, { balance: (window.currentUser.balance || 0) + amount });
+                        window.showToast("Top Up Berhasil Masuk!"); window.closeAllModals();
+                    } catch(e) { 
+                        window.showToast("Gagal top up.", false); 
+                    } finally { 
+                        btn.innerText = "Lanjutkan Transfer"; btn.disabled = false; 
+                    }
+                }
+            );
         };
 
         window.openCheckoutModal = function(carId) {
@@ -1015,7 +1023,7 @@
                     await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: c.priceDay, status: "paid", payMethod: "otopay" });
                     window.showToast("Lunas! Pesanan dikonfirmasi otomatis.");
                 } else {
-                    window.showConfirm("Transfer Bank (Escrow)", `Silakan transfer ${formatRp(c.priceDay)} ke rekening Rekber: \n\nBCA 1234567 a/n PT OtoLink. \n\nJika sudah, klik 'Ya, Yakin' untuk verifikasi Admin.`, async () => {
+                    window.showConfirm("Transfer Bank", `Silakan transfer ${formatRp(c.priceDay)} ke rekening perusahaan:\n\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah, klik 'Ya, Yakin' untuk verifikasi Admin.`, async () => {
                         await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: c.priceDay, status: "pending_payment", payMethod: "transfer" });
                         window.showToast("Pesanan dibuat. Menunggu Verifikasi Admin.");
                     });
@@ -1277,6 +1285,37 @@
             });
         };
         window.confirmWithdrawal = function(id) { window.showConfirm("Konfirmasi Transfer", "Anda yakin sudah mentransfer uang ke Mitra ini secara manual?", async () => { try { await window.fsUpdateDoc('withdrawals', id, { status: 'transferred' }); window.showToast("Dana Berhasil Ditandai Ditransfer!"); } catch(e) { window.showToast("Gagal", false); } }); };
+
+        // ADMIN: Verifikasi Top Up
+        window.loadAdminTopups = function() {
+            const t = document.getElementById('adminTopupList'); t.innerHTML = '';
+            if(window.topupsData.length === 0) { t.innerHTML = `<tr><td colspan="5" class="text-center py-4">Tidak ada permintaan top up</td></tr>`; return; }
+            window.topupsData.forEach(tp => {
+                let sb = tp.status === 'pending' ? `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Menunggu Bukti</span>` : `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">Disetujui</span>`;
+                let ab = tp.status === 'pending' ? `<button onclick="approveTopup('${tp.id}', '${tp.userId}', ${tp.amount})" class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-blue-600 shadow mr-1">Verifikasi</button><button onclick="rejectTopup('${tp.id}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-red-600 shadow">Tolak</button>` : `-`;
+                t.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xs">${tp.topupRef}</td><td class="px-4 py-3 text-xs"><b>${tp.userName}</b></td><td class="px-4 py-3 font-bold text-blue-700">${formatRp(tp.amount)}</td><td class="px-4 py-3">${sb}</td><td class="px-4 py-3 text-center">${ab}</td></tr>`;
+            });
+        };
+        
+        window.approveTopup = function(id, userId, amount) { 
+            window.showConfirm("Setujui Top Up", `Apakah Anda sudah mengecek mutasi masuk BCA sebesar ${formatRp(amount)} dari pengguna ini?`, async () => { 
+                try { 
+                    const user = window.usersData.find(u => u.id === userId);
+                    if(user) {
+                        const currentBalance = user.balance || 0;
+                        await window.fsUpdateDoc('users', userId, { balance: currentBalance + amount });
+                    }
+                    await window.fsUpdateDoc('topups', id, { status: 'approved' }); 
+                    window.showToast("Top Up Disetujui! Saldo pengguna ditambahkan."); 
+                } catch(e) { window.showToast("Gagal memproses", false); } 
+            }); 
+        };
+
+        window.rejectTopup = function(id) { 
+            window.showConfirm("Tolak Top Up", "Tolak dan hapus permintaan ini?", async () => { 
+                try { await window.fsDeleteDoc('topups', id); window.showToast("Permintaan Top Up ditolak."); } catch(e) { window.showToast("Gagal", false); } 
+            }); 
+        };
 
         // ADMIN: Edit Pengguna
         window.loadAdminUsers = function() {
