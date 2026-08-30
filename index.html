@@ -30,7 +30,6 @@
 <body class="bg-gray-100 text-gray-800 font-sans antialiased overflow-x-hidden selection:bg-shopee selection:text-white">
 
     <div id="appContainer" class="min-h-screen pb-20 md:pb-0 block transition-all">
-        
         <header class="bg-shopee text-white sticky top-0 z-40 shadow-md">
             <!-- Top mini bar -->
             <div class="container mx-auto px-4 flex justify-between items-center h-8 text-xs font-semibold">
@@ -219,7 +218,6 @@
         </div>
         
         <div class="container mx-auto p-4 max-w-7xl mt-4">
-            <!-- Tabs Navigasi Admin -->
             <div class="flex gap-2 overflow-x-auto hide-scrollbar mb-4 border-b border-gray-300 pb-2">
                 <button onclick="switchAdminTab('verifikasi')" id="tab-verifikasi" class="admin-tab px-4 py-2 bg-blue-600 text-white rounded font-bold text-sm whitespace-nowrap shadow-sm">Verifikasi Iklan</button>
                 <button onclick="switchAdminTab('pesanan')" id="tab-pesanan" class="admin-tab px-4 py-2 bg-white text-gray-600 rounded font-bold text-sm whitespace-nowrap hover:bg-gray-50 border">Kelola Pesanan</button>
@@ -228,14 +226,14 @@
                 <button onclick="switchAdminTab('semuamobil')" id="tab-semuamobil" class="admin-tab px-4 py-2 bg-white text-gray-600 rounded font-bold text-sm whitespace-nowrap hover:bg-gray-50 border">Semua Iklan</button>
             </div>
 
-            <!-- TAB 1: Verifikasi -->
+            <!-- Tab 1: Verifikasi Iklan -->
             <div id="admin-verifikasi" class="admin-content bg-white rounded-lg shadow border p-5">
                 <h3 class="font-bold text-gray-800 border-b pb-3 mb-4 text-lg flex items-center gap-2"><i class="ph-fill ph-car"></i> Verifikasi Iklan Mobil</h3>
                 <p class="text-xs text-gray-500 mb-4">Iklan di bawah ini baru diajukan oleh Mitra dan menunggu persetujuan (Pending).</p>
                 <div id="adminCarsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
 
-            <!-- TAB 2: Pesanan -->
+            <!-- Tab 2: Kelola Pesanan -->
             <div id="admin-pesanan" class="admin-content hidden bg-white rounded-lg shadow border p-5">
                 <h3 class="font-bold text-gray-800 border-b pb-3 mb-4 text-lg flex items-center gap-2"><i class="ph-fill ph-receipt"></i> Kelola Semua Pesanan</h3>
                 <div class="overflow-x-auto">
@@ -254,7 +252,7 @@
                 </div>
             </div>
 
-            <!-- TAB 3: Pencairan Dana (Admin ke Mitra) -->
+            <!-- Tab 3: Pencairan Dana -->
             <div id="admin-pencairan" class="admin-content hidden bg-white rounded-lg shadow border p-5">
                 <h3 class="font-bold text-gray-800 border-b pb-3 mb-4 text-lg flex items-center gap-2 text-orange-600"><i class="ph-fill ph-bank"></i> Permintaan Pencairan Dana (Withdrawal)</h3>
                 <div class="overflow-x-auto">
@@ -274,7 +272,7 @@
                 </div>
             </div>
 
-            <!-- TAB 4: Pengguna -->
+            <!-- Tab 4: Pengguna & Mitra -->
             <div id="admin-pengguna" class="admin-content hidden bg-white rounded-lg shadow border p-5">
                 <h3 class="font-bold text-gray-800 border-b pb-3 mb-4 text-lg flex items-center gap-2"><i class="ph-fill ph-users"></i> Data Pengguna & Mitra</h3>
                 <div class="overflow-x-auto">
@@ -283,8 +281,8 @@
                             <tr>
                                 <th class="px-4 py-3 border-b">Nama</th>
                                 <th class="px-4 py-3 border-b">Kontak/Email</th>
-                                <th class="px-4 py-3 border-b">Tipe Akun</th>
-                                <th class="px-4 py-3 border-b text-center">Aksi</th>
+                                <th class="px-4 py-3 border-b">Saldo / Tipe</th>
+                                <th class="px-4 py-3 border-b text-center">Aksi Edit/Hapus</th>
                             </tr>
                         </thead>
                         <tbody id="adminUsersList"></tbody>
@@ -292,7 +290,7 @@
                 </div>
             </div>
 
-            <!-- TAB 5: Semua Iklan -->
+            <!-- Tab 5: Semua Iklan -->
             <div id="admin-semuamobil" class="admin-content hidden bg-white rounded-lg shadow border p-5">
                 <h3 class="font-bold text-gray-800 border-b pb-3 mb-4 text-lg flex items-center gap-2"><i class="ph-fill ph-list-dashes"></i> Kelola Semua Iklan Tayang</h3>
                 <div id="adminAllCarsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
@@ -332,7 +330,7 @@
                 </div>
             </div>
 
-            <!-- Form Pasang Iklan (Upload Foto Asli) -->
+            <!-- Form Pasang Iklan -->
             <div id="partnerAddCarForm" class="hidden bg-white p-6 rounded-lg shadow-sm border mb-6 transition-all">
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
                     <h4 class="font-bold text-gray-800 text-lg">Ajukan Iklan Unit Kendaraan Baru</h4>
@@ -363,12 +361,10 @@
                     
                     <div class="col-span-1 md:col-span-2 border-t pt-4 mt-2 bg-blue-50/50 p-4 rounded border border-blue-100">
                         <label class="text-sm font-bold mb-3 block text-gray-800"><i class="ph-fill ph-image"></i> Upload Foto Asli (Otomatis Dikompres)</label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-white p-3 rounded border shadow-sm">
-                                <label class="text-xs font-bold text-gray-700 mb-1 block">Foto Utama (Depan) *</label>
-                                <input type="file" id="pcImg1" accept="image/*" required class="w-full text-xs mb-2 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200 cursor-pointer">
-                                <img id="prevImg1" class="hidden w-full h-24 object-cover rounded border border-gray-200 mt-2">
-                            </div>
+                        <div class="bg-white p-3 rounded border shadow-sm w-full md:w-1/2">
+                            <label class="text-xs font-bold text-gray-700 mb-1 block">Foto Utama (Depan) *</label>
+                            <input type="file" id="pcImg1" accept="image/*" required class="w-full text-xs mb-2 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200 cursor-pointer">
+                            <img id="prevImg1" class="hidden w-full h-32 object-cover rounded border border-gray-200 mt-2">
                         </div>
                     </div>
 
@@ -586,7 +582,69 @@
             </div>
         </div>
 
-        <!-- Custom Confirm Modal (Anti Alert Bawaan) -->
+        <div id="editUserModal" class="bg-white w-full md:w-[400px] md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col absolute bottom-0 md:relative">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="ph-fill ph-pencil-simple text-blue-600 text-xl"></i> Edit Pengguna</h3>
+                <button onclick="closeAllModals()" class="text-gray-400 hover:text-gray-800 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center"><i class="ph ph-x text-lg"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-4">
+                <input type="hidden" id="euUid">
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Nama Lengkap</label>
+                    <input type="text" id="euName" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Kontak / Email</label>
+                    <input type="text" id="euEmail" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Saldo OtoPay (Rp)</label>
+                    <input type="number" id="euBalance" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Tipe Akun</label>
+                    <select id="euRole" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm">
+                        <option value="customer">Customer Biasa</option>
+                        <option value="mitra">Mitra (Pemilik Mobil)</option>
+                    </select>
+                </div>
+                <button onclick="saveUserEdit()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded shadow-md transition text-sm">Simpan Perubahan</button>
+            </div>
+        </div>
+
+        <div id="editCarModal" class="bg-white w-full md:w-[400px] md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col absolute bottom-0 md:relative">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="ph-fill ph-car text-blue-600 text-xl"></i> Edit Data Mobil</h3>
+                <button onclick="closeAllModals()" class="text-gray-400 hover:text-gray-800 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center"><i class="ph ph-x text-lg"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-3 h-[60vh] md:h-auto overflow-y-auto">
+                <input type="hidden" id="ecId">
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Nama Mobil</label>
+                    <input type="text" id="ecName" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Kategori</label>
+                    <select id="ecCategory" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm">
+                        <option value="Keluarga">Keluarga</option>
+                        <option value="SUV">SUV</option>
+                        <option value="Terlaris">Terlaris</option>
+                        <option value="Promo">Promo</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Harga Sewa / Hari (Rp)</label>
+                    <input type="number" id="ecPrice" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Kapasitas Kursi</label>
+                    <input type="number" id="ecSeat" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm">
+                </div>
+                <button onclick="saveCarEdit()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded shadow-md transition text-sm mt-2">Simpan Perubahan</button>
+            </div>
+        </div>
+
+        <!-- Modal Konfirmasi Custom -->
         <div id="confirmModal" class="bg-white w-[90%] md:w-80 rounded-xl shadow-2xl overflow-hidden hidden flex-col absolute">
             <div class="p-5 text-center">
                 <div class="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-fill ph-warning text-3xl"></i></div>
@@ -607,7 +665,6 @@
     </div>
 
     <script>
-        // --- DATABASE DUMMY (Cerdas) ---
         let currentUser = null; 
         
         let usersData = [
@@ -625,15 +682,14 @@
         
         let ordersData = [
             { id: "ORD-001", userId: "u1", userName: "Budi Santoso", carId: "c1", carName: "Toyota Avanza", ownerPhone: "official", total: 350000, status: "completed", payMethod: "otopay" },
-            { id: "ORD-002", userId: "u1", userName: "Budi Santoso", carId: "c4", carName: "Daihatsu Ayla", ownerPhone: "mitrademo", total: 200000, status: "pending_payment", payMethod: "transfer" }, // Nunggu diverifikasi admin
-            { id: "ORD-003", userId: "u1", userName: "Budi Santoso", carId: "c4", carName: "Daihatsu Ayla", ownerPhone: "mitrademo", total: 400000, status: "completed", payMethod: "otopay" } // Selesai, masuk ke pendapatan mitra
+            { id: "ORD-002", userId: "u1", userName: "Budi Santoso", carId: "c4", carName: "Daihatsu Ayla", ownerPhone: "mitrademo", total: 200000, status: "pending_payment", payMethod: "transfer" },
+            { id: "ORD-003", userId: "u1", userName: "Budi Santoso", carId: "c4", carName: "Daihatsu Ayla", ownerPhone: "mitrademo", total: 400000, status: "completed", payMethod: "otopay" }
         ];
 
         let withdrawalsData = [
             { id: "WD-001", mitraEmail: "mitrademo", mitraName: "Agus (Mitra)", amount: 100000, bank: "BCA", account: "0812345678", status: "pending" }
         ];
 
-        // --- HELPER FUNCTIONS ---
         const formatRp = (num) => "Rp " + parseInt(num).toLocaleString('id-ID');
         const generateId = (prefix) => prefix + '-' + Math.floor(Math.random() * 10000);
 
@@ -647,14 +703,13 @@
             setTimeout(() => { t.classList.add('opacity-0', '-translate-y-20', 'pointer-events-none'); }, 3000);
         }
 
-        // --- MANAJEMEN MODAL / POP-UP (RAPIH) ---
         function closeAllModals() {
             const overlay = document.getElementById('modalOverlay');
             if(overlay) {
                 overlay.classList.add('opacity-0', 'pointer-events-none');
                 setTimeout(() => { 
                     overlay.classList.add('hidden'); overlay.classList.remove('flex');
-                    ['authModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal'].forEach(id => {
+                    ['authModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal'].forEach(id => {
                         const el = document.getElementById(id);
                         if(el) { el.classList.add('hidden'); el.classList.remove('flex'); }
                     });
@@ -666,7 +721,7 @@
             const overlay = document.getElementById('modalOverlay');
             overlay.classList.remove('hidden', 'pointer-events-none');
             overlay.classList.add('flex');
-            ['authModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal'].forEach(modalId => {
+            ['authModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal'].forEach(modalId => {
                 const el = document.getElementById(modalId);
                 if(el) { 
                     if(modalId === id) { el.classList.remove('hidden'); el.classList.add('flex'); } 
@@ -676,7 +731,6 @@
             setTimeout(() => { overlay.classList.remove('opacity-0'); overlay.classList.add('opacity-100'); }, 10);
         }
 
-        // --- CUSTOM CONFIRM MODAL (PENGGANTI ALERT) ---
         let confirmAction = null;
         function showConfirm(title, message, actionFunc) {
             document.getElementById('confirmTitle').innerText = title;
@@ -684,16 +738,9 @@
             confirmAction = actionFunc;
             openModal('confirmModal');
         }
-        function closeConfirm() {
-            confirmAction = null;
-            closeAllModals();
-        }
-        document.getElementById('confirmYesBtn').addEventListener('click', () => {
-            if(confirmAction) confirmAction();
-            closeConfirm();
-        });
+        function closeConfirm() { confirmAction = null; closeAllModals(); }
+        document.getElementById('confirmYesBtn').addEventListener('click', () => { if(confirmAction) confirmAction(); closeConfirm(); });
 
-        // --- LOGIN & AUTH (DUMMY Cerdas) ---
         let isRegisterMode = false;
         window.toggleAuthMode = function(mode) {
             isRegisterMode = mode === 'register';
@@ -709,6 +756,7 @@
                 document.getElementById('authName').removeAttribute('required');
             }
         }
+        
         window.openAuthModal = function() { toggleAuthMode('login'); openModal('authModal'); }
 
         window.handleAuthSubmit = function(e) {
@@ -717,10 +765,8 @@
             const originalText = btn.innerText;
             btn.innerText = "Memproses..."; btn.disabled = true;
 
-            setTimeout(() => { // Simulasi loading
+            setTimeout(() => { 
                 let rawEmail = document.getElementById('authEmail').value.trim();
-                let password = document.getElementById('authPassword').value;
-
                 if (isRegisterMode) {
                     let name = document.getElementById('authName').value;
                     let newUser = { uid: "u" + Date.now(), name: name, email: rawEmail, isPartner: false, balance: 0 };
@@ -728,7 +774,6 @@
                     currentUser = newUser;
                     showToast("Pendaftaran Berhasil!");
                 } else {
-                    // Cari user (Login)
                     let found = usersData.find(u => u.email === rawEmail);
                     if(found) {
                         currentUser = found;
@@ -746,13 +791,7 @@
             }, 800);
         }
 
-        window.logout = function() {
-            currentUser = null; 
-            updateUserUI(); 
-            closeAllModals(); 
-            closePartnerPanel(); 
-            showToast("Berhasil keluar.");
-        }
+        window.logout = function() { currentUser = null; updateUserUI(); closeAllModals(); closePartnerPanel(); showToast("Berhasil keluar."); }
 
         window.updateUserUI = function() {
             if (currentUser) {
@@ -761,10 +800,8 @@
                 document.getElementById('desktopUserName').innerText = currentUser.name.split(' ')[0];
                 document.getElementById('desktopOtopayBtn').classList.remove('hidden');
                 document.getElementById('desktopOtopayBtn').classList.add('flex');
-                
                 document.getElementById('mobileOtopayBtn').classList.remove('hidden');
                 document.getElementById('mobileOtopayBtn').classList.add('flex');
-                
                 updateOtopayBalanceUI();
                 
                 const mobileText = document.getElementById('mobileUserText');
@@ -786,7 +823,6 @@
                 document.getElementById('desktopOtopayBtn').classList.add('hidden');
                 document.getElementById('desktopOtopayBtn').classList.remove('flex');
                 document.getElementById('topPartnerLink').innerHTML = 'Mulai Sewakan Mobil';
-                
                 document.getElementById('mobileOtopayBtn').classList.add('hidden');
                 document.getElementById('mobileOtopayBtn').classList.remove('flex');
                 
@@ -816,7 +852,6 @@
             }
         };
 
-        // --- SISTEM OTOPAY & TOP UP ---
         window.updateOtopayBalanceUI = function() {
             if(!currentUser) return;
             const balFormat = formatRp(currentUser.balance || 0);
@@ -828,8 +863,7 @@
 
         window.openOtopay = function() {
             if(!currentUser) { showToast("Login dulu untuk buka OtoPay", false); openAuthModal(); return; }
-            updateOtopayBalanceUI();
-            openModal('otopayModal');
+            updateOtopayBalanceUI(); openModal('otopayModal');
         }
 
         window.processTopUp = function() {
@@ -838,8 +872,7 @@
             setTimeout(() => {
                 const amount = parseInt(document.getElementById('topupAmount').value);
                 currentUser.balance = (currentUser.balance || 0) + amount;
-                updateOtopayBalanceUI();
-                showToast("Top Up Saldo Berhasil!");
+                updateOtopayBalanceUI(); showToast("Top Up Saldo Berhasil!");
                 closeAllModals();
                 btn.innerText = "Top Up Otomatis (Demo)"; btn.disabled = false;
             }, 1000);
@@ -847,7 +880,6 @@
 
         window.openCheckoutModal = function(carId) {
             if(!currentUser) { showToast("Silakan login untuk memesan mobil.", false); openAuthModal(); return; }
-            
             const car = carsData.find(c => c.id === carId);
             if(!car) return;
 
@@ -857,18 +889,17 @@
             document.getElementById('coCarName').innerText = car.name;
             document.getElementById('coCarCat').innerText = car.category;
             document.getElementById('coCarPrice').innerText = formatRp(car.priceDay) + " / hari";
-            document.getElementById('coTotal').innerText = formatRp(car.priceDay); // Asumsi 1 hari
+            document.getElementById('coTotal').innerText = formatRp(car.priceDay); 
             
-            updateOtopayBalanceUI();
-            openModal('checkoutModal');
+            updateOtopayBalanceUI(); openModal('checkoutModal');
         }
 
         window.processPayment = function() {
             const payMethod = document.querySelector('input[name="payMethod"]:checked').value;
             const carId = document.getElementById('coCarId').value;
             const car = carsData.find(c => c.id === carId);
-            
             const btn = document.getElementById('btnBayarSekarang');
+            
             btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Memproses...`; btn.disabled = true;
 
             setTimeout(() => {
@@ -878,34 +909,31 @@
                         btn.innerHTML = `<i class="ph-fill ph-lock-key"></i> Bayar Sekarang`; btn.disabled = false;
                         return;
                     }
-                    // Potong Saldo
                     currentUser.balance -= car.priceDay;
                     updateOtopayBalanceUI();
                     
-                    // Buat Order LUNAS
                     ordersData.push({
                         id: generateId("ORD"), userId: currentUser.uid, userName: currentUser.name, 
                         carId: car.id, carName: car.name, ownerPhone: car.ownerPhone, 
-                        total: car.priceDay, status: "paid", payMethod: "otopay" // Paid = lunas (menunggu di pick up)
+                        total: car.priceDay, status: "paid", payMethod: "otopay" 
                     });
                     showToast("Pembayaran Berhasil! Pesanan Dibuat.");
                 } else {
-                    // Buat Order PENDING (Transfer)
-                    ordersData.push({
-                        id: generateId("ORD"), userId: currentUser.uid, userName: currentUser.name, 
-                        carId: car.id, carName: car.name, ownerPhone: car.ownerPhone, 
-                        total: car.priceDay, status: "pending_payment", payMethod: "transfer"
+                    showConfirm("Transfer Rekening", `Silakan transfer sejumlah ${formatRp(car.priceDay)} ke rekening BCA 1234567 a/n PT OtoLink. Jika sudah, klik 'Sudah Transfer'.`, () => {
+                        ordersData.push({
+                            id: generateId("ORD"), userId: currentUser.uid, userName: currentUser.name, 
+                            carId: car.id, carName: car.name, ownerPhone: car.ownerPhone, 
+                            total: car.priceDay, status: "pending_payment", payMethod: "transfer"
+                        });
+                        showToast("Pesanan Dibuat. Menunggu Verifikasi Admin.");
                     });
-                    showToast("Pesanan Dibuat. Silakan transfer dan tunggu konfirmasi Admin.");
                 }
-                
                 closeAllModals();
                 btn.innerHTML = `<i class="ph-fill ph-lock-key"></i> Bayar Sekarang`; btn.disabled = false;
             }, 1200);
         }
 
-        window.openMyOrders = function() { showToast("Riwayat Pesanan bisa dilihat di Dashboard Admin untuk demo ini."); closeAllModals(); };
-
+        window.openMyOrders = function() { showToast("Cek tab 'Kelola Pesanan' di Menu Admin (Klik Logo 3x) untuk demo ini."); closeAllModals(); };
 
         window.handlePartnerClick = function() {
             if(!currentUser) { showToast("Login dulu untuk mendaftar Mitra", false); openAuthModal(); return; }
@@ -920,10 +948,8 @@
 
             setTimeout(() => {
                 currentUser.isPartner = true;
-                updateUserUI();
-                showToast("Pendaftaran Berhasil! Anda kini Mitra.");
-                closeAllModals();
-                e.target.reset();
+                updateUserUI(); showToast("Berhasil! Akun Mitra Anda otomatis disetujui.");
+                closeAllModals(); e.target.reset();
                 btn.innerText = "Kirim Pendaftaran & Buka Dashboard"; btn.disabled = false;
                 openMitraDashboard(); 
             }, 1000);
@@ -934,9 +960,8 @@
             document.getElementById('partnerPanel').classList.remove('hidden'); 
             document.getElementById('partnerDashName').innerText = `Halo, ${currentUser ? currentUser.name : 'Mitra'}`; 
             
-            closeAllModals();
-            closeAddCarForm(); 
-            renderMitraCars(); // Hitung pendapatan & list mobil
+            closeAllModals(); closeAddCarForm(); 
+            renderMitraCars(); 
             window.scrollTo(0, 0); 
         }
         
@@ -948,7 +973,6 @@
         window.openAddCarForm = function() { document.getElementById('partnerAddCarForm').classList.remove('hidden'); }
         window.closeAddCarForm = function() { document.getElementById('partnerAddCarForm').classList.add('hidden'); }
 
-        // Kompresi Foto
         function compressImage(file, maxWidth = 800) {
             return new Promise((resolve, reject) => {
                 if (!file) return resolve("");
@@ -993,13 +1017,9 @@
                 const imgBase64 = await compressImage(file1); 
 
                 const newCarData = {
-                    id: generateId("CAR"),
-                    ownerPhone: currentUser.email,
-                    status: 'pending', 
-                    name: document.getElementById('pcName').value,
-                    category: document.getElementById('pcType').value,
-                    priceDay: parseInt(document.getElementById('pcPriceDay').value),
-                    seat: parseInt(document.getElementById('pcSeat').value),
+                    id: generateId("CAR"), ownerPhone: currentUser.email, status: 'pending', 
+                    name: document.getElementById('pcName').value, category: document.getElementById('pcType').value,
+                    priceDay: parseInt(document.getElementById('pcPriceDay').value), seat: parseInt(document.getElementById('pcSeat').value),
                     img: imgBase64
                 };
 
@@ -1007,9 +1027,7 @@
                 showToast("Iklan berhasil dikirim! Menunggu persetujuan Admin.");
                 
                 e.target.reset();
-                document.getElementById('prevImg1').classList.add('hidden'); 
-                document.getElementById('prevImg1').src = "";
-                
+                document.getElementById('prevImg1').classList.add('hidden'); document.getElementById('prevImg1').src = "";
                 renderMitraCars(); 
                 
             } catch (error) {
@@ -1025,21 +1043,16 @@
             const container = document.getElementById('partnerCarList'); 
             if(!currentUser) return;
             
-            // 1. Ambil semua pesanan yg sudah SELESAI dari mobil milik mitra ini
             const myCompletedOrders = ordersData.filter(o => o.ownerPhone === currentUser.email && o.status === 'completed');
             const grossEarnings = myCompletedOrders.reduce((sum, order) => sum + order.total, 0);
-            
-            // 2. Hitung Bersih (Potong Fee 7% / Bagi Hasil 93%)
             const netEarnings = grossEarnings * 0.93;
             
-            // 3. Kurangi dengan dana yang SUDAH ditarik / sedang diproses penarikan
             const myWithdrawals = withdrawalsData.filter(w => w.mitraEmail === currentUser.email);
             const totalWithdrawn = myWithdrawals.reduce((sum, wd) => sum + wd.amount, 0);
             
             currentMitraAvailableEarnings = netEarnings - totalWithdrawn;
             document.getElementById('partnerRevenue').innerText = formatRp(currentMitraAvailableEarnings);
 
-            // Render Daftar Mobil
             const myCars = carsData.filter(c => c.ownerPhone === currentUser.email);
             if(myCars.length === 0) { 
                 container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-10 bg-gray-50 rounded border border-dashed">Anda belum memiliki iklan mobil.</div>`; 
@@ -1070,17 +1083,14 @@
         window.deleteCar = function(carId) {
             showConfirm("Hapus Iklan?", "Yakin ingin menghapus iklan mobil ini dari sistem?", () => {
                 carsData = carsData.filter(c => c.id !== carId);
-                renderMitraCars();
-                showToast("Iklan berhasil dihapus.");
+                renderMitraCars(); showToast("Iklan berhasil dihapus.");
             });
         }
 
         window.openWithdrawModal = function() {
-            if(currentMitraAvailableEarnings < 50000) {
-                showToast("Minimal penarikan saldo adalah Rp 50.000", false); return;
-            }
+            if(currentMitraAvailableEarnings < 50000) { showToast("Minimal penarikan saldo adalah Rp 50.000", false); return; }
             document.getElementById('wdAvailableBal').innerText = formatRp(currentMitraAvailableEarnings);
-            document.getElementById('wdAmount').value = currentMitraAvailableEarnings; // Default max
+            document.getElementById('wdAmount').value = currentMitraAvailableEarnings; 
             openModal('withdrawModal');
         }
 
@@ -1089,12 +1099,8 @@
             const bank = document.getElementById('wdBank').value;
             const account = document.getElementById('wdAccount').value;
             
-            if(!amount || amount < 50000 || amount > currentMitraAvailableEarnings) {
-                showToast("Nominal tidak valid atau melebihi saldo.", false); return;
-            }
-            if(!account) {
-                showToast("Masukkan nomor rekening/hp", false); return;
-            }
+            if(!amount || amount < 50000 || amount > currentMitraAvailableEarnings) { showToast("Nominal tidak valid atau melebihi saldo.", false); return; }
+            if(!account) { showToast("Masukkan nomor rekening/hp", false); return; }
 
             const btn = document.getElementById('btnWithdraw');
             btn.innerText = "Memproses..."; btn.disabled = true;
@@ -1105,22 +1111,17 @@
                     amount: amount, bank: bank, account: account, status: "pending"
                 });
                 showToast("Permintaan pencairan berhasil dikirim ke Admin!");
-                closeAllModals();
-                renderMitraCars(); // Akan memotong saldo di tampilan
+                closeAllModals(); renderMitraCars(); 
                 btn.innerText = "Ajukan Penarikan"; btn.disabled = false;
             }, 1000);
         }
 
-        let adminClickCount = 0;
-        let adminClickTimer = null;
-
+        let adminClickCount = 0; let adminClickTimer = null;
         window.handleAdminClick = function() {
             adminClickCount++;
             if(adminClickTimer) clearTimeout(adminClickTimer);
             if(adminClickCount >= 3) {
-                adminClickCount = 0;
-                showToast("Berhasil masuk Mode Admin!");
-                openAdminPanel(); 
+                adminClickCount = 0; showToast("Berhasil masuk Mode Admin!"); openAdminPanel(); 
             } else {
                 adminClickTimer = setTimeout(() => { adminClickCount = 0; window.scrollTo({ top: 0, behavior: 'smooth' }); }, 1500);
             }
@@ -1130,14 +1131,13 @@
             document.getElementById('appContainer').classList.add('hidden'); 
             document.getElementById('partnerPanel').classList.add('hidden'); 
             document.getElementById('adminPanel').classList.remove('hidden');
-            closeAllModals();
-            switchAdminTab('verifikasi'); 
+            closeAllModals(); switchAdminTab('verifikasi'); 
         }
 
         window.closeAdminPanel = function() {
             document.getElementById('adminPanel').classList.add('hidden');
             document.getElementById('appContainer').classList.remove('hidden'); 
-            renderCars(); // Refresh homepage
+            renderCars(); 
         }
 
         window.switchAdminTab = function(tabName) {
@@ -1148,11 +1148,8 @@
 
             document.getElementById('admin-' + tabName).classList.remove('hidden');
             let activeTab = document.getElementById('tab-' + tabName);
-            if(tabName === 'pencairan') {
-                 activeTab.className = "admin-tab px-4 py-2 bg-orange-500 text-white rounded font-bold text-sm whitespace-nowrap shadow-sm";
-            } else {
-                 activeTab.className = "admin-tab px-4 py-2 bg-blue-600 text-white rounded font-bold text-sm whitespace-nowrap shadow-sm";
-            }
+            if(tabName === 'pencairan') activeTab.className = "admin-tab px-4 py-2 bg-orange-500 text-white rounded font-bold text-sm whitespace-nowrap shadow-sm";
+            else activeTab.className = "admin-tab px-4 py-2 bg-blue-600 text-white rounded font-bold text-sm whitespace-nowrap shadow-sm";
 
             if(tabName === 'verifikasi') loadAdminData();
             if(tabName === 'pesanan') loadAdminOrders();
@@ -1161,7 +1158,6 @@
             if(tabName === 'semuamobil') loadAdminAllCars();
         }
 
-        // 1. Verifikasi Iklan Baru
         window.loadAdminData = function() {
             const container = document.getElementById('adminCarsList');
             const pendingCars = carsData.filter(c => c.status === 'pending');
@@ -1190,8 +1186,7 @@
         window.approveCar = function(carId) {
             let car = carsData.find(c => c.id === carId);
             if(car) car.status = 'approved';
-            showToast("Iklan berhasil DISYETUJUI dan tayang!");
-            loadAdminData(); 
+            showToast("Iklan berhasil DISYETUJUI dan tayang!"); loadAdminData(); 
         }
 
         window.rejectCar = function(carId) {
@@ -1203,17 +1198,13 @@
             });
         }
 
-        // 2. Kelola Pesanan (Ubah Status)
         window.loadAdminOrders = function() {
-            const tbody = document.getElementById('adminOrdersList');
-            tbody.innerHTML = '';
-            if(ordersData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Belum ada transaksi</td></tr>`; return;
-            }
+            const tbody = document.getElementById('adminOrdersList'); tbody.innerHTML = '';
+            if(ordersData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Belum ada transaksi</td></tr>`; return; }
             ordersData.forEach(o => {
                 let statusBadge, actionBtn = '';
                 if(o.status === 'pending_payment') {
-                    statusBadge = `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Menunggu Transfer</span>`;
+                    statusBadge = `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Tunggu Transfer</span>`;
                     actionBtn = `<button onclick="updateOrderStatus('${o.id}', 'paid')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-blue-600">Verifikasi Bayar</button>`;
                 } else if(o.status === 'paid') {
                     statusBadge = `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">Lunas (Berjalan)</span>`;
@@ -1241,13 +1232,9 @@
             loadAdminOrders();
         }
 
-        // 3. Pencairan Dana Mitra
         window.loadAdminWithdrawals = function() {
-            const tbody = document.getElementById('adminWithdrawalsList');
-            tbody.innerHTML = '';
-            if(withdrawalsData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Belum ada request pencairan</td></tr>`; return;
-            }
+            const tbody = document.getElementById('adminWithdrawalsList'); tbody.innerHTML = '';
+            if(withdrawalsData.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Belum ada request pencairan</td></tr>`; return; }
             withdrawalsData.forEach(w => {
                 let statusBadge = w.status === 'pending' 
                     ? `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Menunggu Transfer</span>` 
@@ -1273,30 +1260,61 @@
             showConfirm("Konfirmasi Transfer", "Apakah Anda sudah mentransfer uang ke rekening Mitra?", () => {
                 let wd = withdrawalsData.find(w => w.id === wdId);
                 if(wd) wd.status = 'transferred';
-                showToast("Pencairan dana ditandai Selesai.");
-                loadAdminWithdrawals();
+                showToast("Pencairan dana ditandai Selesai."); loadAdminWithdrawals();
             });
         }
 
-        // 4. Data Pengguna
+        // FITUR EDIT PENGGUNA (BARU)
         window.loadAdminUsers = function() {
-            const tbody = document.getElementById('adminUsersList');
-            tbody.innerHTML = '';
+            const tbody = document.getElementById('adminUsersList'); tbody.innerHTML = '';
             usersData.forEach(u => {
                 let role = u.isPartner ? `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs"><i class="ph-fill ph-handshake"></i> Mitra</span>` : `<span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Customer</span>`;
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="px-4 py-3 font-bold">${u.name}</td>
                         <td class="px-4 py-3 text-xs">${u.email}</td>
-                        <td class="px-4 py-3">${role}</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="text-xs text-gray-400">Aktif</span>
+                        <td class="px-4 py-3 text-xs font-bold text-orange-600">${formatRp(u.balance || 0)}<br><div class="mt-1">${role}</div></td>
+                        <td class="px-4 py-3 text-center flex gap-1 justify-center">
+                            <button onclick="openEditUserModal('${u.uid}')" class="bg-blue-100 text-blue-600 p-1.5 rounded hover:bg-blue-200" title="Edit"><i class="ph-fill ph-pencil-simple text-sm"></i></button>
+                            <button onclick="deleteUser('${u.uid}')" class="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200" title="Hapus"><i class="ph-fill ph-trash text-sm"></i></button>
                         </td>
                     </tr>`;
             });
         }
 
-        // 5. Semua Iklan
+        window.openEditUserModal = function(uid) {
+            let u = usersData.find(x => x.uid === uid);
+            if(!u) return;
+            document.getElementById('euUid').value = u.uid;
+            document.getElementById('euName').value = u.name;
+            document.getElementById('euEmail').value = u.email;
+            document.getElementById('euBalance').value = u.balance || 0;
+            document.getElementById('euRole').value = u.isPartner ? 'mitra' : 'customer';
+            openModal('editUserModal');
+        }
+
+        window.saveUserEdit = function() {
+            let uid = document.getElementById('euUid').value;
+            let u = usersData.find(x => x.uid === uid);
+            if(u) {
+                u.name = document.getElementById('euName').value;
+                u.email = document.getElementById('euEmail').value;
+                u.balance = parseInt(document.getElementById('euBalance').value) || 0;
+                u.isPartner = document.getElementById('euRole').value === 'mitra';
+                showToast("Data pengguna berhasil diubah!");
+                closeAllModals(); loadAdminUsers();
+                if(currentUser && currentUser.uid === uid) { currentUser = u; updateUserUI(); } // Update diri sendiri
+            }
+        }
+
+        window.deleteUser = function(uid) {
+            showConfirm("Hapus Pengguna?", "Semua data terkait pengguna ini (termasuk saldo) akan hilang secara permanen.", () => {
+                usersData = usersData.filter(x => x.uid !== uid);
+                showToast("Pengguna berhasil dihapus."); loadAdminUsers();
+            });
+        }
+
+        // FITUR EDIT MOBIL (BARU)
         window.loadAdminAllCars = function() {
             const container = document.getElementById('adminAllCarsList');
             const activeCars = carsData.filter(c => c.status === 'approved');
@@ -1306,13 +1324,41 @@
                 <div class="border rounded p-2 bg-white flex items-center gap-3 relative group shadow-sm">
                     <img src="${car.img}" class="w-16 h-16 object-cover rounded">
                     <div class="flex-grow">
-                        <h4 class="font-bold text-xs truncate">${car.name}</h4>
-                        <p class="text-[10px] text-gray-500">Pemilik: ${car.ownerPhone}</p>
+                        <h4 class="font-bold text-xs truncate" title="${car.name}">${car.name}</h4>
+                        <p class="text-[10px] text-gray-500 mb-1">P: ${car.ownerPhone}</p>
+                        <span class="text-xs font-bold text-shopee">${formatRp(car.priceDay)}</span>
                     </div>
-                    <button onclick="rejectCar('${car.id}')" class="text-red-500 p-2 hover:bg-red-50 rounded transition" title="Hapus Iklan"><i class="ph-fill ph-trash"></i></button>
+                    <div class="flex flex-col gap-1 shrink-0">
+                        <button onclick="openEditCarModal('${car.id}')" class="text-blue-500 bg-blue-50 p-1.5 hover:bg-blue-100 rounded transition" title="Edit Iklan"><i class="ph-fill ph-pencil-simple text-sm"></i></button>
+                        <button onclick="rejectCar('${car.id}')" class="text-red-500 bg-red-50 p-1.5 hover:bg-red-100 rounded transition" title="Hapus Iklan"><i class="ph-fill ph-trash text-sm"></i></button>
+                    </div>
                 </div>`;
             });
             container.innerHTML = html;
+        }
+
+        window.openEditCarModal = function(carId) {
+            let c = carsData.find(x => x.id === carId);
+            if(!c) return;
+            document.getElementById('ecId').value = c.id;
+            document.getElementById('ecName').value = c.name;
+            document.getElementById('ecCategory').value = c.category;
+            document.getElementById('ecPrice').value = c.priceDay;
+            document.getElementById('ecSeat').value = c.seat;
+            openModal('editCarModal');
+        }
+
+        window.saveCarEdit = function() {
+            let id = document.getElementById('ecId').value;
+            let c = carsData.find(x => x.id === id);
+            if(c) {
+                c.name = document.getElementById('ecName').value;
+                c.category = document.getElementById('ecCategory').value;
+                c.priceDay = parseInt(document.getElementById('ecPrice').value) || 0;
+                c.seat = parseInt(document.getElementById('ecSeat').value) || 0;
+                showToast("Data mobil berhasil diubah!");
+                closeAllModals(); loadAdminAllCars(); renderCars(); 
+            }
         }
 
         window.renderCars = function(filterCat = "") {
@@ -1377,9 +1423,7 @@
             renderCars(categoryName); 
         }
 
-        window.onload = function() { 
-            renderCars(); 
-        }
+        window.onload = function() { renderCars(); }
     </script>
 </body>
 </html>
