@@ -29,6 +29,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased overflow-x-hidden selection:bg-shopee selection:text-white">
 
+    <!-- Kontainer Utama -->
     <div id="appContainer" class="min-h-screen pb-20 md:pb-0 block transition-all">
         <header class="bg-shopee text-white sticky top-0 z-40 shadow-md">
             <!-- Top mini bar -->
@@ -160,17 +161,17 @@
                     <div>
                         <h4 class="font-bold text-sm mb-4">Layanan Pelanggan</h4>
                         <ul class="text-xs text-gray-500 space-y-2">
-                            <li><a href="javascript:void(0)" onclick="document.getElementById('mainCarSection').scrollIntoView({behavior: 'smooth'})" class="hover:text-shopee transition">Sewa Mobil</a></li>
-                            <li><a href="javascript:void(0)" onclick="handlePartnerClick()" class="hover:text-shopee transition">Jadi Mitra</a></li>
-                            <li><a href="javascript:void(0)" onclick="openOtopay()" class="hover:text-shopee transition">OtoPay</a></li>
+                            <li><a href="javascript:void(0)" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hover:text-shopee transition block py-1">Sewa Mobil</a></li>
+                            <li><a href="javascript:void(0)" onclick="handlePartnerClick()" class="hover:text-shopee transition block py-1">Jadi Mitra</a></li>
+                            <li><a href="javascript:void(0)" onclick="openOtopay()" class="hover:text-shopee transition block py-1">OtoPay</a></li>
                         </ul>
                     </div>
                     <div>
                         <h4 class="font-bold text-sm mb-4">Kontak Kami</h4>
                         <ul class="text-xs text-gray-500 space-y-2">
-                            <li class="flex items-center gap-2"><i class="ph-fill ph-envelope"></i> cskalimaja@gmail.com</li>
-                            <li class="flex items-center gap-2"><i class="ph-fill ph-globe"></i> www.otolink.web.id</li>
-                            <li class="flex items-center gap-2"><i class="ph-fill ph-phone"></i> 087811559627</li>
+                            <li class="flex items-center gap-2 py-1"><i class="ph-fill ph-envelope"></i> cskalimaja@gmail.com</li>
+                            <li class="flex items-center gap-2 py-1"><i class="ph-fill ph-globe"></i> www.otolink.web.id</li>
+                            <li class="flex items-center gap-2 py-1"><i class="ph-fill ph-phone"></i> 087811559627</li>
                         </ul>
                     </div>
                     <div>
@@ -189,6 +190,7 @@
             </div>
         </footer>
 
+        <!-- Mobile Bottom Nav -->
         <nav class="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center h-16 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-40 text-gray-500">
             <a href="#" onclick="window.scrollTo(0,0)" class="flex flex-col items-center w-full py-1 text-shopee font-bold">
                 <i class="ph-fill ph-house text-2xl mb-1"></i>
@@ -307,7 +309,9 @@
         </div>
 
         <div class="container mx-auto p-4 max-w-6xl mt-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Statistik Mitra -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <!-- Info & Pasang Iklan -->
                 <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-green-500 md:col-span-2 flex flex-col justify-center">
                     <h3 class="font-bold text-gray-800 text-lg md:text-xl mb-1" id="partnerDashName">Halo, Mitra</h3>
                     <p class="text-sm text-gray-500 mb-4">Kelola unit kendaraan Anda dan pantau persetujuan iklan agar segera tayang di OtoLink.</p>
@@ -317,16 +321,23 @@
                         </button>
                     </div>
                 </div>
-                <div class="bg-gradient-to-br from-green-500 to-green-700 p-5 rounded-lg shadow-sm text-white flex flex-col justify-center relative overflow-hidden group">
+                <!-- Kartu Saldo (Revenue) -->
+                <div class="bg-gradient-to-br from-green-500 to-green-700 p-5 rounded-lg shadow-sm text-white flex flex-col justify-center relative overflow-hidden group md:col-span-1">
                     <i class="ph-fill ph-money absolute -right-4 -bottom-4 text-7xl opacity-20 transition group-hover:scale-110"></i>
-                    <span class="text-sm opacity-90 mb-1 font-medium">Saldo Pendapatan (Bisa Ditarik)</span>
-                    <span class="text-2xl md:text-3xl font-black mb-2" id="partnerRevenue">Rp 0</span>
-                    <div class="flex items-center gap-2 mt-2 z-10">
-                        <button onclick="openWithdrawModal()" class="bg-white text-green-700 hover:bg-green-50 px-3 py-1.5 rounded text-xs font-bold shadow-sm transition flex items-center gap-1">
+                    <span class="text-sm opacity-90 mb-1 font-medium">Saldo (Bisa Ditarik)</span>
+                    <span class="text-2xl font-black mb-2 truncate" id="partnerRevenue">Rp 0</span>
+                    <div class="flex items-center gap-2 mt-auto z-10">
+                        <button onclick="openWithdrawModal()" class="bg-white text-green-700 hover:bg-green-50 px-3 py-1.5 rounded text-xs font-bold shadow-sm transition flex items-center gap-1 w-full justify-center">
                             <i class="ph-fill ph-bank"></i> Tarik Dana
                         </button>
-                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded w-max flex items-center gap-1"><i class="ph-fill ph-trend-up"></i> Bagi Hasil 93%</span>
                     </div>
+                </div>
+                <!-- Kartu Total Iklan -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center text-center relative overflow-hidden">
+                    <i class="ph-fill ph-car absolute -left-4 -bottom-4 text-6xl text-gray-100"></i>
+                    <span class="text-xs text-gray-500 mb-1 font-bold z-10">Total Iklan Aktif</span>
+                    <span class="text-4xl font-black text-gray-800 z-10" id="partnerTotalCars">0</span>
+                    <span class="text-[10px] text-green-500 font-bold mt-1 bg-green-50 px-2 py-0.5 rounded z-10">Unit Tayang</span>
                 </div>
             </div>
 
@@ -336,7 +347,7 @@
                     <h4 class="font-bold text-gray-800 text-lg">Ajukan Iklan Unit Kendaraan Baru</h4>
                     <button onclick="closeAddCarForm()" class="text-gray-400 hover:text-red-500"><i class="ph ph-x text-xl"></i></button>
                 </div>
-                <form onsubmit="handlePartnerAddCar(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onsubmit="handlePartnerAddCar(event)" id="formUploadMobil" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="text-sm font-semibold mb-1 block text-gray-700">Merek & Tipe Mobil</label>
                         <input type="text" id="pcName" required class="w-full p-2.5 border rounded outline-none focus:ring-2 focus:ring-green-500 bg-gray-50" placeholder="Cth: Toyota Avanza">
@@ -383,7 +394,7 @@
                     <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="ph-fill ph-list-dashes"></i> Daftar Iklan Mobil Saya</h3>
                 </div>
                 <div class="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="partnerCarList">
-                    <!-- List iklan mitra -->
+                    <!-- List iklan mitra akan di-render ke sini -->
                 </div>
             </div>
         </div>
@@ -424,6 +435,19 @@
             </div>
         </div>
 
+        <!-- Modal Admin Auth (Security Gembok) -->
+        <div id="adminAuthModal" class="bg-white w-full md:w-96 md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col absolute bottom-0 md:relative">
+            <div class="bg-gray-900 p-4 text-white flex justify-between items-center sticky top-0 z-10 shrink-0">
+                <div class="flex items-center gap-2"><i class="ph-fill ph-shield-warning text-2xl text-yellow-400"></i><h2 class="font-bold text-lg">Keamanan Admin</h2></div>
+                <button onclick="closeAllModals()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-4 text-center">Masukkan PIN rahasia untuk membuka panel Admin (Ketikan: <b>admin123</b>).</p>
+                <input type="password" id="adminPinInput" placeholder="Masukkan PIN..." class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-gray-800 bg-gray-50 text-center text-xl tracking-widest font-black mb-4">
+                <button onclick="verifyAdmin()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold p-3.5 rounded shadow-md transition">Verifikasi Akses</button>
+            </div>
+        </div>
+
         <!-- Modal Pendaftaran Mitra -->
         <div id="partnerModal" class="bg-white w-full md:w-[600px] md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col max-h-[90vh] absolute bottom-0 md:relative">
             <div class="bg-gray-900 p-4 text-white flex justify-between items-center sticky top-0 z-10 shrink-0">
@@ -433,7 +457,7 @@
             <div class="p-5 overflow-y-auto flex-1 hide-scrollbar">
                 <div class="bg-green-50 border border-green-200 text-green-800 p-3 rounded mb-4 text-sm flex gap-2">
                     <i class="ph-fill ph-info text-xl"></i>
-                    <p>Setelah mendaftar, akun Anda akan otomatis disetujui (Auto-Approve) agar bisa langsung mencoba fitur Dashboard Mitra.</p>
+                    <p>Setelah mendaftar, akun Anda akan otomatis disetujui (Auto-Approve) dan tersimpan ke Database Cloud agar bisa langsung mencoba Dashboard Mitra.</p>
                 </div>
                 <form onsubmit="submitPartner(event)" class="flex flex-col gap-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -546,7 +570,7 @@
                         <option value="1000000">Rp 1.000.000</option>
                     </select>
                 </div>
-                <button onclick="processTopUp()" id="btnTopUp" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold p-3.5 rounded shadow-md transition text-sm">Top Up Otomatis (Demo)</button>
+                <button onclick="processTopUp()" id="btnTopUp" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold p-3.5 rounded shadow-md transition text-sm">Top Up Otomatis (Database Cloud)</button>
             </div>
         </div>
 
@@ -582,6 +606,7 @@
             </div>
         </div>
 
+        <!-- Modal Edit Pengguna (Admin) -->
         <div id="editUserModal" class="bg-white w-full md:w-[400px] md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col absolute bottom-0 md:relative">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50">
                 <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="ph-fill ph-pencil-simple text-blue-600 text-xl"></i> Edit Pengguna</h3>
@@ -612,6 +637,7 @@
             </div>
         </div>
 
+        <!-- Modal Edit Mobil (Admin & Mitra) -->
         <div id="editCarModal" class="bg-white w-full md:w-[400px] md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col absolute bottom-0 md:relative">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50">
                 <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="ph-fill ph-car text-blue-600 text-xl"></i> Edit Data Mobil</h3>
@@ -644,7 +670,7 @@
             </div>
         </div>
 
-        <!-- Modal Konfirmasi Custom -->
+        <!-- Modal Konfirmasi Custom (Cantik, pengganti alert/confirm) -->
         <div id="confirmModal" class="bg-white w-[90%] md:w-80 rounded-xl shadow-2xl overflow-hidden hidden flex-col absolute">
             <div class="p-5 text-center">
                 <div class="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-fill ph-warning text-3xl"></i></div>
@@ -658,42 +684,48 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[150] bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-300 opacity-0 -translate-y-20 pointer-events-none min-w-[250px] justify-center">
         <i id="toastIcon" class="ph-fill ph-check-circle text-green-400 text-lg"></i>
         <span id="toastMsg" class="font-medium text-sm">Notifikasi</span>
     </div>
 
-    <script>
-        let currentUser = null; 
-        
-        let usersData = [
-            { uid: "admin1", name: "Admin Utama", email: "admin", isPartner: false, balance: 0 },
-            { uid: "u1", name: "Budi Santoso", email: "08123456789", isPartner: false, balance: 500000 },
-            { uid: "u2", name: "Agus (Mitra)", email: "mitrademo", isPartner: true, balance: 0 }
-        ];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        let carsData = [
-            { id: "c1", name: "Toyota Avanza", category: "Keluarga", priceDay: 350000, seat: 7, img: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
-            { id: "c2", name: "Honda Brio", category: "Terlaris", priceDay: 250000, seat: 5, img: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
-            { id: "c3", name: "Mitsubishi Pajero", category: "SUV", priceDay: 800000, seat: 7, img: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
-            { id: "c4", name: "Daihatsu Ayla (Baru)", category: "Promo", priceDay: 200000, seat: 5, img: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=400", status: "pending", ownerPhone: "mitrademo" } 
-        ];
-        
-        let ordersData = [
-            { id: "ORD-001", userId: "u1", userName: "Budi Santoso", carId: "c1", carName: "Toyota Avanza", ownerPhone: "official", total: 350000, status: "completed", payMethod: "otopay" },
-            { id: "ORD-002", userId: "u1", userName: "Budi Santoso", carId: "c4", carName: "Daihatsu Ayla", ownerPhone: "mitrademo", total: 200000, status: "pending_payment", payMethod: "transfer" },
-            { id: "ORD-003", userId: "u1", userName: "Budi Santoso", carId: "c4", carName: "Daihatsu Ayla", ownerPhone: "mitrademo", total: 400000, status: "completed", payMethod: "otopay" }
-        ];
+        // Firebase Setup - Gunakan env dari system (wajib)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'otolink-master';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
-        let withdrawalsData = [
-            { id: "WD-001", mitraEmail: "mitrademo", mitraName: "Agus (Mitra)", amount: 100000, bank: "BCA", account: "0812345678", status: "pending" }
-        ];
+        let app, db, auth;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } catch (e) {
+            console.error("Firebase init fallback:", e);
+        }
 
+        // Jalur Strict sesuai aturan wajib Firebase di sistem ini
+        const getColl = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
+        const getDocRef = (name, id) => doc(db, 'artifacts', appId, 'public', 'data', name, id);
+
+        // State Global
+        window.currentUser = null;
+        window.usersData = [];
+        window.carsData = [];
+        window.ordersData = [];
+        window.withdrawalsData = [];
         const formatRp = (num) => "Rp " + parseInt(num).toLocaleString('id-ID');
         const generateId = (prefix) => prefix + '-' + Math.floor(Math.random() * 10000);
 
-        function showToast(msg, isSuccess = true) {
+        // Ekspor fungsi agar bisa dipakai di seluruh bagian window (penting untuk tombol onClick)
+        window.fsAddDoc = async (coll, data) => await addDoc(getColl(coll), data);
+        window.fsUpdateDoc = async (coll, id, data) => await updateDoc(getDocRef(coll, id), data);
+        window.fsDeleteDoc = async (coll, id) => await deleteDoc(getDocRef(coll, id));
+
+        window.showToast = function(msg, isSuccess = true) {
             const t = document.getElementById('toast');
             document.getElementById('toastMsg').innerText = msg;
             document.getElementById('toastIcon').className = isSuccess 
@@ -701,27 +733,27 @@
                 : "ph-fill ph-warning-circle text-red-400 text-lg";
             t.classList.remove('opacity-0', '-translate-y-20', 'pointer-events-none');
             setTimeout(() => { t.classList.add('opacity-0', '-translate-y-20', 'pointer-events-none'); }, 3000);
-        }
+        };
 
-        function closeAllModals() {
+        window.closeAllModals = function() {
             const overlay = document.getElementById('modalOverlay');
             if(overlay) {
                 overlay.classList.add('opacity-0', 'pointer-events-none');
                 setTimeout(() => { 
                     overlay.classList.add('hidden'); overlay.classList.remove('flex');
-                    ['authModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal'].forEach(id => {
+                    ['authModal', 'adminAuthModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal'].forEach(id => {
                         const el = document.getElementById(id);
                         if(el) { el.classList.add('hidden'); el.classList.remove('flex'); }
                     });
                 }, 300);
             }
-        }
+        };
 
-        function openModal(id) {
+        window.openModal = function(id) {
             const overlay = document.getElementById('modalOverlay');
             overlay.classList.remove('hidden', 'pointer-events-none');
             overlay.classList.add('flex');
-            ['authModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal'].forEach(modalId => {
+            ['authModal', 'adminAuthModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal'].forEach(modalId => {
                 const el = document.getElementById(modalId);
                 if(el) { 
                     if(modalId === id) { el.classList.remove('hidden'); el.classList.add('flex'); } 
@@ -729,85 +761,174 @@
                 }
             });
             setTimeout(() => { overlay.classList.remove('opacity-0'); overlay.classList.add('opacity-100'); }, 10);
-        }
+        };
 
         let confirmAction = null;
-        function showConfirm(title, message, actionFunc) {
+        window.showConfirm = function(title, message, actionFunc) {
             document.getElementById('confirmTitle').innerText = title;
             document.getElementById('confirmMessage').innerText = message;
             confirmAction = actionFunc;
-            openModal('confirmModal');
+            window.openModal('confirmModal');
+        };
+        window.closeConfirm = function() { confirmAction = null; window.closeAllModals(); };
+        document.getElementById('confirmYesBtn').addEventListener('click', () => { if(confirmAction) confirmAction(); window.closeConfirm(); });
+
+
+        async function startApp() {
+            try {
+                // Aturan wajib Firestore: Autentikasi sebelum kueri
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // 1. Sinkronisasi Data Pengguna Real-Time
+                onSnapshot(getColl('users'), (snapshot) => {
+                    window.usersData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    
+                    // Update sesi saat ini jika datanya berubah di cloud (misal topup)
+                    if(window.currentUser) {
+                        const updatedMe = window.usersData.find(u => u.email === window.currentUser.email);
+                        if(updatedMe) window.currentUser = updatedMe;
+                        window.updateUserUI();
+                        if(!document.getElementById('partnerPanel').classList.contains('hidden')) window.renderMitraCars();
+                    }
+                    if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminUsers();
+                }, (error) => console.error("Error users:", error));
+
+                // 2. Sinkronisasi Data Mobil Real-Time
+                onSnapshot(getColl('cars'), (snapshot) => {
+                    window.carsData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    window.renderCars(); // Otomatis refresh homepage
+                    if(window.currentUser && !document.getElementById('partnerPanel').classList.contains('hidden')) {
+                        window.renderMitraCars();
+                    }
+                    if(!document.getElementById('adminPanel').classList.contains('hidden')) {
+                        window.loadAdminData();
+                        window.loadAdminAllCars();
+                    }
+                }, (error) => console.error("Error cars:", error));
+
+                // 3. Sinkronisasi Data Transaksi
+                onSnapshot(getColl('orders'), (snapshot) => {
+                    window.ordersData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    if(window.currentUser && !document.getElementById('partnerPanel').classList.contains('hidden')) {
+                        window.renderMitraCars(); // Update pendapatan
+                    }
+                    if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminOrders();
+                }, (error) => console.error("Error orders:", error));
+
+                // 4. Sinkronisasi Pencairan
+                onSnapshot(getColl('withdrawals'), (snapshot) => {
+                    window.withdrawalsData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    if(window.currentUser && !document.getElementById('partnerPanel').classList.contains('hidden')) {
+                        window.renderMitraCars(); // Update saldo sisa
+                    }
+                    if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminWithdrawals();
+                }, (error) => console.error("Error withdrawals:", error));
+
+                // Suntik Data Dummy Otomatis jika Database Kosong Pertama Kali
+                setTimeout(seedInitialDataIfNeeded, 2500);
+
+            } catch(e) {
+                console.error("Gagal terhubung ke Cloud Database:", e);
+                window.showToast("Koneksi Database Offline", false);
+            }
         }
-        function closeConfirm() { confirmAction = null; closeAllModals(); }
-        document.getElementById('confirmYesBtn').addEventListener('click', () => { if(confirmAction) confirmAction(); closeConfirm(); });
+
+        async function seedInitialDataIfNeeded() {
+            if(window.carsData.length === 0) {
+                const initialCars = [
+                    { name: "Toyota Avanza", category: "Keluarga", priceDay: 350000, seat: 7, img: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
+                    { name: "Honda Brio", category: "Terlaris", priceDay: 250000, seat: 5, img: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
+                    { name: "Mitsubishi Pajero", category: "SUV", priceDay: 800000, seat: 7, img: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" }
+                ];
+                for (let c of initialCars) await window.fsAddDoc('cars', c);
+            }
+        }
 
         let isRegisterMode = false;
         window.toggleAuthMode = function(mode) {
             isRegisterMode = mode === 'register';
             document.getElementById('authTitle').innerText = isRegisterMode ? 'Daftar Akun Baru' : 'Masuk';
             document.getElementById('authSubmitBtn').innerText = isRegisterMode ? 'Daftar Sekarang' : 'Masuk';
+            
             if(isRegisterMode) {
-                document.getElementById('authNameGroup').classList.remove('hidden'); document.getElementById('authNameGroup').classList.add('flex');
-                document.getElementById('authSwitchContainer').classList.add('hidden'); document.getElementById('authSwitchToLoginContainer').classList.remove('hidden');
+                document.getElementById('authNameGroup').classList.replace('hidden', 'flex');
+                document.getElementById('authSwitchContainer').classList.add('hidden');
+                document.getElementById('authSwitchToLoginContainer').classList.remove('hidden');
                 document.getElementById('authName').setAttribute('required', 'true');
             } else {
-                document.getElementById('authNameGroup').classList.add('hidden'); document.getElementById('authNameGroup').classList.remove('flex');
-                document.getElementById('authSwitchContainer').classList.remove('hidden'); document.getElementById('authSwitchToLoginContainer').classList.add('hidden');
+                document.getElementById('authNameGroup').classList.replace('flex', 'hidden');
+                document.getElementById('authSwitchContainer').classList.remove('hidden');
+                document.getElementById('authSwitchToLoginContainer').classList.add('hidden');
                 document.getElementById('authName').removeAttribute('required');
             }
-        }
-        
-        window.openAuthModal = function() { toggleAuthMode('login'); openModal('authModal'); }
+        };
 
-        window.handleAuthSubmit = function(e) {
+        window.openAuthModal = function() { window.toggleAuthMode('login'); window.openModal('authModal'); };
+
+        window.handleAuthSubmit = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('authSubmitBtn');
             const originalText = btn.innerText;
-            btn.innerText = "Memproses..."; btn.disabled = true;
+            btn.innerText = "Memproses (Cloud)..."; btn.disabled = true;
 
-            setTimeout(() => { 
+            try {
                 let rawEmail = document.getElementById('authEmail').value.trim();
+                
                 if (isRegisterMode) {
                     let name = document.getElementById('authName').value;
-                    let newUser = { uid: "u" + Date.now(), name: name, email: rawEmail, isPartner: false, balance: 0 };
-                    usersData.push(newUser);
-                    currentUser = newUser;
-                    showToast("Pendaftaran Berhasil!");
+                    let newUser = { name: name, email: rawEmail, isPartner: false, balance: 0 };
+                    const docRef = await window.fsAddDoc('users', newUser); // Simpan ke Cloud Firebase
+                    newUser.id = docRef.id;
+                    window.currentUser = newUser;
+                    window.showToast("Pendaftaran Berhasil & Tersimpan di Cloud!");
                 } else {
-                    let found = usersData.find(u => u.email === rawEmail);
+                    let found = window.usersData.find(u => u.email === rawEmail);
                     if(found) {
-                        currentUser = found;
-                        showToast("Login Berhasil!");
+                        window.currentUser = found;
+                        window.showToast("Berhasil Masuk!");
                     } else {
-                        showToast("Akun tidak ditemukan. Silakan daftar.", false);
+                        window.showToast("Akun tidak ditemukan. Silakan daftar.", false);
                         btn.innerText = originalText; btn.disabled = false;
                         return;
                     }
                 }
-                updateUserUI();
-                closeAllModals();
-                btn.innerText = originalText; btn.disabled = false;
+                window.updateUserUI();
+                window.closeAllModals();
                 e.target.reset();
-            }, 800);
-        }
+            } catch (err) {
+                window.showToast("Gagal memproses data", false);
+            } finally {
+                btn.innerText = originalText; btn.disabled = false;
+            }
+        };
 
-        window.logout = function() { currentUser = null; updateUserUI(); closeAllModals(); closePartnerPanel(); showToast("Berhasil keluar."); }
+        window.logout = function() { 
+            window.currentUser = null; 
+            window.updateUserUI(); 
+            window.closeAllModals(); 
+            window.closePartnerPanel(); 
+            window.showToast("Berhasil keluar dari sesi."); 
+        };
 
         window.updateUserUI = function() {
-            if (currentUser) {
+            if (window.currentUser) {
                 document.getElementById('desktopLoginBtn').classList.add('hidden');
                 document.getElementById('desktopUserMenu').classList.remove('hidden');
-                document.getElementById('desktopUserName').innerText = currentUser.name.split(' ')[0];
-                document.getElementById('desktopOtopayBtn').classList.remove('hidden');
-                document.getElementById('desktopOtopayBtn').classList.add('flex');
-                document.getElementById('mobileOtopayBtn').classList.remove('hidden');
-                document.getElementById('mobileOtopayBtn').classList.add('flex');
-                updateOtopayBalanceUI();
+                document.getElementById('desktopUserName').innerText = window.currentUser.name.split(' ')[0];
+                document.getElementById('desktopOtopayBtn').classList.replace('hidden', 'flex');
+                document.getElementById('mobileOtopayBtn').classList.replace('hidden', 'flex');
+                
+                window.updateOtopayBalanceUI();
                 
                 const mobileText = document.getElementById('mobileUserText');
-                if(mobileText) mobileText.innerText = currentUser.name.substring(0,6);
+                if(mobileText) mobileText.innerText = window.currentUser.name.substring(0,6);
                 
-                if(currentUser.isPartner) { 
+                // Cek status Mitra secara Real-Time
+                if(window.currentUser.isPartner) { 
                     document.getElementById('desktopPartnerBtn').classList.remove('hidden'); 
                     document.getElementById('topPartnerLink').innerHTML = '🤝 Dashboard Mitra';
                     document.getElementById('mobilePartnerBtn').classList.remove('hidden');
@@ -817,25 +938,23 @@
                     document.getElementById('mobilePartnerBtn').classList.add('hidden');
                 }
             } else {
+                // UI untuk tamu / belum login
                 document.getElementById('desktopLoginBtn').classList.remove('hidden');
                 document.getElementById('desktopUserMenu').classList.add('hidden');
                 document.getElementById('desktopPartnerBtn').classList.add('hidden');
-                document.getElementById('desktopOtopayBtn').classList.add('hidden');
-                document.getElementById('desktopOtopayBtn').classList.remove('flex');
+                document.getElementById('desktopOtopayBtn').classList.replace('flex', 'hidden');
                 document.getElementById('topPartnerLink').innerHTML = 'Mulai Sewakan Mobil';
-                document.getElementById('mobileOtopayBtn').classList.add('hidden');
-                document.getElementById('mobileOtopayBtn').classList.remove('flex');
+                document.getElementById('mobileOtopayBtn').classList.replace('flex', 'hidden');
                 
                 const mobileText = document.getElementById('mobileUserText');
                 if(mobileText) mobileText.innerText = 'Saya';
                 document.getElementById('mobilePartnerBtn').classList.add('hidden');
             }
-        }
+        };
 
         window.toggleUserDropdown = function(e) {
             if(e) e.stopPropagation();
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.classList.toggle('hidden');
+            document.getElementById('userDropdown').classList.toggle('hidden');
         };
         
         document.addEventListener('click', function(event) {
@@ -845,42 +964,50 @@
         });
 
         window.handleMobileUserIcon = function() {
-            if (!currentUser) openAuthModal();
+            if (!window.currentUser) window.openAuthModal();
             else {
-                document.getElementById('mobileAccountName').innerText = currentUser.name;
-                openModal('mobileAccountModal');
+                document.getElementById('mobileAccountName').innerText = window.currentUser.name;
+                window.openModal('mobileAccountModal');
             }
         };
 
         window.updateOtopayBalanceUI = function() {
-            if(!currentUser) return;
-            const balFormat = formatRp(currentUser.balance || 0);
+            if(!window.currentUser) return;
+            const balFormat = formatRp(window.currentUser.balance || 0);
             document.getElementById('desktopOtopayBalance').innerText = balFormat;
             document.getElementById('mobileOtopayBalance').innerText = balFormat;
             document.getElementById('topupCurrentBal').innerText = balFormat;
             document.getElementById('coOtopayBal').innerText = "Saldo: " + balFormat;
-        }
+        };
 
         window.openOtopay = function() {
-            if(!currentUser) { showToast("Login dulu untuk buka OtoPay", false); openAuthModal(); return; }
-            updateOtopayBalanceUI(); openModal('otopayModal');
-        }
+            if(!window.currentUser) { window.showToast("Login dulu untuk buka OtoPay", false); window.openAuthModal(); return; }
+            window.updateOtopayBalanceUI(); 
+            window.openModal('otopayModal');
+        };
 
-        window.processTopUp = function() {
+        window.processTopUp = async function() {
             const btn = document.getElementById('btnTopUp');
-            btn.innerText = "Memproses Top Up..."; btn.disabled = true;
-            setTimeout(() => {
+            btn.innerText = "Mengirim ke Cloud..."; btn.disabled = true;
+            try {
                 const amount = parseInt(document.getElementById('topupAmount').value);
-                currentUser.balance = (currentUser.balance || 0) + amount;
-                updateOtopayBalanceUI(); showToast("Top Up Saldo Berhasil!");
-                closeAllModals();
-                btn.innerText = "Top Up Otomatis (Demo)"; btn.disabled = false;
-            }, 1000);
-        }
+                const newBalance = (window.currentUser.balance || 0) + amount;
+                
+                // Update ke Firebase, Data akan ter-sync otomatis ke UI
+                await window.fsUpdateDoc('users', window.currentUser.id, { balance: newBalance });
+                
+                window.showToast("Top Up Saldo Cloud Berhasil!");
+                window.closeAllModals();
+            } catch(e) {
+                window.showToast("Top up gagal", false);
+            } finally {
+                btn.innerText = "Top Up Otomatis (Database Cloud)"; btn.disabled = false;
+            }
+        };
 
         window.openCheckoutModal = function(carId) {
-            if(!currentUser) { showToast("Silakan login untuk memesan mobil.", false); openAuthModal(); return; }
-            const car = carsData.find(c => c.id === carId);
+            if(!window.currentUser) { window.showToast("Silakan login untuk memesan mobil.", false); window.openAuthModal(); return; }
+            const car = window.carsData.find(c => c.id === carId);
             if(!car) return;
 
             document.getElementById('coCarId').value = car.id;
@@ -891,88 +1018,105 @@
             document.getElementById('coCarPrice').innerText = formatRp(car.priceDay) + " / hari";
             document.getElementById('coTotal').innerText = formatRp(car.priceDay); 
             
-            updateOtopayBalanceUI(); openModal('checkoutModal');
-        }
+            window.updateOtopayBalanceUI(); window.openModal('checkoutModal');
+        };
 
-        window.processPayment = function() {
+        window.processPayment = async function() {
             const payMethod = document.querySelector('input[name="payMethod"]:checked').value;
             const carId = document.getElementById('coCarId').value;
-            const car = carsData.find(c => c.id === carId);
+            const car = window.carsData.find(c => c.id === carId);
             const btn = document.getElementById('btnBayarSekarang');
             
-            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Memproses...`; btn.disabled = true;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Menyimpan ke Cloud...`; btn.disabled = true;
 
-            setTimeout(() => {
+            try {
                 if(payMethod === 'otopay') {
-                    if(currentUser.balance < car.priceDay) {
-                        showToast("Saldo OtoPay tidak cukup. Silakan Top Up.", false);
+                    if(window.currentUser.balance < car.priceDay) {
+                        window.showToast("Saldo OtoPay tidak cukup. Silakan Top Up.", false);
                         btn.innerHTML = `<i class="ph-fill ph-lock-key"></i> Bayar Sekarang`; btn.disabled = false;
                         return;
                     }
-                    currentUser.balance -= car.priceDay;
-                    updateOtopayBalanceUI();
                     
-                    ordersData.push({
-                        id: generateId("ORD"), userId: currentUser.uid, userName: currentUser.name, 
+                    // Potong Saldo User di Cloud
+                    await window.fsUpdateDoc('users', window.currentUser.id, { balance: window.currentUser.balance - car.priceDay });
+                    
+                    // Buat Pesanan di Cloud
+                    await window.fsAddDoc('orders', {
+                        orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, 
                         carId: car.id, carName: car.name, ownerPhone: car.ownerPhone, 
                         total: car.priceDay, status: "paid", payMethod: "otopay" 
                     });
-                    showToast("Pembayaran Berhasil! Pesanan Dibuat.");
+                    
+                    window.showToast("Pembayaran Lunas! Pesanan Anda dikonfirmasi.");
                 } else {
-                    showConfirm("Transfer Rekening", `Silakan transfer sejumlah ${formatRp(car.priceDay)} ke rekening BCA 1234567 a/n PT OtoLink. Jika sudah, klik 'Sudah Transfer'.`, () => {
-                        ordersData.push({
-                            id: generateId("ORD"), userId: currentUser.uid, userName: currentUser.name, 
+                    window.showConfirm("Transfer Rekening", `Silakan transfer sejumlah ${formatRp(car.priceDay)} ke rekening BCA 1234567 a/n PT OtoLink. Jika sudah, klik 'Ya, Yakin' (Sudah Transfer).`, async () => {
+                        await window.fsAddDoc('orders', {
+                            orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, 
                             carId: car.id, carName: car.name, ownerPhone: car.ownerPhone, 
                             total: car.priceDay, status: "pending_payment", payMethod: "transfer"
                         });
-                        showToast("Pesanan Dibuat. Menunggu Verifikasi Admin.");
+                        window.showToast("Pesanan dibuat di Cloud. Menunggu Verifikasi Admin.");
                     });
                 }
-                closeAllModals();
+                window.closeAllModals();
+            } catch(e) {
+                window.showToast("Gagal memproses pesanan.", false);
+            } finally {
                 btn.innerHTML = `<i class="ph-fill ph-lock-key"></i> Bayar Sekarang`; btn.disabled = false;
-            }, 1200);
-        }
+            }
+        };
 
-        window.openMyOrders = function() { showToast("Cek tab 'Kelola Pesanan' di Menu Admin (Klik Logo 3x) untuk demo ini."); closeAllModals(); };
+        window.openMyOrders = function() { 
+            window.showToast("Demo: Silakan buka Rahasia Admin (Klik logo kiri atas 3x) lalu cek Tab 'Kelola Pesanan'."); 
+            window.closeAllModals(); 
+        };
 
         window.handlePartnerClick = function() {
-            if(!currentUser) { showToast("Login dulu untuk mendaftar Mitra", false); openAuthModal(); return; }
-            if(currentUser.isPartner) { openMitraDashboard(); return; } 
-            openModal('partnerModal'); 
-        }
+            if(!window.currentUser) { window.showToast("Login dulu untuk mendaftar Mitra", false); window.openAuthModal(); return; }
+            if(window.currentUser.isPartner) { window.openMitraDashboard(); return; } 
+            window.openModal('partnerModal'); 
+        };
 
-        window.submitPartner = function(e) {
+        window.submitPartner = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnDaftarMitra');
-            btn.innerText = "Mendaftarkan Anda..."; btn.disabled = true;
+            btn.innerText = "Mendaftarkan ke Cloud..."; btn.disabled = true;
 
-            setTimeout(() => {
-                currentUser.isPartner = true;
-                updateUserUI(); showToast("Berhasil! Akun Mitra Anda otomatis disetujui.");
-                closeAllModals(); e.target.reset();
+            try {
+                // Update hak akses Mitra langsung di Database Cloud (Auto-Approve)
+                await window.fsUpdateDoc('users', window.currentUser.id, { isPartner: true });
+                
+                window.showToast("Selamat! Akun Mitra Anda otomatis aktif di jaringan kami.");
+                window.closeAllModals(); 
+                e.target.reset();
+                window.openMitraDashboard(); 
+            } catch(err) {
+                window.showToast("Gagal mendaftar kemitraan", false);
+            } finally {
                 btn.innerText = "Kirim Pendaftaran & Buka Dashboard"; btn.disabled = false;
-                openMitraDashboard(); 
-            }, 1000);
-        }
+            }
+        };
 
         window.openMitraDashboard = function() { 
             document.getElementById('appContainer').classList.add('hidden'); 
             document.getElementById('partnerPanel').classList.remove('hidden'); 
-            document.getElementById('partnerDashName').innerText = `Halo, ${currentUser ? currentUser.name : 'Mitra'}`; 
+            document.getElementById('partnerDashName').innerText = `Halo, ${window.currentUser ? window.currentUser.name : 'Mitra'}`; 
             
-            closeAllModals(); closeAddCarForm(); 
-            renderMitraCars(); 
+            window.closeAllModals(); window.closeAddCarForm(); 
+            window.renderMitraCars(); 
             window.scrollTo(0, 0); 
-        }
+        };
         
         window.closePartnerPanel = function() { 
             document.getElementById('partnerPanel').classList.add('hidden');
             document.getElementById('appContainer').classList.remove('hidden'); 
-        }
+            window.renderCars();
+        };
 
-        window.openAddCarForm = function() { document.getElementById('partnerAddCarForm').classList.remove('hidden'); }
-        window.closeAddCarForm = function() { document.getElementById('partnerAddCarForm').classList.add('hidden'); }
+        window.openAddCarForm = function() { document.getElementById('partnerAddCarForm').classList.remove('hidden'); };
+        window.closeAddCarForm = function() { document.getElementById('partnerAddCarForm').classList.add('hidden'); };
 
+        // Kompresor Gambar agar Cloud tidak penuh
         function compressImage(file, maxWidth = 800) {
             return new Promise((resolve, reject) => {
                 if (!file) return resolve("");
@@ -1010,50 +1154,56 @@
         window.handlePartnerAddCar = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnUploadIklan');
-            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Memproses...`; btn.disabled = true;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Mengunggah ke Server...`; btn.disabled = true;
 
             try {
                 const file1 = document.getElementById('pcImg1').files[0];
                 const imgBase64 = await compressImage(file1); 
 
                 const newCarData = {
-                    id: generateId("CAR"), ownerPhone: currentUser.email, status: 'pending', 
+                    ownerPhone: window.currentUser.email, status: 'pending', 
                     name: document.getElementById('pcName').value, category: document.getElementById('pcType').value,
                     priceDay: parseInt(document.getElementById('pcPriceDay').value), seat: parseInt(document.getElementById('pcSeat').value),
                     img: imgBase64
                 };
 
-                carsData.push(newCarData);
-                showToast("Iklan berhasil dikirim! Menunggu persetujuan Admin.");
-                
+                // Kirim langsung ke Cloud Firebase
+                await window.fsAddDoc('cars', newCarData);
+
+                window.showToast("Iklan berhasil dikirim! Menunggu persetujuan Admin.");
                 e.target.reset();
                 document.getElementById('prevImg1').classList.add('hidden'); document.getElementById('prevImg1').src = "";
-                renderMitraCars(); 
                 
             } catch (error) {
-                showToast("Gagal mengunggah iklan.", false);
+                window.showToast("Gagal mengunggah iklan ke server.", false);
             } finally {
                 btn.innerHTML = `<i class="ph ph-upload-simple"></i> Kirim Pengajuan Iklan`; btn.disabled = false;
             }
-        }
+        };
 
         let currentMitraAvailableEarnings = 0;
 
         window.renderMitraCars = function() {
             const container = document.getElementById('partnerCarList'); 
-            if(!currentUser) return;
+            if(!window.currentUser) return;
             
-            const myCompletedOrders = ordersData.filter(o => o.ownerPhone === currentUser.email && o.status === 'completed');
+            // Kalkulasi Pendapatan Live dari Transaksi Cloud
+            const myCompletedOrders = window.ordersData.filter(o => o.ownerPhone === window.currentUser.email && o.status === 'completed');
             const grossEarnings = myCompletedOrders.reduce((sum, order) => sum + order.total, 0);
-            const netEarnings = grossEarnings * 0.93;
+            const netEarnings = grossEarnings * 0.93; // 93% untuk mitra
             
-            const myWithdrawals = withdrawalsData.filter(w => w.mitraEmail === currentUser.email);
+            const myWithdrawals = window.withdrawalsData.filter(w => w.mitraEmail === window.currentUser.email);
             const totalWithdrawn = myWithdrawals.reduce((sum, wd) => sum + wd.amount, 0);
             
             currentMitraAvailableEarnings = netEarnings - totalWithdrawn;
             document.getElementById('partnerRevenue').innerText = formatRp(currentMitraAvailableEarnings);
 
-            const myCars = carsData.filter(c => c.ownerPhone === currentUser.email);
+            const myCars = window.carsData.filter(c => c.ownerPhone === window.currentUser.email);
+            
+            const activeCarsCount = myCars.filter(c => c.status === 'approved').length;
+            const elTotalCars = document.getElementById('partnerTotalCars');
+            if(elTotalCars) elTotalCars.innerText = activeCarsCount;
+
             if(myCars.length === 0) { 
                 container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-10 bg-gray-50 rounded border border-dashed">Anda belum memiliki iklan mobil.</div>`; 
                 return; 
@@ -1068,7 +1218,10 @@
                 
                 container.innerHTML += `
                     <div class="border rounded-lg p-3 bg-white shadow-sm hover:shadow-md transition relative group">
-                        <button onclick="deleteCar('${car.id}')" class="absolute top-2 right-2 bg-white text-red-500 p-1.5 rounded-full shadow hover:bg-red-50 z-10 hidden group-hover:block transition" title="Hapus Iklan"><i class="ph-fill ph-trash"></i></button>
+                        <div class="absolute top-2 right-2 flex gap-1 z-10 hidden group-hover:flex transition">
+                            <button onclick="openEditCarModal('${car.id}')" class="bg-white text-blue-500 p-1.5 rounded-full shadow hover:bg-blue-50" title="Edit Iklan"><i class="ph-fill ph-pencil-simple"></i></button>
+                            <button onclick="deleteCar('${car.id}')" class="bg-white text-red-500 p-1.5 rounded-full shadow hover:bg-red-50" title="Hapus Iklan"><i class="ph-fill ph-trash"></i></button>
+                        </div>
                         <div class="h-24 bg-gray-200 rounded overflow-hidden mb-2 relative">
                             <img src="${car.img}" class="w-full h-full object-cover">
                         </div>
@@ -1078,67 +1231,88 @@
                     </div>
                 `; 
             });
-        }
+        };
 
         window.deleteCar = function(carId) {
-            showConfirm("Hapus Iklan?", "Yakin ingin menghapus iklan mobil ini dari sistem?", () => {
-                carsData = carsData.filter(c => c.id !== carId);
-                renderMitraCars(); showToast("Iklan berhasil dihapus.");
+            window.showConfirm("Hapus Iklan secara Permanen?", "Iklan mobil ini akan dihapus dari Database Cloud kami.", async () => {
+                try {
+                    await window.fsDeleteDoc('cars', carId);
+                    window.showToast("Iklan berhasil dihapus dari server.");
+                } catch(e) { window.showToast("Gagal menghapus iklan", false); }
             });
-        }
+        };
 
         window.openWithdrawModal = function() {
-            if(currentMitraAvailableEarnings < 50000) { showToast("Minimal penarikan saldo adalah Rp 50.000", false); return; }
+            if(currentMitraAvailableEarnings < 50000) { window.showToast("Minimal penarikan saldo adalah Rp 50.000", false); return; }
             document.getElementById('wdAvailableBal').innerText = formatRp(currentMitraAvailableEarnings);
             document.getElementById('wdAmount').value = currentMitraAvailableEarnings; 
-            openModal('withdrawModal');
-        }
+            window.openModal('withdrawModal');
+        };
 
-        window.submitWithdrawal = function() {
+        window.submitWithdrawal = async function() {
             const amount = parseInt(document.getElementById('wdAmount').value);
             const bank = document.getElementById('wdBank').value;
             const account = document.getElementById('wdAccount').value;
             
-            if(!amount || amount < 50000 || amount > currentMitraAvailableEarnings) { showToast("Nominal tidak valid atau melebihi saldo.", false); return; }
-            if(!account) { showToast("Masukkan nomor rekening/hp", false); return; }
+            if(!amount || amount < 50000 || amount > currentMitraAvailableEarnings) { window.showToast("Nominal tidak valid atau melebihi saldo.", false); return; }
+            if(!account) { window.showToast("Masukkan nomor rekening/hp", false); return; }
 
             const btn = document.getElementById('btnWithdraw');
-            btn.innerText = "Memproses..."; btn.disabled = true;
+            btn.innerText = "Mengajukan..."; btn.disabled = true;
 
-            setTimeout(() => {
-                withdrawalsData.push({
-                    id: generateId("WD"), mitraEmail: currentUser.email, mitraName: currentUser.name, 
+            try {
+                await window.fsAddDoc('withdrawals', {
+                    wdRef: generateId("WD"), mitraEmail: window.currentUser.email, mitraName: window.currentUser.name, 
                     amount: amount, bank: bank, account: account, status: "pending"
                 });
-                showToast("Permintaan pencairan berhasil dikirim ke Admin!");
-                closeAllModals(); renderMitraCars(); 
+                window.showToast("Permintaan pencairan berhasil dikirim ke Admin!");
+                window.closeAllModals(); 
+            } catch (e) {
+                window.showToast("Gagal mengirim permintaan", false);
+            } finally {
                 btn.innerText = "Ajukan Penarikan"; btn.disabled = false;
-            }, 1000);
-        }
+            }
+        };
+
 
         let adminClickCount = 0; let adminClickTimer = null;
         window.handleAdminClick = function() {
             adminClickCount++;
             if(adminClickTimer) clearTimeout(adminClickTimer);
+            
             if(adminClickCount >= 3) {
-                adminClickCount = 0; showToast("Berhasil masuk Mode Admin!"); openAdminPanel(); 
+                adminClickCount = 0; 
+                // Fitur Keamanan: Tidak langsung tembus, suruh masuk PIN
+                window.openModal('adminAuthModal'); 
             } else {
                 adminClickTimer = setTimeout(() => { adminClickCount = 0; window.scrollTo({ top: 0, behavior: 'smooth' }); }, 1500);
             }
-        }
+        };
+
+        window.verifyAdmin = function() {
+            const pin = document.getElementById('adminPinInput').value;
+            if(pin === 'admin123') { // PIN rahasia untuk demo
+                window.closeAllModals();
+                document.getElementById('adminPinInput').value = '';
+                window.showToast("Autentikasi Berhasil. Selamat Datang Admin!");
+                window.openAdminPanel();
+            } else {
+                window.showToast("PIN Admin Salah / Akses Ditolak!", false);
+            }
+        };
 
         window.openAdminPanel = function() {
             document.getElementById('appContainer').classList.add('hidden'); 
             document.getElementById('partnerPanel').classList.add('hidden'); 
             document.getElementById('adminPanel').classList.remove('hidden');
-            closeAllModals(); switchAdminTab('verifikasi'); 
-        }
+            window.switchAdminTab('verifikasi'); 
+        };
 
         window.closeAdminPanel = function() {
             document.getElementById('adminPanel').classList.add('hidden');
             document.getElementById('appContainer').classList.remove('hidden'); 
-            renderCars(); 
-        }
+            window.renderCars(); 
+        };
 
         window.switchAdminTab = function(tabName) {
             document.querySelectorAll('.admin-content').forEach(el => el.classList.add('hidden'));
@@ -1151,16 +1325,16 @@
             if(tabName === 'pencairan') activeTab.className = "admin-tab px-4 py-2 bg-orange-500 text-white rounded font-bold text-sm whitespace-nowrap shadow-sm";
             else activeTab.className = "admin-tab px-4 py-2 bg-blue-600 text-white rounded font-bold text-sm whitespace-nowrap shadow-sm";
 
-            if(tabName === 'verifikasi') loadAdminData();
-            if(tabName === 'pesanan') loadAdminOrders();
-            if(tabName === 'pencairan') loadAdminWithdrawals();
-            if(tabName === 'pengguna') loadAdminUsers();
-            if(tabName === 'semuamobil') loadAdminAllCars();
-        }
+            if(tabName === 'verifikasi') window.loadAdminData();
+            if(tabName === 'pesanan') window.loadAdminOrders();
+            if(tabName === 'pencairan') window.loadAdminWithdrawals();
+            if(tabName === 'pengguna') window.loadAdminUsers();
+            if(tabName === 'semuamobil') window.loadAdminAllCars();
+        };
 
         window.loadAdminData = function() {
             const container = document.getElementById('adminCarsList');
-            const pendingCars = carsData.filter(c => c.status === 'pending');
+            const pendingCars = window.carsData.filter(c => c.status === 'pending');
             if(pendingCars.length === 0) {
                 container.innerHTML = `<div class="col-span-full text-center py-10 bg-gray-50 border border-dashed rounded text-gray-500">Tidak ada iklan yang menunggu verifikasi.</div>`; return;
             }
@@ -1174,34 +1348,35 @@
                         <h4 class="font-bold text-gray-800 text-sm">${car.name}</h4>
                         <p class="text-[10px] text-gray-400 mb-3 border-t pt-2">Pemilik: ${car.ownerPhone}</p>
                         <div class="grid grid-cols-2 gap-2 mt-auto">
-                            <button onclick="approveCar('${car.id}')" class="bg-green-500 hover:bg-green-600 text-white font-bold py-1.5 rounded text-xs shadow-sm">Terima</button>
-                            <button onclick="rejectCar('${car.id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1.5 rounded text-xs shadow-sm">Tolak</button>
+                            <button onclick="approveCar('${car.id}')" class="bg-green-500 hover:bg-green-600 text-white font-bold py-1.5 rounded text-xs shadow-sm">Terima (Live)</button>
+                            <button onclick="rejectCar('${car.id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1.5 rounded text-xs shadow-sm">Tolak & Hapus</button>
                         </div>
                     </div>
                 </div>`;
             });
             container.innerHTML = html;
-        }
+        };
 
-        window.approveCar = function(carId) {
-            let car = carsData.find(c => c.id === carId);
-            if(car) car.status = 'approved';
-            showToast("Iklan berhasil DISYETUJUI dan tayang!"); loadAdminData(); 
-        }
+        window.approveCar = async function(carId) {
+            try {
+                await window.fsUpdateDoc('cars', carId, { status: 'approved' });
+                window.showToast("Iklan berhasil DISYETUJUI. Langsung tayang di Aplikasi!"); 
+            } catch(e) { window.showToast("Gagal menerima iklan", false); }
+        };
 
         window.rejectCar = function(carId) {
-            showConfirm("Tolak & Hapus Iklan?", "Yakin ingin menolak dan menghapus iklan ini?", () => {
-                carsData = carsData.filter(c => c.id !== carId);
-                showToast("Iklan berhasil dihapus.");
-                loadAdminData(); 
-                if(document.getElementById('admin-semuamobil').classList.contains('hidden') === false) loadAdminAllCars();
+            window.showConfirm("Tolak & Hapus Iklan?", "Yakin ingin menghapusnya permanen dari Database Server?", async () => {
+                try {
+                    await window.fsDeleteDoc('cars', carId);
+                    window.showToast("Iklan berhasil dihapus.");
+                } catch(e) { window.showToast("Gagal menghapus", false); }
             });
-        }
+        };
 
         window.loadAdminOrders = function() {
             const tbody = document.getElementById('adminOrdersList'); tbody.innerHTML = '';
-            if(ordersData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Belum ada transaksi</td></tr>`; return; }
-            ordersData.forEach(o => {
+            if(window.ordersData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Belum ada transaksi</td></tr>`; return; }
+            window.ordersData.forEach(o => {
                 let statusBadge, actionBtn = '';
                 if(o.status === 'pending_payment') {
                     statusBadge = `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Tunggu Transfer</span>`;
@@ -1216,26 +1391,26 @@
 
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-3 font-medium text-xs">${o.id}<br><span class="text-[10px] text-gray-400 uppercase">${o.payMethod}</span></td>
+                        <td class="px-4 py-3 font-medium text-xs">${o.orderRef}<br><span class="text-[10px] text-gray-400 uppercase">${o.payMethod}</span></td>
                         <td class="px-4 py-3 text-xs">P: <b>${o.userName}</b><br>M: ${o.ownerPhone}</td>
                         <td class="px-4 py-3 text-xs">${o.carName}<br><span class="font-bold text-shopee">${formatRp(o.total)}</span></td>
                         <td class="px-4 py-3">${statusBadge}</td>
                         <td class="px-4 py-3 text-center">${actionBtn}</td>
                     </tr>`;
             });
-        }
+        };
         
-        window.updateOrderStatus = function(orderId, newStatus) {
-            let order = ordersData.find(o => o.id === orderId);
-            if(order) order.status = newStatus;
-            showToast(newStatus === 'completed' ? "Sewa Selesai! Uang diteruskan ke Mitra." : "Pembayaran Diverifikasi.");
-            loadAdminOrders();
-        }
+        window.updateOrderStatus = async function(docId, newStatus) {
+            try {
+                await window.fsUpdateDoc('orders', docId, { status: newStatus });
+                window.showToast(newStatus === 'completed' ? "Sewa Selesai! Uang diteruskan ke Mitra." : "Pembayaran Diverifikasi.");
+            } catch(e) { window.showToast("Gagal update status", false); }
+        };
 
         window.loadAdminWithdrawals = function() {
             const tbody = document.getElementById('adminWithdrawalsList'); tbody.innerHTML = '';
-            if(withdrawalsData.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Belum ada request pencairan</td></tr>`; return; }
-            withdrawalsData.forEach(w => {
+            if(window.withdrawalsData.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Belum ada request pencairan</td></tr>`; return; }
+            window.withdrawalsData.forEach(w => {
                 let statusBadge = w.status === 'pending' 
                     ? `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Menunggu Transfer</span>` 
                     : `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold"><i class="ph-fill ph-check-circle"></i> Selesai</span>`;
@@ -1246,7 +1421,7 @@
 
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-3 font-medium text-xs">${w.id}</td>
+                        <td class="px-4 py-3 font-medium text-xs">${w.wdRef}</td>
                         <td class="px-4 py-3 text-xs"><b>${w.mitraName}</b></td>
                         <td class="px-4 py-3 text-xs">${w.bank} - ${w.account}</td>
                         <td class="px-4 py-3 font-bold text-green-700">${formatRp(w.amount)}</td>
@@ -1254,20 +1429,20 @@
                         <td class="px-4 py-3 text-center">${actionBtn}</td>
                     </tr>`;
             });
-        }
+        };
 
-        window.confirmWithdrawal = function(wdId) {
-            showConfirm("Konfirmasi Transfer", "Apakah Anda sudah mentransfer uang ke rekening Mitra?", () => {
-                let wd = withdrawalsData.find(w => w.id === wdId);
-                if(wd) wd.status = 'transferred';
-                showToast("Pencairan dana ditandai Selesai."); loadAdminWithdrawals();
+        window.confirmWithdrawal = function(docId) {
+            window.showConfirm("Konfirmasi Transfer", "Apakah Anda sudah mentransfer uang ke rekening Mitra?", async () => {
+                try {
+                    await window.fsUpdateDoc('withdrawals', docId, { status: 'transferred' });
+                    window.showToast("Pencairan dana ditandai Selesai (Server).");
+                } catch(e) { window.showToast("Gagal update status", false); }
             });
-        }
+        };
 
-        // FITUR EDIT PENGGUNA (BARU)
         window.loadAdminUsers = function() {
             const tbody = document.getElementById('adminUsersList'); tbody.innerHTML = '';
-            usersData.forEach(u => {
+            window.usersData.forEach(u => {
                 let role = u.isPartner ? `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs"><i class="ph-fill ph-handshake"></i> Mitra</span>` : `<span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Customer</span>`;
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50">
@@ -1275,49 +1450,51 @@
                         <td class="px-4 py-3 text-xs">${u.email}</td>
                         <td class="px-4 py-3 text-xs font-bold text-orange-600">${formatRp(u.balance || 0)}<br><div class="mt-1">${role}</div></td>
                         <td class="px-4 py-3 text-center flex gap-1 justify-center">
-                            <button onclick="openEditUserModal('${u.uid}')" class="bg-blue-100 text-blue-600 p-1.5 rounded hover:bg-blue-200" title="Edit"><i class="ph-fill ph-pencil-simple text-sm"></i></button>
-                            <button onclick="deleteUser('${u.uid}')" class="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200" title="Hapus"><i class="ph-fill ph-trash text-sm"></i></button>
+                            <button onclick="openEditUserModal('${u.id}')" class="bg-blue-100 text-blue-600 p-1.5 rounded hover:bg-blue-200" title="Edit Pengguna"><i class="ph-fill ph-pencil-simple text-sm"></i></button>
+                            <button onclick="deleteUser('${u.id}')" class="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200" title="Hapus Pengguna"><i class="ph-fill ph-trash text-sm"></i></button>
                         </td>
                     </tr>`;
             });
-        }
+        };
 
-        window.openEditUserModal = function(uid) {
-            let u = usersData.find(x => x.uid === uid);
+        window.openEditUserModal = function(id) {
+            let u = window.usersData.find(x => x.id === id);
             if(!u) return;
-            document.getElementById('euUid').value = u.uid;
+            document.getElementById('euUid').value = u.id;
             document.getElementById('euName').value = u.name;
             document.getElementById('euEmail').value = u.email;
             document.getElementById('euBalance').value = u.balance || 0;
             document.getElementById('euRole').value = u.isPartner ? 'mitra' : 'customer';
-            openModal('editUserModal');
-        }
+            window.openModal('editUserModal');
+        };
 
-        window.saveUserEdit = function() {
-            let uid = document.getElementById('euUid').value;
-            let u = usersData.find(x => x.uid === uid);
-            if(u) {
-                u.name = document.getElementById('euName').value;
-                u.email = document.getElementById('euEmail').value;
-                u.balance = parseInt(document.getElementById('euBalance').value) || 0;
-                u.isPartner = document.getElementById('euRole').value === 'mitra';
-                showToast("Data pengguna berhasil diubah!");
-                closeAllModals(); loadAdminUsers();
-                if(currentUser && currentUser.uid === uid) { currentUser = u; updateUserUI(); } // Update diri sendiri
-            }
-        }
+        window.saveUserEdit = async function() {
+            let id = document.getElementById('euUid').value;
+            let updatedData = {
+                name: document.getElementById('euName').value,
+                email: document.getElementById('euEmail').value,
+                balance: parseInt(document.getElementById('euBalance').value) || 0,
+                isPartner: document.getElementById('euRole').value === 'mitra'
+            };
+            try {
+                await window.fsUpdateDoc('users', id, updatedData);
+                window.showToast("Data pengguna berhasil diperbarui di Cloud!");
+                window.closeAllModals();
+            } catch(e) { window.showToast("Gagal memperbarui pengguna", false); }
+        };
 
-        window.deleteUser = function(uid) {
-            showConfirm("Hapus Pengguna?", "Semua data terkait pengguna ini (termasuk saldo) akan hilang secara permanen.", () => {
-                usersData = usersData.filter(x => x.uid !== uid);
-                showToast("Pengguna berhasil dihapus."); loadAdminUsers();
+        window.deleteUser = function(id) {
+            window.showConfirm("Hapus Pengguna?", "Semua data dari pengguna ini (termasuk saldo) akan hangus secara permanen.", async () => {
+                try {
+                    await window.fsDeleteDoc('users', id);
+                    window.showToast("Pengguna berhasil dihapus."); 
+                } catch(e) { window.showToast("Gagal menghapus", false); }
             });
-        }
+        };
 
-        // FITUR EDIT MOBIL (BARU)
         window.loadAdminAllCars = function() {
             const container = document.getElementById('adminAllCarsList');
-            const activeCars = carsData.filter(c => c.status === 'approved');
+            const activeCars = window.carsData.filter(c => c.status === 'approved');
             let html = '';
             activeCars.forEach(car => {
                 html += `
@@ -1335,38 +1512,40 @@
                 </div>`;
             });
             container.innerHTML = html;
-        }
+        };
 
         window.openEditCarModal = function(carId) {
-            let c = carsData.find(x => x.id === carId);
+            let c = window.carsData.find(x => x.id === carId);
             if(!c) return;
             document.getElementById('ecId').value = c.id;
             document.getElementById('ecName').value = c.name;
             document.getElementById('ecCategory').value = c.category;
             document.getElementById('ecPrice').value = c.priceDay;
             document.getElementById('ecSeat').value = c.seat;
-            openModal('editCarModal');
-        }
+            window.openModal('editCarModal');
+        };
 
-        window.saveCarEdit = function() {
+        window.saveCarEdit = async function() {
             let id = document.getElementById('ecId').value;
-            let c = carsData.find(x => x.id === id);
-            if(c) {
-                c.name = document.getElementById('ecName').value;
-                c.category = document.getElementById('ecCategory').value;
-                c.priceDay = parseInt(document.getElementById('ecPrice').value) || 0;
-                c.seat = parseInt(document.getElementById('ecSeat').value) || 0;
-                showToast("Data mobil berhasil diubah!");
-                closeAllModals(); loadAdminAllCars(); renderCars(); 
-            }
-        }
+            let updatedData = {
+                name: document.getElementById('ecName').value,
+                category: document.getElementById('ecCategory').value,
+                priceDay: parseInt(document.getElementById('ecPrice').value) || 0,
+                seat: parseInt(document.getElementById('ecSeat').value) || 0
+            };
+            try {
+                await window.fsUpdateDoc('cars', id, updatedData);
+                window.showToast("Data mobil berhasil disimpan di server!");
+                window.closeAllModals(); 
+            } catch(e) { window.showToast("Gagal memperbarui mobil", false); }
+        };
 
         window.renderCars = function(filterCat = "") {
             const container = document.getElementById('carListContainer');
             if(!container) return; 
             container.innerHTML = '';
             
-            const filtered = carsData.filter(car => {
+            const filtered = window.carsData.filter(car => {
                 if (car.status !== 'approved') return false; 
                 if (filterCat) {
                     const carCat = (car.category || "").toLowerCase();
@@ -1376,7 +1555,7 @@
             });
             
             if(filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 font-medium bg-gray-50 rounded border border-dashed">Belum ada mobil di kategori ini.</div>`;
+                container.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 font-medium bg-gray-50 rounded border border-dashed">Sedang memuat data kendaraan...</div>`;
                 return;
             }
 
@@ -1402,7 +1581,7 @@
                     </div>
                 `;
             });
-        }
+        };
 
         window.filterCars = function(categoryName) { 
             document.querySelectorAll('.cat-btn').forEach(btn => {
@@ -1420,10 +1599,11 @@
                 icon.className = "w-14 h-14 rounded-2xl bg-orange-100 text-shopee flex items-center justify-center text-3xl group-hover:bg-shopee group-hover:text-white transition shadow-sm border border-transparent group-hover:border-shopee/20 cat-icon";
                 text.className = "text-xs font-bold text-gray-700 cat-text";
             }
-            renderCars(categoryName); 
-        }
+            window.renderCars(categoryName); 
+        };
 
-        window.onload = function() { renderCars(); }
+        // Nyalakan Aplikasi Saat Web Siap
+        window.onload = function() { startApp(); };
     </script>
 </body>
 </html>
