@@ -1054,8 +1054,9 @@
             window.ordersData.forEach(o => {
                 let sb = o.status === 'pending_payment' ? `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Tunggu Bayar</span>` : o.status === 'paid' ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">Jalan</span>` : `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">Selesai</span>`;
                 let ab = o.status === 'pending_payment' ? `<button onclick="updateOrderStatus('${o.id}', 'paid')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-blue-600">Verifikasi Tf</button>` : o.status === 'paid' ? `<button onclick="updateOrderStatus('${o.id}', 'completed')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-green-600">Selesaikan</button>` : `-`;
-                // Menampilkan detail durasi di panel Admin
-                let detailSewa = `${o.carName}<br><span class="text-gray-500 text-[10px]">${o.duration || 1} Hari (${o.startDate || '-'})</span><br><b class="text-shopee">${formatRp(o.total)}</b>`;
+                
+                // Menampilkan detail lengkap (termasuk Supir dan Alamat)
+                let detailSewa = `<b class="text-gray-800">${o.carName}</b><br><span class="text-gray-500 text-[10px]">${o.duration || 1} Hari (${o.startDate || '-'})</span><br><span class="text-blue-600 font-semibold text-[10px] uppercase">${o.serviceType || 'Lepas Kunci'}</span><br><span class="text-gray-500 text-[9px] leading-tight block mt-1"><b>Dari:</b> ${o.pickupAddress || '-'}<br><b>Ke:</b> ${o.destination || '-'}</span><br><b class="text-shopee mt-1 block">${formatRp(o.total)}</b>`;
                 
                 t.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xs">${o.orderRef}</td><td class="px-4 py-3 text-xs">P: ${o.userName}<br>M: ${o.ownerPhone}</td><td class="px-4 py-3 text-xs">${detailSewa}</td><td class="px-4 py-3">${sb}</td><td class="px-4 py-3 text-center">${ab}</td></tr>`;
             });
