@@ -1088,15 +1088,49 @@
             if(window.ordersData.length === 0) { t.innerHTML = `<tr><td colspan="5" class="text-center py-4">Kosong</td></tr>`; return; }
             window.ordersData.forEach(o => {
                 let sb = o.status === 'pending_payment' ? `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Tunggu Bayar</span>` : o.status === 'paid' ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">Jalan</span>` : `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">Selesai</span>`;
-                let ab = o.status === 'pending_payment' ? `<button onclick="updateOrderStatus('${o.id}', 'paid')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-blue-600">Verifikasi Tf</button>` : o.status === 'paid' ? `<button onclick="updateOrderStatus('${o.id}', 'completed')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-green-600">Selesaikan</button>` : `-`;
+                
+                let ab = '-';
+                if (o.status === 'pending_payment') {
+                    ab = `<button onclick="updateOrderStatus('${o.id}', 'paid')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-blue-600">Verifikasi Tf</button>`;
+                } else if (o.status === 'paid') {
+                    ab = `<button onclick="updateOrderStatus('${o.id}', 'completed')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-green-600">Selesaikan</button>`;
+                } else if (o.status === 'completed') {
+                    if(!o.isDisbursed) {
+                        const mShare = o.ownerPhone === 'official' ? o.total : o.total * 0.93;
+                        ab = `<button onclick="disburseOrder('${o.id}', ${o.total}, '${o.ownerPhone}')" class="bg-orange-500 text-white px-2 py-1.5 rounded text-[10px] font-bold shadow hover:bg-orange-600 leading-tight">Cairkan Ke Mitra<br>(${formatRp(mShare)})</button>`;
+                    } else {
+                        ab = `<span class="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-1 rounded border border-green-200">Dana Cair</span>`;
+                    }
+                }
                 
                 let svcText = o.serviceType === 'supir' ? 'Dgn Supir' : 'Lepas Kunci';
                 let detailSewa = `<b class="text-gray-800">${o.carName}</b><br><span class="text-gray-500 text-[10px]">${o.duration || 1} Hari (${o.startDate || '-'})</span><br><span class="text-blue-600 font-semibold text-[10px] uppercase">${svcText}</span><br><span class="text-gray-500 text-[9px] leading-tight block mt-1"><b>Jemput:</b> ${o.pickupAddress || '-'}<br><b>Tujuan:</b> ${o.destination || '-'}</span><br><b class="text-shopee mt-1 block">${formatRp(o.total)}</b>`;
                 
-                t.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xs">${o.orderRef}</td><td class="px-4 py-3 text-xs">P: ${o.userName}<br>M: ${o.ownerPhone}</td><td class="px-4 py-3 text-xs">${detailSewa}</td><td class="px-4 py-3">${sb}</td><td class="px-4 py-3 text-center">${ab}</td></tr>`;
+                t.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xs">${o.orderRef}</td><td class="px-4 py-3 text-xs">P: ${o.userName}<br>M: ${o.ownerPhone}</td><td class="px-4 py-3 text-xs">${detailSewa}</td><td class="px-4 py-3">${sb}</td><td class="px-4 py-3 text-center align-middle">${ab}</td></tr>`;
             });
         };
+        
         window.updateOrderStatus = async function(id, st) { try { await window.fsUpdateDoc('orders', id, { status: st }); window.showToast("Status Diperbarui!"); } catch(e) {} };
+
+        window.disburseOrder = function(orderId, total, ownerPhone) {
+            if(ownerPhone === 'official') {
+                window.showConfirm("Pendapatan Perusahaan", `Ini adalah mobil perusahaan (Official). Tandai pendapatan sebesar ${formatRp(total)} sudah masuk/selesai?`, async () => {
+                    try { await window.fsUpdateDoc('orders', orderId, { isDisbursed: true }); window.showToast("Ditandai selesai."); } catch(e) {}
+                });
+                return;
+            }
+            const mitraShare = total * 0.93;
+            const mitraUser = window.usersData.find(u => u.email === ownerPhone);
+            const mitraName = mitraUser ? mitraUser.name : 'Mitra';
+            
+            window.showConfirm("Cairkan Dana Pesanan", `Tandai pencairan dana ${formatRp(mitraShare)} (93%) ke ${mitraName}?\n\n(Ini akan otomatis menambahkan catatan ke riwayat Penarikan Mitra)`, async () => {
+                try {
+                    await window.fsUpdateDoc('orders', orderId, { isDisbursed: true });
+                    await window.fsAddDoc('withdrawals', { wdRef: generateId("WD"), mitraEmail: ownerPhone, mitraName: mitraName, amount: mitraShare, bank: "Pencairan Langsung", account: "Oleh Admin", status: "transferred" });
+                    window.showToast("Berhasil dicairkan!");
+                } catch(e) { window.showToast("Gagal memproses", false); }
+            });
+        };
 
         window.loadAdminWithdrawals = function() {
             const t = document.getElementById('adminWithdrawalsList'); t.innerHTML = '';
