@@ -707,8 +707,11 @@
             <div class="p-4 flex-1 overflow-y-auto bg-gray-50 flex flex-col gap-3 h-80" id="acmMessages">
                 <!-- Messages populated via JS -->
             </div>
-            <div class="p-3 bg-white border-t flex gap-2">
-                <input type="text" id="acmInput" onkeypress="if(event.key==='Enter') sendAdminMsg()" class="flex-1 border rounded-full px-4 outline-none focus:border-blue-500 text-sm" placeholder="Ketik balasan untuk mitra...">
+            <div class="p-3 bg-white border-t flex gap-2 items-center">
+                <input type="file" id="acmImgInput" accept="image/*" class="hidden" onchange="sendAdminImage(event)">
+                <button onclick="document.getElementById('acmImgInput').click()" class="text-gray-400 hover:text-blue-600 transition p-2" title="Kirim Gambar"><i class="ph-fill ph-image text-xl"></i></button>
+                
+                <input type="text" id="acmInput" onkeypress="if(event.key==='Enter') sendAdminMsg()" class="flex-1 border rounded-full px-4 py-2 outline-none focus:border-blue-500 text-sm" placeholder="Ketik balasan untuk mitra...">
                 <button onclick="sendAdminMsg()" class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-blue-700 shrink-0 shadow"><i class="ph-fill ph-paper-plane-right"></i></button>
             </div>
         </div>
@@ -722,8 +725,11 @@
             <div class="p-4 flex-1 overflow-y-auto bg-gray-50 flex flex-col gap-3 h-80" id="mcmMessages">
                 <!-- Messages populated via JS -->
             </div>
-            <div class="p-3 bg-white border-t flex gap-2">
-                <input type="text" id="mcmInput" onkeypress="if(event.key==='Enter') sendMitraMsg()" class="flex-1 border rounded-full px-4 outline-none focus:border-blue-500 text-sm" placeholder="Ketik pesan Anda...">
+            <div class="p-3 bg-white border-t flex gap-2 items-center">
+                <input type="file" id="mcmImgInput" accept="image/*" class="hidden" onchange="sendMitraImage(event)">
+                <button onclick="document.getElementById('mcmImgInput').click()" class="text-gray-400 hover:text-blue-600 transition p-2" title="Kirim Gambar/Bukti Transfer"><i class="ph-fill ph-image text-xl"></i></button>
+                
+                <input type="text" id="mcmInput" onkeypress="if(event.key==='Enter') sendMitraMsg()" class="flex-1 border rounded-full px-4 py-2 outline-none focus:border-blue-500 text-sm" placeholder="Ketik pesan Anda...">
                 <button onclick="sendMitraMsg()" class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-blue-700 shrink-0 shadow"><i class="ph-fill ph-paper-plane-right"></i></button>
             </div>
         </div>
@@ -1006,7 +1012,7 @@
             const btn = document.getElementById('btnBayarSekarang'); btn.innerHTML = `Memproses...`; btn.disabled = true;
             try {
                 if(pm === 'otopay') {
-                    if(window.currentUser.balance < total) { window.showToast("Saldo OtoPay kurang.", false); btn.innerHTML = `Bayar Sekarang`; btn.disabled = false; return; }
+                    if(window.currentUser.balance < total) { window.showToast("Saldo OtoPay kurang.", false); btn.innerHTML = `<i class="ph-fill ph-lock-key"></i> Bayar Sekarang`; btn.disabled = false; return; }
                     await window.fsUpdateDoc('users', window.currentUser.id, { balance: window.currentUser.balance - total });
                     await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: total, duration: dur, startDate: start, endDate: end, serviceType: svcType, pickupAddress: pickup, destination: dest, status: "paid", payMethod: "otopay" });
                     window.showToast("Lunas! Pesanan dikonfirmasi otomatis."); window.closeAllModals();
@@ -1389,10 +1395,13 @@
             container.innerHTML = '';
             myMsgs.forEach(m => {
                 const timeStr = new Date(m.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                const imgHtml = m.img ? `<img src="${m.img}" class="rounded mb-1 w-full max-w-[200px] object-cover cursor-pointer border border-white/20 shadow-sm" onclick="window.open('${m.img}', '_blank')">` : '';
+                const textHtml = m.text ? `<span class="mb-1">${m.text}</span>` : '';
+                
                 if(m.sender === 'mitra') {
-                    container.innerHTML += `<div class="self-end bg-blue-600 text-white p-2.5 rounded-lg rounded-br-none max-w-[85%] text-sm shadow-sm flex flex-col"><span class="mb-1">${m.text}</span><span class="text-[9px] text-blue-200 self-end mt-1">${timeStr}</span></div>`;
+                    container.innerHTML += `<div class="self-end bg-blue-600 text-white p-2.5 rounded-lg rounded-br-none max-w-[85%] text-sm shadow-sm flex flex-col">${imgHtml}${textHtml}<span class="text-[9px] text-blue-200 self-end mt-1">${timeStr}</span></div>`;
                 } else {
-                    container.innerHTML += `<div class="self-start bg-white border border-gray-200 text-gray-800 p-2.5 rounded-lg rounded-bl-none max-w-[85%] text-sm shadow-sm flex flex-col"><span class="mb-1">${m.text}</span><span class="text-[9px] text-gray-400 self-start mt-1">${timeStr}</span></div>`;
+                    container.innerHTML += `<div class="self-start bg-white border border-gray-200 text-gray-800 p-2.5 rounded-lg rounded-bl-none max-w-[85%] text-sm shadow-sm flex flex-col">${imgHtml}${textHtml}<span class="text-[9px] text-gray-400 self-start mt-1">${timeStr}</span></div>`;
                 }
             });
             container.scrollTop = container.scrollHeight;
@@ -1405,6 +1414,20 @@
             try {
                 await window.fsAddDoc('messages', { mitraEmail: window.currentUser.email, mitraName: window.currentUser.name, sender: 'mitra', text: text, timestamp: Date.now() });
             } catch(e) { window.showToast("Gagal kirim pesan", false); }
+        };
+
+        window.sendMitraImage = async function(e) {
+            const file = e.target.files[0];
+            if(!file || !window.currentUser) return;
+            const btn = e.target.nextElementSibling;
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i>`;
+            try {
+                const imgBase64 = await compressImage(file, 800); 
+                await window.fsAddDoc('messages', { mitraEmail: window.currentUser.email, mitraName: window.currentUser.name, sender: 'mitra', text: '', img: imgBase64, timestamp: Date.now() });
+                window.showToast("Bukti transfer/gambar terkirim!");
+            } catch(err) { window.showToast("Gagal kirim gambar", false); }
+            finally { btn.innerHTML = origHtml; e.target.value = ''; }
         };
 
         window.loadAdminChatList = function() {
@@ -1428,6 +1451,8 @@
             chatList.forEach(m => {
                 const timeStr = new Date(m.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                 const isUnread = m.sender === 'mitra' ? `<div class="w-2 h-2 bg-blue-500 rounded-full"></div>` : '';
+                const displayMsg = m.img ? '📷 Mengirim gambar' : m.text;
+                
                 container.innerHTML += `
                 <div onclick="openAdminChatRoom('${m.mitraEmail}', '${m.mitraName}')" class="bg-white border p-3 rounded-lg shadow-sm hover:shadow-md cursor-pointer transition flex items-center gap-3 group">
                     <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl shrink-0 group-hover:bg-blue-600 group-hover:text-white transition"><i class="ph-fill ph-user"></i></div>
@@ -1437,7 +1462,7 @@
                             <span class="text-[10px] text-gray-400 shrink-0">${timeStr}</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <p class="text-xs text-gray-500 truncate">${m.sender === 'admin' ? 'Anda: ' : ''}${m.text}</p>
+                            <p class="text-xs text-gray-500 truncate">${m.sender === 'admin' ? 'Anda: ' : ''}${displayMsg}</p>
                             ${isUnread}
                         </div>
                     </div>
@@ -1460,10 +1485,13 @@
             container.innerHTML = '';
             myMsgs.forEach(m => {
                 const timeStr = new Date(m.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                const imgHtml = m.img ? `<img src="${m.img}" class="rounded mb-1 w-full max-w-[200px] object-cover cursor-pointer border border-white/20 shadow-sm" onclick="window.open('${m.img}', '_blank')">` : '';
+                const textHtml = m.text ? `<span class="mb-1">${m.text}</span>` : '';
+
                 if(m.sender === 'admin') {
-                    container.innerHTML += `<div class="self-end bg-blue-600 text-white p-2.5 rounded-lg rounded-br-none max-w-[85%] text-sm shadow-sm flex flex-col"><span class="mb-1">${m.text}</span><span class="text-[9px] text-blue-200 self-end mt-1">${timeStr}</span></div>`;
+                    container.innerHTML += `<div class="self-end bg-blue-600 text-white p-2.5 rounded-lg rounded-br-none max-w-[85%] text-sm shadow-sm flex flex-col">${imgHtml}${textHtml}<span class="text-[9px] text-blue-200 self-end mt-1">${timeStr}</span></div>`;
                 } else {
-                    container.innerHTML += `<div class="self-start bg-white border border-gray-200 text-gray-800 p-2.5 rounded-lg rounded-bl-none max-w-[85%] text-sm shadow-sm flex flex-col"><span class="mb-1">${m.text}</span><span class="text-[9px] text-gray-400 self-start mt-1">${timeStr}</span></div>`;
+                    container.innerHTML += `<div class="self-start bg-white border border-gray-200 text-gray-800 p-2.5 rounded-lg rounded-bl-none max-w-[85%] text-sm shadow-sm flex flex-col">${imgHtml}${textHtml}<span class="text-[9px] text-gray-400 self-start mt-1">${timeStr}</span></div>`;
                 }
             });
             container.scrollTop = container.scrollHeight;
@@ -1476,6 +1504,19 @@
             try {
                 await window.fsAddDoc('messages', { mitraEmail: window.activeAdminChatEmail, mitraName: document.getElementById('acmTitle').innerText.replace('Chat: ', ''), sender: 'admin', text: text, timestamp: Date.now() });
             } catch(e) { window.showToast("Gagal kirim pesan", false); }
+        };
+
+        window.sendAdminImage = async function(e) {
+            const file = e.target.files[0];
+            if(!file || !window.activeAdminChatEmail) return;
+            const btn = e.target.nextElementSibling;
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i>`;
+            try {
+                const imgBase64 = await compressImage(file, 800);
+                await window.fsAddDoc('messages', { mitraEmail: window.activeAdminChatEmail, mitraName: document.getElementById('acmTitle').innerText.replace('Chat: ', ''), sender: 'admin', text: '', img: imgBase64, timestamp: Date.now() });
+            } catch(err) { window.showToast("Gagal kirim gambar", false); }
+            finally { btn.innerHTML = origHtml; e.target.value = ''; }
         };
 
         window.onload = function() { startApp(); };
