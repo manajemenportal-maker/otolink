@@ -300,9 +300,12 @@
                         <button onclick="openWithdrawModal()" class="bg-white text-green-700 hover:bg-green-50 px-3 py-1.5 rounded text-xs font-bold shadow-sm transition flex items-center gap-1 w-full justify-center">
                             <i class="ph-fill ph-bank"></i> Tarik Dana
                         </button>
+                        <button onclick="openPartnerBankModal()" class="bg-green-800 text-white hover:bg-green-900 px-3 py-1.5 rounded text-xs font-bold shadow-sm transition flex items-center gap-1 w-full justify-center">
+                            <i class="ph-fill ph-gear"></i> Rekening
+                        </button>
                     </div>
                 </div>
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center text-center relative overflow-hidden">
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center text-center relative overflow-hidden md:col-span-1">
                     <i class="ph-fill ph-car absolute -left-4 -bottom-4 text-6xl text-gray-100"></i>
                     <span class="text-xs text-gray-500 mb-1 font-bold z-10">Total Iklan Aktif</span>
                     <span class="text-4xl font-black text-gray-800 z-10" id="partnerTotalCars">0</span>
@@ -435,7 +438,7 @@
             </div>
         </div>
 
-        <!-- Modal Checkout Pembayaran -->
+        <!-- Modal Checkout Pembayaran Lengkap -->
         <div id="checkoutModal" class="bg-white w-full md:w-[500px] md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col max-h-[90vh] absolute bottom-0 md:relative">
             <div class="bg-gray-900 p-4 text-white flex justify-between items-center sticky top-0 z-10">
                 <h2 class="font-bold text-lg flex items-center gap-2"><i class="ph-fill ph-shopping-cart text-shopee text-xl"></i> Checkout Sewa</h2>
@@ -451,7 +454,6 @@
                     </div>
                 </div>
 
-                <!-- Bagian Detail Sewa & Durasi Baru -->
                 <div class="mb-4 bg-gray-50 p-3 rounded border border-gray-200">
                     <h4 class="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Detail Penyewaan</h4>
                     <div class="grid grid-cols-2 gap-3 mb-3">
@@ -529,6 +531,66 @@
                     </select>
                 </div>
                 <button onclick="processTopUp()" id="btnTopUp" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold p-3.5 rounded shadow-md transition text-sm">Lanjutkan Transfer</button>
+            </div>
+        </div>
+
+        <!-- Modal Setting Rekening Bank Mitra -->
+        <div id="partnerBankModal" class="bg-white w-full md:w-96 md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col absolute bottom-0 md:relative">
+            <div class="p-4 border-b flex justify-between items-center bg-green-50">
+                <h3 class="font-bold text-green-800 flex items-center gap-2"><i class="ph-fill ph-bank text-xl"></i> Pengaturan Rekening Bank</h3>
+                <button onclick="closeAllModals()" class="text-green-600 hover:text-green-800 bg-green-200 rounded-full w-8 h-8 flex items-center justify-center"><i class="ph ph-x text-lg"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-4">
+                <div class="text-xs text-gray-600 mb-2">Simpan data rekening Anda agar memudahkan Admin mentransfer penghasilan bagi hasil (93%) Anda.</div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Nama Bank</label>
+                    <select id="pbBankName" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 text-sm">
+                        <option value="">-- Pilih Bank --</option>
+                        <option value="BCA">BCA</option><option value="Mandiri">Mandiri</option><option value="BRI">BRI</option><option value="BNI">BNI</option><option value="GoPay">GoPay</option><option value="OVO">OVO</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Nomor Rekening / HP</label>
+                    <input type="text" id="pbBankAccount" placeholder="Masukkan nomor rekening..." class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 text-sm">
+                </div>
+                <button onclick="savePartnerBank()" id="btnSavePartnerBank" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold p-3.5 rounded shadow-md transition text-sm flex items-center justify-center gap-2">
+                    <i class="ph-fill ph-floppy-disk"></i> Simpan Rekening
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Admin Pencairan Pintar -->
+        <div id="adminDisburseModal" class="bg-white w-full md:w-[450px] md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col absolute bottom-0 md:relative">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-900 text-white">
+                <h3 class="font-bold flex items-center gap-2"><i class="ph-fill ph-money text-orange-400 text-xl"></i> Proses Pencairan Dana Mitra</h3>
+                <button onclick="closeAllModals()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-4">
+                <input type="hidden" id="adOrderId">
+                <input type="hidden" id="adMitraEmail">
+                <input type="hidden" id="adAmount">
+                
+                <div class="bg-orange-50 border border-orange-200 p-4 rounded text-center">
+                    <p class="text-xs text-orange-800 mb-1" id="adMitraName">Nama Mitra</p>
+                    <h2 class="text-3xl font-black text-orange-600 mb-1" id="adAmountDisplay">Rp 0</h2>
+                    <p class="text-[10px] text-orange-700 font-semibold">Total Bagi Hasil 93%</p>
+                </div>
+
+                <div class="bg-gray-50 border p-3 rounded">
+                    <h4 class="text-xs font-bold text-gray-700 mb-2 border-b pb-1">Info Rekening Pencairan</h4>
+                    <div id="adBankInfo" class="text-sm font-semibold text-gray-800">
+                        <!-- Data rekening tampil di sini -->
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3 mt-2">
+                    <button onclick="confirmDisbursement('otopay')" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold p-3.5 rounded shadow-md transition text-sm flex items-center justify-center gap-2">
+                        <i class="ph-fill ph-wallet"></i> Cairkan ke Saldo OtoPay Mitra
+                    </button>
+                    <button onclick="confirmDisbursement('transfer')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded shadow-md transition text-sm flex items-center justify-center gap-2">
+                        <i class="ph-fill ph-bank"></i> Tandai Sudah Transfer Bank
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -768,7 +830,7 @@
                 o.classList.add('opacity-0', 'pointer-events-none');
                 setTimeout(() => { 
                     o.classList.add('hidden'); o.classList.remove('flex');
-                    ['authModal', 'adminAuthModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal'].forEach(id => { const el = document.getElementById(id); if(el) { el.classList.add('hidden'); el.classList.remove('flex'); } });
+                    ['authModal', 'adminAuthModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal', 'partnerBankModal', 'adminDisburseModal'].forEach(id => { const el = document.getElementById(id); if(el) { el.classList.add('hidden'); el.classList.remove('flex'); } });
                 }, 300);
             }
         };
@@ -776,7 +838,7 @@
         window.openModal = function(id) {
             const o = document.getElementById('modalOverlay');
             o.classList.remove('hidden', 'pointer-events-none'); o.classList.add('flex');
-            ['authModal', 'adminAuthModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal'].forEach(m => {
+            ['authModal', 'adminAuthModal', 'partnerModal', 'mobileAccountModal', 'checkoutModal', 'otopayModal', 'withdrawModal', 'confirmModal', 'editUserModal', 'editCarModal', 'partnerBankModal', 'adminDisburseModal'].forEach(m => {
                 const el = document.getElementById(m); if(el) { m === id ? (el.classList.remove('hidden'), el.classList.add('flex')) : (el.classList.add('hidden'), el.classList.remove('flex')); }
             });
             setTimeout(() => { o.classList.remove('opacity-0'); o.classList.add('opacity-100'); }, 10);
@@ -984,7 +1046,7 @@
                         window.showToast("Pesanan dibuat. Menunggu Verifikasi Admin."); window.closeAllModals();
                     });
                 }
-            } catch(e) { window.showToast("Gagal memproses.", false); } finally { btn.innerHTML = `Bayar Sekarang`; btn.disabled = false; }
+            } catch(e) { window.showToast("Gagal memproses.", false); } finally { btn.innerHTML = `<i class="ph-fill ph-lock-key"></i> Bayar Sekarang`; btn.disabled = false; }
         };
 
         window.openMyOrders = function() { window.showToast("Pemesanan sedang diproses sistem."); window.closeAllModals(); };
@@ -999,6 +1061,25 @@
         window.closePartnerPanel = function() { document.getElementById('partnerPanel').classList.add('hidden'); document.getElementById('appContainer').classList.remove('hidden'); window.renderCars(); };
         window.openAddCarForm = function() { document.getElementById('partnerAddCarForm').classList.remove('hidden'); };
         window.closeAddCarForm = function() { document.getElementById('partnerAddCarForm').classList.add('hidden'); };
+
+        window.openPartnerBankModal = function() {
+            if(!window.currentUser) return;
+            document.getElementById('pbBankName').value = window.currentUser.bankName || "";
+            document.getElementById('pbBankAccount').value = window.currentUser.bankAccount || "";
+            window.openModal('partnerBankModal');
+        };
+
+        window.savePartnerBank = async function() {
+            const btn = document.getElementById('btnSavePartnerBank'); btn.innerHTML = "Menyimpan..."; btn.disabled = true;
+            const bName = document.getElementById('pbBankName').value;
+            const bAcc = document.getElementById('pbBankAccount').value.trim();
+            if(!bName || !bAcc) { window.showToast("Isi Bank & Nomor Rekening!", false); btn.innerHTML = `<i class="ph-fill ph-floppy-disk"></i> Simpan Rekening`; btn.disabled = false; return; }
+            try {
+                await window.fsUpdateDoc('users', window.currentUser.id, { bankName: bName, bankAccount: bAcc });
+                window.showToast("Rekening berhasil disimpan!");
+                window.closeAllModals();
+            } catch(e) { window.showToast("Gagal menyimpan rekening", false); } finally { btn.innerHTML = `<i class="ph-fill ph-floppy-disk"></i> Simpan Rekening`; btn.disabled = false; }
+        };
 
         function compressImage(file, maxWidth = 800) {
             return new Promise((res, rej) => {
@@ -1097,13 +1178,13 @@
                 } else if (o.status === 'completed') {
                     if(!o.isDisbursed) {
                         const mShare = o.ownerPhone === 'official' ? o.total : o.total * 0.93;
-                        ab = `<button onclick="disburseOrder('${o.id}', ${o.total}, '${o.ownerPhone}')" class="bg-orange-500 text-white px-2 py-1.5 rounded text-[10px] font-bold shadow hover:bg-orange-600 leading-tight">Cairkan Ke Mitra<br>(${formatRp(mShare)})</button>`;
+                        ab = `<button onclick="openAdminDisburseModal('${o.id}', ${o.total}, '${o.ownerPhone}')" class="bg-orange-500 text-white px-2 py-1.5 rounded text-[10px] font-bold shadow hover:bg-orange-600 leading-tight">Cairkan Ke Mitra<br>(${formatRp(mShare)})</button>`;
                     } else {
                         ab = `<span class="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-1 rounded border border-green-200">Dana Cair</span>`;
                     }
                 }
                 
-                let svcText = o.serviceType === 'supir' ? 'Dgn Supir' : 'Lepas Kunci';
+                let svcText = o.serviceType === 'supir' ? 'DGN SUPIR' : 'LEPAS KUNCI';
                 let detailSewa = `<b class="text-gray-800">${o.carName}</b><br><span class="text-gray-500 text-[10px]">${o.duration || 1} Hari (${o.startDate || '-'})</span><br><span class="text-blue-600 font-semibold text-[10px] uppercase">${svcText}</span><br><span class="text-gray-500 text-[9px] leading-tight block mt-1"><b>Jemput:</b> ${o.pickupAddress || '-'}<br><b>Tujuan:</b> ${o.destination || '-'}</span><br><b class="text-shopee mt-1 block">${formatRp(o.total)}</b>`;
                 
                 t.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xs">${o.orderRef}</td><td class="px-4 py-3 text-xs">P: ${o.userName}<br>M: ${o.ownerPhone}</td><td class="px-4 py-3 text-xs">${detailSewa}</td><td class="px-4 py-3">${sb}</td><td class="px-4 py-3 text-center align-middle">${ab}</td></tr>`;
@@ -1112,31 +1193,70 @@
         
         window.updateOrderStatus = async function(id, st) { try { await window.fsUpdateDoc('orders', id, { status: st }); window.showToast("Status Diperbarui!"); } catch(e) {} };
 
-        window.disburseOrder = function(orderId, total, ownerPhone) {
+        // Pencairan Pintar (Smart Disbursement)
+        window.openAdminDisburseModal = function(orderId, total, ownerPhone) {
             if(ownerPhone === 'official') {
                 window.showConfirm("Pendapatan Perusahaan", `Ini adalah mobil perusahaan (Official). Tandai pendapatan sebesar ${formatRp(total)} sudah masuk/selesai?`, async () => {
                     try { await window.fsUpdateDoc('orders', orderId, { isDisbursed: true }); window.showToast("Ditandai selesai."); } catch(e) {}
                 });
                 return;
             }
+
             const mitraShare = total * 0.93;
             const mitraUser = window.usersData.find(u => u.email === ownerPhone);
-            const mitraName = mitraUser ? mitraUser.name : 'Mitra';
+            const mitraName = mitraUser ? mitraUser.name : 'Mitra Tidak Ditemukan';
+
+            document.getElementById('adOrderId').value = orderId;
+            document.getElementById('adMitraEmail').value = ownerPhone;
+            document.getElementById('adAmount').value = mitraShare;
             
-            window.showConfirm("Cairkan Dana Pesanan", `Tandai pencairan dana ${formatRp(mitraShare)} (93%) ke ${mitraName}?\n\n(Ini akan otomatis menambahkan catatan ke riwayat Penarikan Mitra)`, async () => {
-                try {
+            document.getElementById('adMitraName').innerText = mitraName + " (" + ownerPhone + ")";
+            document.getElementById('adAmountDisplay').innerText = formatRp(mitraShare);
+
+            const bankInfoDiv = document.getElementById('adBankInfo');
+            if (mitraUser && mitraUser.bankName && mitraUser.bankAccount) {
+                bankInfoDiv.innerHTML = `<span class="text-green-600 block mb-1"><i class="ph-fill ph-check-circle"></i> Rekening Tersedia</span>
+                                         Bank: <b>${mitraUser.bankName}</b><br>No. Rek: <b>${mitraUser.bankAccount}</b>`;
+            } else {
+                bankInfoDiv.innerHTML = `<span class="text-red-500 font-bold"><i class="ph-fill ph-warning-circle"></i> Mitra belum mengatur rekening bank di dashboard mereka. Pastikan hubungi mitra sebelum transfer manual.</span>`;
+            }
+
+            window.openModal('adminDisburseModal');
+        };
+
+        window.confirmDisbursement = async function(method) {
+            const orderId = document.getElementById('adOrderId').value;
+            const mitraEmail = document.getElementById('adMitraEmail').value;
+            const amount = parseInt(document.getElementById('adAmount').value);
+            const mitraUser = window.usersData.find(u => u.email === mitraEmail);
+            const mitraName = mitraUser ? mitraUser.name : 'Mitra';
+
+            try {
+                if(method === 'otopay') {
+                    if(mitraUser) {
+                        await window.fsUpdateDoc('users', mitraUser.id, { balance: (mitraUser.balance || 0) + amount });
+                    }
+                    await window.fsAddDoc('withdrawals', { wdRef: generateId("WD"), mitraEmail: mitraEmail, mitraName: mitraName, amount: amount, bank: "OtoPay", account: "Saldo Digital", status: "transferred" });
                     await window.fsUpdateDoc('orders', orderId, { isDisbursed: true });
-                    await window.fsAddDoc('withdrawals', { wdRef: generateId("WD"), mitraEmail: ownerPhone, mitraName: mitraName, amount: mitraShare, bank: "Pencairan Langsung", account: "Oleh Admin", status: "transferred" });
-                    window.showToast("Berhasil dicairkan!");
-                } catch(e) { window.showToast("Gagal memproses", false); }
-            });
+                    window.showToast("Berhasil dicairkan ke OtoPay Mitra!");
+                } else if(method === 'transfer') {
+                    const bName = mitraUser?.bankName || "Manual Transfer";
+                    const bAcc = mitraUser?.bankAccount || "Hubungi Mitra";
+                    await window.fsAddDoc('withdrawals', { wdRef: generateId("WD"), mitraEmail: mitraEmail, mitraName: mitraName, amount: amount, bank: bName, account: bAcc, status: "transferred" });
+                    await window.fsUpdateDoc('orders', orderId, { isDisbursed: true });
+                    window.showToast("Berhasil ditandai sudah Transfer Bank!");
+                }
+                window.closeAllModals();
+            } catch(e) {
+                window.showToast("Terjadi kesalahan sistem.", false);
+            }
         };
 
         window.loadAdminWithdrawals = function() {
             const t = document.getElementById('adminWithdrawalsList'); t.innerHTML = '';
             if(window.withdrawalsData.length === 0) { t.innerHTML = `<tr><td colspan="6" class="text-center py-4">Kosong</td></tr>`; return; }
             window.withdrawalsData.forEach(w => {
-                let sb = w.status === 'pending' ? `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Menunggu</span>` : `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">Ditransfer</span>`;
+                let sb = w.status === 'pending' ? `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Menunggu</span>` : `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">Selesai</span>`;
                 let ab = w.status === 'pending' ? `<button onclick="confirmWithdrawal('${w.id}')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-orange-600 shadow">Tandai Ditransfer</button>` : `-`;
                 t.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xs">${w.wdRef}</td><td class="px-4 py-3 text-xs"><b>${w.mitraName}</b></td><td class="px-4 py-3 text-xs">${w.bank}<br>${w.account}</td><td class="px-4 py-3 font-bold text-green-700">${formatRp(w.amount)}</td><td class="px-4 py-3">${sb}</td><td class="px-4 py-3 text-center">${ab}</td></tr>`;
             });
