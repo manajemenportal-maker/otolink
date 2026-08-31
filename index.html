@@ -163,7 +163,7 @@
                         <h4 class="font-bold text-sm mb-4">Ikuti Kami</h4>
                         <div class="flex gap-4 text-gray-500 text-xl">
                             <a href="https://instagram.com/otolinkrent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-instagram-logo"></i></a>
-                            <a href="https://facebook.com/otolinkrent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-facebook-logo"></i></a>
+                            <a href="https://facebook.com/Otolink rent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-facebook-logo"></i></a>
                             <a href="https://threads.net/@otolinkrent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-threads-logo"></i></a>
                         </div>
                     </div>
@@ -453,7 +453,7 @@
 
                 <!-- Bagian Detail Sewa & Durasi Baru -->
                 <div class="mb-4 bg-gray-50 p-3 rounded border border-gray-200">
-                    <h4 class="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Pilih Tanggal Sewa</h4>
+                    <h4 class="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Detail Penyewaan</h4>
                     <div class="grid grid-cols-2 gap-3 mb-3">
                         <div>
                             <label class="text-[10px] font-bold text-gray-500 block mb-1">Tanggal Ambil</label>
@@ -464,9 +464,28 @@
                             <input type="date" id="coEndDate" onchange="calculateCheckoutTotal()" class="w-full p-2 border rounded text-xs outline-none focus:border-shopee bg-white shadow-inner">
                         </div>
                     </div>
-                    <div class="flex justify-between items-center text-xs text-gray-700 bg-white p-2 rounded border">
-                        <span class="font-semibold">Total Durasi Sewa:</span>
-                        <span id="coDuration" class="font-black text-shopee text-sm" data-val="1">1 Hari</span>
+                    <div class="mb-3">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-1">Tipe Layanan</label>
+                        <select id="coServiceType" onchange="calculateCheckoutTotal()" class="w-full p-2 border rounded text-xs outline-none focus:border-shopee bg-white shadow-inner">
+                            <option value="lepas_kunci">Lepas Kunci (Tanpa Supir)</option>
+                            <option value="supir">Dengan Supir (+ Rp 150.000/hari)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-1">Alamat Penjemputan / Pengantaran Mobil</label>
+                        <textarea id="coPickupAddress" rows="2" placeholder="Tuliskan alamat lengkap penjemputan..." class="w-full p-2 border rounded text-xs outline-none focus:border-shopee bg-white shadow-inner"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-1">Kota / Tujuan Pemakaian</label>
+                        <input type="text" id="coDestination" placeholder="Cth: Dalam Kota, atau Luar Kota (Bandung)" class="w-full p-2 border rounded text-xs outline-none focus:border-shopee bg-white shadow-inner">
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-gray-700 bg-white p-2 rounded border mb-1">
+                        <span class="font-semibold">Durasi Sewa:</span>
+                        <span id="coDuration" class="font-black text-shopee" data-val="1">1 Hari</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-gray-700 bg-white p-2 rounded border hidden" id="coDriverFeeContainer">
+                        <span class="font-semibold">Biaya Supir:</span>
+                        <span id="coDriverFee" class="font-black text-shopee">Rp 0</span>
                     </div>
                 </div>
 
@@ -482,7 +501,7 @@
                         </label>
                     </div>
                 </div>
-                <div class="flex justify-between items-center mb-4">
+                <div class="flex justify-between items-center mb-4 border-t pt-4 border-gray-200">
                     <span class="text-sm font-semibold text-gray-600">Total Pembayaran:</span><span class="text-xl font-black text-shopee" id="coTotal" data-val="0">Rp 0</span>
                 </div>
                 <input type="hidden" id="coCarId" data-price="0"><input type="hidden" id="coOwnerPhone">
@@ -872,11 +891,13 @@
             document.getElementById('coCarName').innerText = c.name;
             document.getElementById('coCarCat').innerText = c.category; 
             document.getElementById('coCarPrice').innerText = formatRp(c.priceDay) + " / hari";
-            
-            // Simpan harga per hari secara rahasia untuk dikalkulasi
             document.getElementById('coCarId').dataset.price = c.priceDay;
 
-            // Set Tanggal Mulai (Hari ini) dan Selesai (Besok)
+            // Reset Fields
+            document.getElementById('coServiceType').value = 'lepas_kunci';
+            document.getElementById('coPickupAddress').value = '';
+            document.getElementById('coDestination').value = '';
+
             const today = new Date();
             const tzoffset = today.getTimezoneOffset() * 60000; 
             const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
@@ -888,10 +909,8 @@
             const startInput = document.getElementById('coStartDate');
             const endInput = document.getElementById('coEndDate');
             
-            startInput.min = todayStr;
-            startInput.value = todayStr;
-            endInput.min = tomorrowStr;
-            endInput.value = tomorrowStr;
+            startInput.min = todayStr; startInput.value = todayStr;
+            endInput.min = tomorrowStr; endInput.value = tomorrowStr;
 
             window.calculateCheckoutTotal();
             window.updateOtopayBalanceUI(); 
@@ -902,14 +921,14 @@
             const start = new Date(document.getElementById('coStartDate').value);
             const end = new Date(document.getElementById('coEndDate').value);
             const pricePerDay = parseInt(document.getElementById('coCarId').dataset.price);
+            const svcType = document.getElementById('coServiceType').value;
             const btn = document.getElementById('btnBayarSekarang');
 
-            // Validasi tanggal
             if(end <= start) {
                 document.getElementById('coDuration').innerText = "Tanggal Tidak Valid";
                 document.getElementById('coTotal').innerText = "Rp 0";
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                document.getElementById('coDriverFeeContainer').classList.add('hidden');
+                btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
                 return;
             }
 
@@ -919,12 +938,20 @@
             document.getElementById('coDuration').innerText = diffDays + " Hari";
             document.getElementById('coDuration').dataset.val = diffDays;
             
-            const total = diffDays * pricePerDay;
+            let driverFee = 0;
+            if(svcType === 'supir') {
+                driverFee = 150000 * diffDays;
+                document.getElementById('coDriverFeeContainer').classList.remove('hidden');
+                document.getElementById('coDriverFee').innerText = formatRp(driverFee);
+            } else {
+                document.getElementById('coDriverFeeContainer').classList.add('hidden');
+            }
+
+            const total = (diffDays * pricePerDay) + driverFee;
             document.getElementById('coTotal').innerText = formatRp(total);
             document.getElementById('coTotal').dataset.val = total;
             
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed');
         };
 
         window.processPayment = async function() {
@@ -935,17 +962,25 @@
             const dur = parseInt(document.getElementById('coDuration').dataset.val);
             const start = document.getElementById('coStartDate').value;
             const end = document.getElementById('coEndDate').value;
+            const svcType = document.getElementById('coServiceType').value;
+            const pickup = document.getElementById('coPickupAddress').value.trim();
+            const dest = document.getElementById('coDestination').value.trim();
+
+            if(!pickup || !dest) {
+                window.showToast("Alamat & Tujuan wajib diisi!", false);
+                return;
+            }
 
             const btn = document.getElementById('btnBayarSekarang'); btn.innerHTML = `Memproses...`; btn.disabled = true;
             try {
                 if(pm === 'otopay') {
                     if(window.currentUser.balance < total) { window.showToast("Saldo OtoPay kurang.", false); btn.innerHTML = `Bayar Sekarang`; btn.disabled = false; return; }
                     await window.fsUpdateDoc('users', window.currentUser.id, { balance: window.currentUser.balance - total });
-                    await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: total, duration: dur, startDate: start, endDate: end, status: "paid", payMethod: "otopay" });
+                    await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: total, duration: dur, startDate: start, endDate: end, serviceType: svcType, pickupAddress: pickup, destination: dest, status: "paid", payMethod: "otopay" });
                     window.showToast("Lunas! Pesanan dikonfirmasi otomatis."); window.closeAllModals();
                 } else {
                     window.showConfirm("Transfer Bank BCA", `Transfer ${formatRp(total)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah, klik 'Ya, Yakin' untuk diproses Admin.`, async () => {
-                        await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: total, duration: dur, startDate: start, endDate: end, status: "pending_payment", payMethod: "transfer" });
+                        await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: total, duration: dur, startDate: start, endDate: end, serviceType: svcType, pickupAddress: pickup, destination: dest, status: "pending_payment", payMethod: "transfer" });
                         window.showToast("Pesanan dibuat. Menunggu Verifikasi Admin."); window.closeAllModals();
                     });
                 }
@@ -1055,8 +1090,8 @@
                 let sb = o.status === 'pending_payment' ? `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Tunggu Bayar</span>` : o.status === 'paid' ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">Jalan</span>` : `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">Selesai</span>`;
                 let ab = o.status === 'pending_payment' ? `<button onclick="updateOrderStatus('${o.id}', 'paid')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-blue-600">Verifikasi Tf</button>` : o.status === 'paid' ? `<button onclick="updateOrderStatus('${o.id}', 'completed')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-green-600">Selesaikan</button>` : `-`;
                 
-                // Menampilkan detail lengkap (termasuk Supir dan Alamat)
-                let detailSewa = `<b class="text-gray-800">${o.carName}</b><br><span class="text-gray-500 text-[10px]">${o.duration || 1} Hari (${o.startDate || '-'})</span><br><span class="text-blue-600 font-semibold text-[10px] uppercase">${o.serviceType || 'Lepas Kunci'}</span><br><span class="text-gray-500 text-[9px] leading-tight block mt-1"><b>Dari:</b> ${o.pickupAddress || '-'}<br><b>Ke:</b> ${o.destination || '-'}</span><br><b class="text-shopee mt-1 block">${formatRp(o.total)}</b>`;
+                let svcText = o.serviceType === 'supir' ? 'Dgn Supir' : 'Lepas Kunci';
+                let detailSewa = `<b class="text-gray-800">${o.carName}</b><br><span class="text-gray-500 text-[10px]">${o.duration || 1} Hari (${o.startDate || '-'})</span><br><span class="text-blue-600 font-semibold text-[10px] uppercase">${svcText}</span><br><span class="text-gray-500 text-[9px] leading-tight block mt-1"><b>Jemput:</b> ${o.pickupAddress || '-'}<br><b>Tujuan:</b> ${o.destination || '-'}</span><br><b class="text-shopee mt-1 block">${formatRp(o.total)}</b>`;
                 
                 t.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xs">${o.orderRef}</td><td class="px-4 py-3 text-xs">P: ${o.userName}<br>M: ${o.ownerPhone}</td><td class="px-4 py-3 text-xs">${detailSewa}</td><td class="px-4 py-3">${sb}</td><td class="px-4 py-3 text-center">${ab}</td></tr>`;
             });
