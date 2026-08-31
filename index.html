@@ -285,7 +285,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-green-500 md:col-span-2 flex flex-col justify-center">
                     <h3 class="font-bold text-gray-800 text-lg md:text-xl mb-1" id="partnerDashName">Halo, Mitra</h3>
-                    <p class="text-sm text-gray-500 mb-4">Kelola unit kendaraan. Anda gratis mengupload 1 Iklan. Tambah iklan Rp 11.200/iklan.</p>
+                    <p class="text-sm text-gray-500 mb-4">Kelola unit kendaraan. Anda gratis mengupload 1 Iklan. Tambah iklan dikenakan biaya Rp 11.200/iklan.</p>
                     <div>
                         <button onclick="openAddCarForm()" class="bg-shopee hover:bg-shopee-hover text-white px-5 py-2.5 rounded font-bold shadow transition inline-flex items-center gap-2">
                             <i class="ph ph-plus text-lg"></i> Pasang Iklan Mobil Baru
@@ -643,6 +643,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Konfigurasi Firebase Aktif 
         const firebaseConfig = {
             apiKey: "AIzaSyCQ9wg4ezcqMgrSkL91wOVcx6JHN6PiUMU",
             authDomain: "remote-fd0d8.firebaseapp.com",
@@ -926,24 +927,22 @@
             e.preventDefault(); 
             const myCars = window.carsData.filter(c => c.ownerPhone === window.currentUser.email);
             
-            const processUpload = async () => {
+            const processUpload = async (isPaid = false) => {
                 const btn = document.getElementById('btnUploadIklan'); btn.innerHTML = `Mengunggah...`; btn.disabled = true;
                 try {
-                    if (myCars.length >= 1) { await window.fsUpdateDoc('users', window.currentUser.id, { balance: window.currentUser.balance - 11200 }); }
                     const imgBase64 = await compressImage(document.getElementById('pcImg1').files[0]); 
-                    await window.fsAddDoc('cars', { ownerPhone: window.currentUser.email, status: 'pending', name: document.getElementById('pcName').value, category: document.getElementById('pcType').value, priceDay: parseInt(document.getElementById('pcPriceDay').value), seat: parseInt(document.getElementById('pcSeat').value), img: imgBase64 });
+                    let carData = { ownerPhone: window.currentUser.email, status: 'pending', name: document.getElementById('pcName').value, category: document.getElementById('pcType').value, priceDay: parseInt(document.getElementById('pcPriceDay').value), seat: parseInt(document.getElementById('pcSeat').value), img: imgBase64 };
+                    if(isPaid) { carData.isPaidAd = true; carData.paymentStatus = 'pending_transfer'; } else { carData.isPaidAd = false; }
+                    
+                    await window.fsAddDoc('cars', carData);
                     window.showToast("Iklan berhasil dikirim!"); e.target.reset(); document.getElementById('prevImg1').classList.add('hidden'); document.getElementById('prevImg1').src = ""; window.renderMitraCars(); window.updateUserUI(); window.closeAddCarForm();
                 } catch (err) { window.showToast("Gagal mengunggah iklan.", false); } finally { btn.innerHTML = `<i class="ph ph-upload-simple"></i> Kirim Pengajuan Iklan`; btn.disabled = false; }
             };
 
             if (myCars.length >= 1) {
-                if ((window.currentUser.balance || 0) < 11200) {
-                    window.showConfirm("Limit Iklan Gratis Habis", "Anda hanya mendapat 1 kuota iklan gratis.\n\nUntuk menambah iklan, dikenakan biaya Rp 11.200/iklan yang akan memotong Saldo OtoPay (masuk ke Rek. BCA Pengelola).\n\nSaldo Anda tidak cukup, silakan Top Up terlebih dahulu.", () => { window.closeAddCarForm(); window.openOtopay(); });
-                    return;
-                }
-                window.showConfirm("Tambah Iklan Berbayar", "Batas 1 iklan gratis telah digunakan.\n\nTambah iklan baru akan memotong Saldo OtoPay sebesar Rp 11.200 untuk biaya tayang (masuk ke Rek BCA Pengelola). Lanjutkan?", () => { processUpload(); });
+                window.showConfirm("Iklan Berbayar (Rp 11.200)", "Kuota 1 iklan gratis Anda telah habis.\n\nUntuk menayangkan iklan ini, silakan Transfer Rp 11.200 ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\n\nJika sudah transfer, klik 'Ya, Yakin' untuk dikirim ke Admin.", () => { processUpload(true); });
             } else {
-                processUpload();
+                processUpload(false);
             }
         };
 
@@ -956,7 +955,11 @@
             const myCars = window.carsData.filter(c => c.ownerPhone === window.currentUser.email); const tc = document.getElementById('partnerTotalCars'); if(tc) tc.innerText = myCars.filter(c => c.status === 'approved').length;
             if(myCars.length === 0) { container.innerHTML = `<div class="col-span-full text-center text-gray-500 py-10 bg-gray-50 border border-dashed">Belum ada iklan mobil.</div>`; return; }
             container.innerHTML = '';
-            myCars.forEach(c => { const sb = c.status === 'approved' ? `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold block text-center mt-2">Tayang</span>` : `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-[10px] font-bold block text-center mt-2">Pending Admin</span>`; container.innerHTML += `<div class="border rounded-lg p-3 bg-white shadow-sm hover:shadow-md transition relative group"><div class="absolute top-2 right-2 flex gap-1 z-10 hidden group-hover:flex transition"><button onclick="openEditCarModal('${c.id}', false)" class="bg-white text-blue-500 p-1.5 rounded-full shadow hover:bg-blue-50"><i class="ph-fill ph-pencil-simple"></i></button><button onclick="deleteCar('${c.id}')" class="bg-white text-red-500 p-1.5 rounded-full shadow hover:bg-red-50"><i class="ph-fill ph-trash"></i></button></div><img src="${c.img}" class="w-full h-24 object-cover rounded mb-2 bg-gray-200"><h4 class="font-bold text-gray-800 text-sm truncate">${c.name}</h4><p class="text-sm font-bold text-shopee">${formatRp(c.priceDay)}</p>${sb}</div>`; });
+            myCars.forEach(c => { 
+                let sb = c.status === 'approved' ? `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold block text-center mt-2">Tayang</span>` : `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-[10px] font-bold block text-center mt-2">Pending Admin</span>`; 
+                if (c.status === 'pending' && c.isPaidAd && c.paymentStatus === 'pending_transfer') { sb = `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold block text-center mt-2">Tunggu Cek Tf BCA</span>`; }
+                container.innerHTML += `<div class="border rounded-lg p-3 bg-white shadow-sm hover:shadow-md transition relative group"><div class="absolute top-2 right-2 flex gap-1 z-10 hidden group-hover:flex transition"><button onclick="openEditCarModal('${c.id}', false)" class="bg-white text-blue-500 p-1.5 rounded-full shadow hover:bg-blue-50"><i class="ph-fill ph-pencil-simple"></i></button><button onclick="deleteCar('${c.id}')" class="bg-white text-red-500 p-1.5 rounded-full shadow hover:bg-red-50"><i class="ph-fill ph-trash"></i></button></div><img src="${c.img}" class="w-full h-24 object-cover rounded mb-2 bg-gray-200"><h4 class="font-bold text-gray-800 text-sm truncate">${c.name}</h4><p class="text-sm font-bold text-shopee">${formatRp(c.priceDay)}</p>${sb}</div>`; 
+            });
         };
 
         window.deleteCar = function(id) { window.showConfirm("Hapus Iklan?", "Iklan mobil ini akan dihapus permanen.", async () => { try { await window.fsDeleteDoc('cars', id); window.showToast("Berhasil dihapus."); } catch(e) {} }); };
@@ -996,9 +999,14 @@
         window.loadAdminData = function() {
             const c = document.getElementById('adminCarsList'); const pc = window.carsData.filter(x => x.status === 'pending');
             if(pc.length === 0) { c.innerHTML = `<div class="col-span-full text-center py-10 bg-gray-50 border border-dashed rounded text-gray-500">Bersih! Tidak ada antrian iklan.</div>`; return; }
-            let h = ''; pc.forEach(car => { h += `<div class="bg-white border rounded shadow-sm flex flex-col"><img src="${car.img}" class="w-full h-32 object-cover bg-gray-200"><div class="p-3 flex-grow flex flex-col"><h4 class="font-bold text-sm">${car.name}</h4><p class="text-[10px] text-gray-400 mb-3">${car.ownerPhone}</p><div class="grid grid-cols-2 gap-2 mt-auto"><button onclick="approveCar('${car.id}')" class="bg-green-500 text-white font-bold py-1.5 rounded text-xs hover:bg-green-600 transition">Terima</button><button onclick="rejectCar('${car.id}')" class="bg-red-500 text-white font-bold py-1.5 rounded text-xs hover:bg-red-600 transition">Tolak</button></div></div></div>`; }); c.innerHTML = h;
+            let h = ''; 
+            pc.forEach(car => { 
+                const isPaidHtml = car.isPaidAd ? `<div class="bg-red-50 border border-red-200 text-red-700 p-2 rounded text-[10px] mb-2 font-bold"><i class="ph-fill ph-warning-circle"></i> Iklan Berbayar! Cek mutasi BCA PT KALIMAJA Rp 11.200 sebelum klik Terima.</div>` : `<div class="bg-green-50 border border-green-200 text-green-700 p-2 rounded text-[10px] mb-2 font-bold"><i class="ph-fill ph-check-circle"></i> Iklan Gratis (Pertama)</div>`;
+                h += `<div class="bg-white border rounded shadow-sm flex flex-col"><img src="${car.img}" class="w-full h-32 object-cover bg-gray-200"><div class="p-3 flex-grow flex flex-col"><h4 class="font-bold text-sm">${car.name}</h4><p class="text-[10px] text-gray-400 mb-2">${car.ownerPhone}</p>${isPaidHtml}<div class="grid grid-cols-2 gap-2 mt-auto"><button onclick="approveCar('${car.id}', ${car.isPaidAd})" class="bg-green-500 text-white font-bold py-1.5 rounded text-xs hover:bg-green-600 transition">Terima</button><button onclick="rejectCar('${car.id}')" class="bg-red-500 text-white font-bold py-1.5 rounded text-xs hover:bg-red-600 transition">Tolak</button></div></div></div>`; 
+            }); 
+            c.innerHTML = h;
         };
-        window.approveCar = async function(id) { try { await window.fsUpdateDoc('cars', id, { status: 'approved' }); window.showToast("Iklan Tayang!"); } catch(e) {} };
+        window.approveCar = async function(id, isPaid) { try { let updateData = { status: 'approved' }; if(isPaid) updateData.paymentStatus = 'verified'; await window.fsUpdateDoc('cars', id, updateData); window.showToast("Iklan Tayang!"); } catch(e) {} };
         window.rejectCar = function(id) { window.showConfirm("Tolak Iklan?", "Hapus iklan ini?", async () => { try { await window.fsDeleteDoc('cars', id); window.showToast("Dihapus."); } catch(e) {} }); };
 
         window.loadAdminOrders = function() {
