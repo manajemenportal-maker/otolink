@@ -24,6 +24,23 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         #modalOverlay { padding: 1rem; }
+        
+        /* Carousel Styles */
+        .carousel-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+        .carousel-inner {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            height: 100%;
+        }
+        .carousel-item {
+            min-width: 100%;
+            height: 100%;
+            position: relative;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased overflow-x-hidden selection:bg-shopee selection:text-white">
@@ -88,13 +105,33 @@
 
         <div class="bg-white">
             <div class="container mx-auto max-w-5xl">
-                <div class="relative h-40 md:h-64 md:rounded-b-lg overflow-hidden group">
-                    <img id="heroImage" src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=1200" alt="Banner" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center p-6 md:p-12 text-white">
-                        <h1 id="heroTitle" class="text-2xl md:text-4xl font-bold mb-2 shadow-sm">Sewa Mobil Mudah & Cepat</h1>
-                        <p id="heroSubtitle" class="text-xs md:text-lg max-w-md opacity-90 drop-shadow">Jelajahi kota dengan nyaman. Harga terbaik untuk Anda.</p>
+                <!-- CAROUSEL START -->
+                <div class="relative h-48 md:h-80 md:rounded-b-lg overflow-hidden group carousel-container">
+                    <div class="carousel-inner" id="carouselInner">
+                        <!-- Default Slide (will be replaced if banners exist) -->
+                        <div class="carousel-item">
+                            <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=1200" alt="Banner Default" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center p-6 md:p-12 text-white">
+                                <h1 class="text-2xl md:text-4xl font-bold mb-2 shadow-sm">Sewa Mobil Mudah & Cepat</h1>
+                                <p class="text-xs md:text-lg max-w-md opacity-90 drop-shadow">Jelajahi kota dengan nyaman. Harga terbaik untuk Anda.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Carousel Controls -->
+                    <button onclick="moveCarousel(-1)" class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full backdrop-blur-sm transition z-10 hidden group-hover:flex">
+                        <i class="ph-bold ph-caret-left text-lg md:text-xl"></i>
+                    </button>
+                    <button onclick="moveCarousel(1)" class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full backdrop-blur-sm transition z-10 hidden group-hover:flex">
+                        <i class="ph-bold ph-caret-right text-lg md:text-xl"></i>
+                    </button>
+
+                    <!-- Indicators -->
+                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10" id="carouselIndicators">
+                        <div class="w-2 h-2 rounded-full bg-white transition-all cursor-pointer"></div>
                     </div>
                 </div>
+                <!-- CAROUSEL END -->
             </div>
         </div>
 
@@ -128,6 +165,7 @@
         <main id="mainCarSection" class="container mx-auto px-4 max-w-5xl my-6">
             <div class="flex justify-between items-end mb-4 border-b pb-2">
                 <h2 class="text-lg md:text-xl font-bold text-gray-800 border-l-4 border-shopee pl-2">Rekomendasi Mobil</h2>
+                <span class="text-xs text-gray-500" id="carCountIndicator">Menampilkan max 16 iklan</span>
             </div>
             <div id="carListContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                 <!-- Data Mobil akan dimuat ke sini via JS -->
@@ -206,8 +244,10 @@
                 <button onclick="switchAdminTab('pencairan')" id="tab-pencairan" class="admin-tab px-4 py-2 bg-white text-gray-600 rounded font-bold text-sm whitespace-nowrap hover:bg-gray-50 border">Pencairan Mitra</button>
                 <button onclick="switchAdminTab('pengguna')" id="tab-pengguna" class="admin-tab px-4 py-2 bg-white text-gray-600 rounded font-bold text-sm whitespace-nowrap hover:bg-gray-50 border">Pengguna & Mitra</button>
                 <button onclick="switchAdminTab('semuamobil')" id="tab-semuamobil" class="admin-tab px-4 py-2 bg-white text-gray-600 rounded font-bold text-sm whitespace-nowrap hover:bg-gray-50 border">Kelola Semua Iklan</button>
+                <button onclick="switchAdminTab('banner')" id="tab-banner" class="admin-tab px-4 py-2 bg-white text-gray-600 rounded font-bold text-sm whitespace-nowrap hover:bg-gray-50 border">Pengaturan Banner</button>
             </div>
 
+            <!-- Admin Contents -->
             <div id="admin-verifikasi" class="admin-content bg-white rounded-lg shadow border p-5">
                 <h3 class="font-bold text-gray-800 border-b pb-3 mb-4 text-lg flex items-center gap-2"><i class="ph-fill ph-car"></i> Verifikasi Iklan Mobil</h3>
                 <div id="adminCarsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -269,6 +309,36 @@
                     </button>
                 </div>
                 <div id="adminAllCarsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+            </div>
+            
+            <div id="admin-banner" class="admin-content hidden bg-white rounded-lg shadow border p-5">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2"><i class="ph-fill ph-image"></i> Kelola Banner Utama (Max 5)</h3>
+                    <span class="text-xs text-gray-500" id="bannerCount">0 / 5 Banner</span>
+                </div>
+                
+                <!-- Upload New Banner -->
+                <div class="mb-6 bg-blue-50 border border-blue-100 p-4 rounded-lg">
+                    <h4 class="font-bold text-blue-800 text-sm mb-2">Upload Banner Baru</h4>
+                    <form onsubmit="handleBannerUpload(event)" class="flex flex-col md:flex-row gap-3 items-end">
+                        <div class="flex-grow w-full">
+                            <label class="text-xs font-semibold text-gray-700 block mb-1">Pilih File Gambar</label>
+                            <input type="file" id="bannerImgInput" accept="image/*" required class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer bg-white border rounded">
+                        </div>
+                        <div class="flex-grow w-full">
+                            <label class="text-xs font-semibold text-gray-700 block mb-1">Judul / Teks Opsional</label>
+                            <input type="text" id="bannerTextInput" placeholder="Contoh: Promo Lebaran!" class="w-full p-2 border rounded outline-none text-sm focus:border-blue-500">
+                        </div>
+                        <button type="submit" id="btnUploadBanner" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded text-sm font-bold shadow-sm shrink-0 h-10 w-full md:w-auto">
+                            Simpan Banner
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Existing Banners List -->
+                <div id="adminBannerList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Loaded via JS -->
+                </div>
             </div>
         </div>
     </div>
@@ -395,7 +465,6 @@
                 <button onclick="closeAllModals()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
             </div>
             <div class="p-6">
-                <p class="text-sm text-gray-600 mb-4 text-center">Area khusus pengelola sistem OtoLink. Masukkan sandi rahasia.</p>
                 <input type="password" id="adminPinInput" placeholder="Masukkan Sandi..." class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-gray-800 bg-gray-50 text-center text-xl tracking-widest font-black mb-4">
                 <button onclick="verifyAdmin()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold p-3.5 rounded shadow-md transition">Verifikasi Akses</button>
             </div>
@@ -643,7 +712,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Konfigurasi Firebase Aktif 
         const firebaseConfig = {
             apiKey: "AIzaSyCQ9wg4ezcqMgrSkL91wOVcx6JHN6PiUMU",
             authDomain: "remote-fd0d8.firebaseapp.com",
@@ -664,7 +732,7 @@
         }
 
         window.currentUser = null; 
-        window.usersData = []; window.carsData = []; window.ordersData = []; window.withdrawalsData = []; window.topupsData = []; 
+        window.usersData = []; window.carsData = []; window.ordersData = []; window.withdrawalsData = []; window.topupsData = []; window.bannersData = [];
         
         const formatRp = (num) => "Rp " + parseInt(num).toLocaleString('id-ID');
         const generateId = (prefix) => prefix + '-' + Math.floor(Math.random() * 10000);
@@ -678,7 +746,7 @@
                     if(savedId && !window.currentUser) { window.currentUser = window.usersData.find(u => u.id === savedId) || null; window.updateUserUI(); }
                     else if (window.currentUser) { const me = window.usersData.find(u => u.id === window.currentUser.id); if(me) { window.currentUser = me; window.updateUserUI(); } }
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminUsers();
-                }, (e) => { console.error(e); });
+                }, (e) => { console.error(e); setTimeout(startApp, 5000); });
                 
                 onSnapshot(collection(db, 'cars'), (snap) => {
                     window.carsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -719,11 +787,19 @@
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminTopups();
                 }, (e) => { console.error(e); });
                 
+                onSnapshot(collection(db, 'banners'), (snap) => {
+                    window.bannersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                    window.renderBanners();
+                    if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminBanners();
+                }, (e) => { console.error(e); });
+                
             } else {
+                // Offline Local Storage Fallback
                 window.usersData = JSON.parse(localStorage.getItem('oto_users')) || [];
                 window.ordersData = JSON.parse(localStorage.getItem('oto_orders')) || [];
                 window.withdrawalsData = JSON.parse(localStorage.getItem('oto_withdrawals')) || [];
                 window.topupsData = JSON.parse(localStorage.getItem('oto_topups')) || [];
+                window.bannersData = JSON.parse(localStorage.getItem('oto_banners')) || [];
                 let loadedCars = JSON.parse(localStorage.getItem('oto_cars'));
                 if (!loadedCars || loadedCars.length < 8) {
                     window.carsData = [ { id: "loc1", name: "Toyota Avanza", category: "Keluarga", priceDay: 350000, seat: 7, img: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" } ];
@@ -731,27 +807,28 @@
                 } else { window.carsData = loadedCars; }
                 const savedId = localStorage.getItem('oto_logged_in_id'); if(savedId && !window.currentUser) { window.currentUser = window.usersData.find(u => u.id === savedId) || null; window.updateUserUI(); }
                 window.renderCars();
+                window.renderBanners();
             }
         }
 
         window.fsAddDoc = async (coll, data) => {
             if(useCloud) { const docRef = await addDoc(collection(db, coll), data); return { id: docRef.id }; } 
-            else { let d = { id: generateId("LOC"), ...data }; if(coll==='users') { window.usersData.push(d); saveLocal('oto_users', window.usersData); } else if(coll==='cars') { window.carsData.push(d); saveLocal('oto_cars', window.carsData); window.renderCars(); window.renderMitraCars(); window.loadAdminAllCars(); window.loadAdminData(); } else if(coll==='orders') { window.ordersData.push(d); saveLocal('oto_orders', window.ordersData); window.loadAdminOrders(); } else if(coll==='withdrawals') { window.withdrawalsData.push(d); saveLocal('oto_withdrawals', window.withdrawalsData); window.loadAdminWithdrawals(); } else if(coll==='topups') { window.topupsData.push(d); saveLocal('oto_topups', window.topupsData); window.loadAdminTopups(); } return { id: d.id }; }
+            else { let d = { id: generateId("LOC"), ...data }; if(coll==='users') { window.usersData.push(d); saveLocal('oto_users', window.usersData); } else if(coll==='cars') { window.carsData.push(d); saveLocal('oto_cars', window.carsData); window.renderCars(); window.renderMitraCars(); window.loadAdminAllCars(); window.loadAdminData(); } else if(coll==='orders') { window.ordersData.push(d); saveLocal('oto_orders', window.ordersData); window.loadAdminOrders(); } else if(coll==='withdrawals') { window.withdrawalsData.push(d); saveLocal('oto_withdrawals', window.withdrawalsData); window.loadAdminWithdrawals(); } else if(coll==='topups') { window.topupsData.push(d); saveLocal('oto_topups', window.topupsData); window.loadAdminTopups(); } else if(coll==='banners') { window.bannersData.push(d); saveLocal('oto_banners', window.bannersData); window.renderBanners(); window.loadAdminBanners(); } return { id: d.id }; }
         };
         
         window.fsUpdateDoc = async (coll, id, data) => {
             if(useCloud) { await updateDoc(doc(db, coll, id), data); } 
             else {
                 let arr, key;
-                if(coll==='users') { arr = window.usersData; key = 'oto_users'; } else if(coll==='cars') { arr = window.carsData; key = 'oto_cars'; } else if(coll==='orders') { arr = window.ordersData; key = 'oto_orders'; } else if(coll==='topups') { arr = window.topupsData; key = 'oto_topups'; } else { arr = window.withdrawalsData; key = 'oto_withdrawals'; }
+                if(coll==='users') { arr = window.usersData; key = 'oto_users'; } else if(coll==='cars') { arr = window.carsData; key = 'oto_cars'; } else if(coll==='orders') { arr = window.ordersData; key = 'oto_orders'; } else if(coll==='topups') { arr = window.topupsData; key = 'oto_topups'; } else if(coll==='banners') { arr = window.bannersData; key = 'oto_banners'; } else { arr = window.withdrawalsData; key = 'oto_withdrawals'; }
                 let i = arr.findIndex(x => x.id === id);
-                if(i > -1) { arr[i] = { ...arr[i], ...data }; saveLocal(key, arr); if(coll==='cars') { window.renderCars(); window.renderMitraCars(); window.loadAdminData(); window.loadAdminAllCars(); } if(coll==='orders') window.loadAdminOrders(); if(coll==='withdrawals') window.loadAdminWithdrawals(); if(coll==='topups') window.loadAdminTopups(); if(coll==='users') { window.loadAdminUsers(); if (window.currentUser && window.currentUser.id === id) { window.currentUser = { ...window.currentUser, ...data }; window.updateUserUI(); } } }
+                if(i > -1) { arr[i] = { ...arr[i], ...data }; saveLocal(key, arr); if(coll==='cars') { window.renderCars(); window.renderMitraCars(); window.loadAdminData(); window.loadAdminAllCars(); } if(coll==='orders') window.loadAdminOrders(); if(coll==='withdrawals') window.loadAdminWithdrawals(); if(coll==='topups') window.loadAdminTopups(); if(coll==='banners') { window.renderBanners(); window.loadAdminBanners(); } if(coll==='users') { window.loadAdminUsers(); if (window.currentUser && window.currentUser.id === id) { window.currentUser = { ...window.currentUser, ...data }; window.updateUserUI(); } } }
             }
         };
         
         window.fsDeleteDoc = async (coll, id) => {
             if(useCloud) { await deleteDoc(doc(db, coll, id)); } 
-            else { if(coll==='cars') { window.carsData = window.carsData.filter(x => x.id !== id); saveLocal('oto_cars', window.carsData); window.renderCars(); window.renderMitraCars(); window.loadAdminAllCars(); window.loadAdminData(); } if(coll==='users') { window.usersData = window.usersData.filter(x => x.id !== id); saveLocal('oto_users', window.usersData); window.loadAdminUsers(); } if(coll==='topups') { window.topupsData = window.topupsData.filter(x => x.id !== id); saveLocal('oto_topups', window.topupsData); window.loadAdminTopups(); } }
+            else { if(coll==='cars') { window.carsData = window.carsData.filter(x => x.id !== id); saveLocal('oto_cars', window.carsData); window.renderCars(); window.renderMitraCars(); window.loadAdminAllCars(); window.loadAdminData(); } if(coll==='users') { window.usersData = window.usersData.filter(x => x.id !== id); saveLocal('oto_users', window.usersData); window.loadAdminUsers(); } if(coll==='topups') { window.topupsData = window.topupsData.filter(x => x.id !== id); saveLocal('oto_topups', window.topupsData); window.loadAdminTopups(); } if(coll==='banners') { window.bannersData = window.bannersData.filter(x => x.id !== id); saveLocal('oto_banners', window.bannersData); window.renderBanners(); window.loadAdminBanners(); } }
         };
 
         window.showToast = function(msg, isSuccess = true) {
@@ -985,7 +1062,7 @@
 
         window.switchAdminTab = function(t) {
             document.querySelectorAll('.admin-content').forEach(el => el.classList.add('hidden')); document.querySelectorAll('.admin-tab').forEach(b => b.className = "admin-tab px-4 py-2 bg-white text-gray-600 rounded font-bold text-sm whitespace-nowrap hover:bg-gray-50 border"); document.getElementById('admin-' + t).classList.remove('hidden'); let a = document.getElementById('tab-' + t); a.className = "admin-tab px-4 py-2 bg-blue-600 text-white rounded font-bold text-sm whitespace-nowrap shadow-sm";
-            if(t==='verifikasi') window.loadAdminData(); if(t==='pesanan') window.loadAdminOrders(); if(t==='pencairan') window.loadAdminWithdrawals(); if(t==='topup') window.loadAdminTopups(); if(t==='pengguna') window.loadAdminUsers(); if(t==='semuamobil') window.loadAdminAllCars();
+            if(t==='verifikasi') window.loadAdminData(); if(t==='pesanan') window.loadAdminOrders(); if(t==='pencairan') window.loadAdminWithdrawals(); if(t==='topup') window.loadAdminTopups(); if(t==='pengguna') window.loadAdminUsers(); if(t==='semuamobil') window.loadAdminAllCars(); if(t==='banner') window.loadAdminBanners();
         };
 
         window.loadAdminTopups = function() {
@@ -1139,8 +1216,25 @@
 
         window.renderCars = function(cat = "") {
             const c = document.getElementById('carListContainer'); if(!c) return; c.innerHTML = '';
-            const f = window.carsData.filter(car => { if (car.status !== 'approved') return false; if (cat && (car.category || "").toLowerCase() !== cat.toLowerCase()) return false; return true; });
+            
+            // Filter Data
+            let f = window.carsData.filter(car => { 
+                if (car.status !== 'approved') return false; 
+                if (cat && (car.category || "").toLowerCase() !== cat.toLowerCase()) return false; 
+                return true; 
+            });
+            
+            // Limit to 16 for homepage "Semua Mobil"
+            const indicator = document.getElementById('carCountIndicator');
+            if(cat === "") {
+                if(indicator) indicator.classList.remove('hidden');
+                f = f.slice(0, 16);
+            } else {
+                if(indicator) indicator.classList.add('hidden');
+            }
+
             if(f.length === 0) { c.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 font-medium bg-gray-50 rounded border border-dashed">Belum ada mobil di kategori ini.</div>`; return; }
+            
             f.forEach(car => {
                 const bm = car.ownerPhone !== 'official' ? `<div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold shadow-md z-10"><i class="ph-fill ph-handshake mr-1"></i>Mitra</div>` : '';
                 c.innerHTML += `<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition flex flex-col group"><div class="h-32 md:h-40 overflow-hidden relative bg-gray-200"><img src="${car.img}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">${bm}<div class="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white shadow-sm backdrop-blur-sm">${car.seat} Kursi</div></div><div class="p-3 flex flex-col flex-grow"><h3 class="font-bold text-gray-800 text-sm md:text-base mb-1 truncate">${car.name}</h3><p class="text-[10px] text-gray-500 mb-2 uppercase font-semibold">${car.category || 'Mobil'}</p><div class="mt-auto pt-2 border-t border-gray-100"><p class="text-sm md:text-lg font-black text-shopee">${formatRp(car.priceDay)}<span class="text-[10px] md:text-xs font-normal text-gray-500"> / hari</span></p><button onclick="openCheckoutModal('${car.id}')" class="w-full mt-2 bg-orange-100 hover:bg-shopee hover:text-white text-shopee py-1.5 md:py-2 rounded text-xs md:text-sm font-bold transition">Pesan Sekarang</button></div></div></div>`;
@@ -1151,7 +1245,179 @@
             document.querySelectorAll('.cat-btn').forEach(b => { b.querySelector('.cat-icon').className = "w-14 h-14 rounded-2xl bg-gray-50 text-gray-600 flex items-center justify-center text-3xl hover-trigger transition shadow-sm border border-gray-100 cat-icon"; b.querySelector('.cat-text').className = "text-xs font-medium text-gray-500 cat-text"; });
             let ab = document.getElementById(cat === '' ? 'cat-Semua Mobil' : 'cat-' + cat);
             if(ab) { ab.querySelector('.cat-icon').className = "w-14 h-14 rounded-2xl bg-orange-100 text-shopee flex items-center justify-center text-3xl group-hover:bg-shopee group-hover:text-white transition shadow-sm border border-transparent group-hover:border-shopee/20 cat-icon"; ab.querySelector('.cat-text').className = "text-xs font-bold text-gray-700 cat-text"; }
-            window.renderCars(cat); 
+            
+            // Auto search if using search input
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            if(searchVal) {
+                const c = document.getElementById('carListContainer'); c.innerHTML = '';
+                const f = window.carsData.filter(car => car.status === 'approved' && car.name.toLowerCase().includes(searchVal));
+                if(f.length === 0) { c.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 font-medium bg-gray-50 rounded border border-dashed">Mobil tidak ditemukan.</div>`; return; }
+                f.forEach(car => {
+                    const bm = car.ownerPhone !== 'official' ? `<div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold shadow-md z-10"><i class="ph-fill ph-handshake mr-1"></i>Mitra</div>` : '';
+                    c.innerHTML += `<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition flex flex-col group"><div class="h-32 md:h-40 overflow-hidden relative bg-gray-200"><img src="${car.img}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">${bm}<div class="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white shadow-sm backdrop-blur-sm">${car.seat} Kursi</div></div><div class="p-3 flex flex-col flex-grow"><h3 class="font-bold text-gray-800 text-sm md:text-base mb-1 truncate">${car.name}</h3><p class="text-[10px] text-gray-500 mb-2 uppercase font-semibold">${car.category || 'Mobil'}</p><div class="mt-auto pt-2 border-t border-gray-100"><p class="text-sm md:text-lg font-black text-shopee">${formatRp(car.priceDay)}<span class="text-[10px] md:text-xs font-normal text-gray-500"> / hari</span></p><button onclick="openCheckoutModal('${car.id}')" class="w-full mt-2 bg-orange-100 hover:bg-shopee hover:text-white text-shopee py-1.5 md:py-2 rounded text-xs md:text-sm font-bold transition">Pesan Sekarang</button></div></div></div>`;
+                });
+                document.getElementById('carCountIndicator').classList.add('hidden');
+            } else {
+                window.renderCars(cat); 
+            }
+        };
+
+        // CAROUSEL LOGIC
+        let currentSlide = 0;
+        let slideInterval;
+
+        window.renderBanners = function() {
+            const inner = document.getElementById('carouselInner');
+            const indicators = document.getElementById('carouselIndicators');
+            if(!inner || !indicators) return;
+
+            if(window.bannersData.length === 0) {
+                // Default Banner if empty
+                inner.innerHTML = `
+                <div class="carousel-item">
+                    <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=1200" alt="Banner Default" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center p-6 md:p-12 text-white">
+                        <h1 class="text-2xl md:text-4xl font-bold mb-2 shadow-sm">Sewa Mobil Mudah & Cepat</h1>
+                        <p class="text-xs md:text-lg max-w-md opacity-90 drop-shadow">Jelajahi kota dengan nyaman. Harga terbaik untuk Anda.</p>
+                    </div>
+                </div>`;
+                indicators.innerHTML = `<div class="w-2 h-2 rounded-full bg-white opacity-100"></div>`;
+                return;
+            }
+
+            inner.innerHTML = '';
+            indicators.innerHTML = '';
+
+            window.bannersData.forEach((banner, index) => {
+                let textHtml = banner.text ? `<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-6 text-white"><h2 class="text-xl md:text-3xl font-bold drop-shadow-md mb-2">${banner.text}</h2></div>` : '';
+                
+                inner.innerHTML += `
+                <div class="carousel-item">
+                    <img src="${banner.img}" alt="Banner ${index}" class="w-full h-full object-cover">
+                    ${textHtml}
+                </div>`;
+                
+                indicators.innerHTML += `<div onclick="goToSlide(${index})" class="w-2 h-2 rounded-full bg-white cursor-pointer transition-all ${index === 0 ? 'opacity-100 scale-125' : 'opacity-50'}"></div>`;
+            });
+
+            currentSlide = 0;
+            updateCarouselView();
+            startCarouselAutoPlay();
+        };
+
+        window.updateCarouselView = function() {
+            const inner = document.getElementById('carouselInner');
+            const indicators = document.getElementById('carouselIndicators').children;
+            const total = window.bannersData.length > 0 ? window.bannersData.length : 1;
+
+            if(currentSlide >= total) currentSlide = 0;
+            if(currentSlide < 0) currentSlide = total - 1;
+
+            inner.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+            for(let i=0; i<indicators.length; i++) {
+                if(i === currentSlide) {
+                    indicators[i].classList.replace('opacity-50', 'opacity-100');
+                    indicators[i].classList.add('scale-125');
+                } else {
+                    indicators[i].classList.replace('opacity-100', 'opacity-50');
+                    indicators[i].classList.remove('scale-125');
+                }
+            }
+        };
+
+        window.moveCarousel = function(direction) {
+            currentSlide += direction;
+            updateCarouselView();
+            startCarouselAutoPlay(); // reset timer
+        };
+
+        window.goToSlide = function(index) {
+            currentSlide = index;
+            updateCarouselView();
+            startCarouselAutoPlay();
+        };
+
+        window.startCarouselAutoPlay = function() {
+            clearInterval(slideInterval);
+            slideInterval = setInterval(() => {
+                moveCarousel(1);
+            }, 5000); // 5 seconds interval
+        };
+
+        window.loadAdminBanners = function() {
+            const list = document.getElementById('adminBannerList');
+            document.getElementById('bannerCount').innerText = `${window.bannersData.length} / 5 Banner`;
+            
+            const btnUpload = document.getElementById('btnUploadBanner');
+            const fileInput = document.getElementById('bannerImgInput');
+            
+            if(window.bannersData.length >= 5) {
+                btnUpload.disabled = true;
+                btnUpload.classList.add('opacity-50', 'cursor-not-allowed');
+                btnUpload.innerText = "Limit Penuh (Max 5)";
+                fileInput.disabled = true;
+            } else {
+                btnUpload.disabled = false;
+                btnUpload.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnUpload.innerText = "Simpan Banner";
+                fileInput.disabled = false;
+            }
+
+            if(window.bannersData.length === 0) {
+                list.innerHTML = `<div class="col-span-full text-center py-6 bg-gray-50 border border-dashed rounded text-gray-500 text-sm">Belum ada banner promo. Menggunakan banner default.</div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            window.bannersData.forEach(banner => {
+                list.innerHTML += `
+                <div class="border rounded bg-white overflow-hidden shadow-sm flex flex-col group relative">
+                    <img src="${banner.img}" class="w-full h-32 object-cover bg-gray-200">
+                    <div class="p-3 bg-gray-50 text-xs text-gray-700 truncate font-semibold">${banner.text || 'Tanpa Teks'}</div>
+                    <button onclick="deleteBanner('${banner.id}')" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full shadow-md flex items-center justify-center transition">
+                        <i class="ph-fill ph-trash"></i>
+                    </button>
+                </div>`;
+            });
+        };
+
+        window.handleBannerUpload = async function(e) {
+            e.preventDefault();
+            if(window.bannersData.length >= 5) {
+                window.showToast("Maksimal 5 banner tercapai!", false);
+                return;
+            }
+
+            const btn = document.getElementById('btnUploadBanner');
+            btn.innerText = "Mengupload...";
+            btn.disabled = true;
+
+            try {
+                const imgFile = document.getElementById('bannerImgInput').files[0];
+                const textVal = document.getElementById('bannerTextInput').value.trim();
+                
+                const imgBase64 = await compressImage(imgFile, 1200); // higher width for banners
+                
+                await window.fsAddDoc('banners', { img: imgBase64, text: textVal });
+                
+                window.showToast("Banner berhasil ditambahkan!");
+                e.target.reset();
+            } catch(err) {
+                window.showToast("Gagal mengupload banner.", false);
+            } finally {
+                btn.innerText = "Simpan Banner";
+                btn.disabled = false;
+            }
+        };
+
+        window.deleteBanner = function(id) {
+            window.showConfirm("Hapus Banner?", "Banner ini tidak akan tampil lagi di halaman depan.", async () => {
+                try {
+                    await window.fsDeleteDoc('banners', id);
+                    window.showToast("Banner dihapus.");
+                } catch(e) {}
+            });
         };
 
         window.onload = function() { startApp(); };
