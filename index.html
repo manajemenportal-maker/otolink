@@ -154,7 +154,7 @@
                     <div>
                         <h4 class="font-bold text-sm mb-4">Kontak Kami</h4>
                         <ul class="text-xs text-gray-500 space-y-2">
-                            <li class="flex items-center gap-2 py-1"><i class="ph-fill ph-envelope"></i> cskalimaja@gmail.com</li>
+                            <li class="flex items-center gap-2 py-1"><i class="ph-fill ph-envelope"></i> adminotolink@gmail.com</li>
                             <li class="flex items-center gap-2 py-1"><i class="ph-fill ph-globe"></i> www.otolink.web.id</li>
                             <li class="flex items-center gap-2 py-1"><i class="ph-fill ph-phone"></i> 087811559627</li>
                         </ul>
@@ -162,9 +162,9 @@
                     <div>
                         <h4 class="font-bold text-sm mb-4">Ikuti Kami</h4>
                         <div class="flex gap-4 text-gray-500 text-xl">
-                            <a href="#" class="hover:text-shopee transition"><i class="ph-fill ph-instagram-logo"></i></a>
-                            <a href="#" class="hover:text-shopee transition"><i class="ph-fill ph-facebook-logo"></i></a>
-                            <a href="#" class="hover:text-shopee transition"><i class="ph-fill ph-twitter-logo"></i></a>
+                            <a href="https://instagram.com/otolinkrent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-instagram-logo"></i></a>
+                            <a href="https://facebook.com/otolinkrent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-facebook-logo"></i></a>
+                            <a href="https://threads.net/@otolinkrent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-threads-logo"></i></a>
                         </div>
                     </div>
                 </div>
@@ -218,7 +218,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left border">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                            <tr><th class="px-4 py-3 border-b">ID Order</th><th class="px-4 py-3 border-b">Customer & Mitra</th><th class="px-4 py-3 border-b">Mobil & Total</th><th class="px-4 py-3 border-b">Status</th><th class="px-4 py-3 border-b text-center">Aksi</th></tr>
+                            <tr><th class="px-4 py-3 border-b">ID Order</th><th class="px-4 py-3 border-b">Customer & Mitra</th><th class="px-4 py-3 border-b">Detail Sewa</th><th class="px-4 py-3 border-b">Status</th><th class="px-4 py-3 border-b text-center">Aksi</th></tr>
                         </thead>
                         <tbody id="adminOrdersList"></tbody>
                     </table>
@@ -376,7 +376,7 @@
                     </div>
                     <div class="flex flex-col gap-1">
                         <label class="text-sm font-semibold text-gray-700">Kata Sandi</label>
-                        <input type="password" id="authPassword" required placeholder="Masukkan kata sandi rahasia..." class="p-3 border rounded outline-none transition focus:border-shopee">
+                        <input type="password" id="authPassword" required placeholder="Masukkan kata sandi..." class="p-3 border rounded outline-none transition focus:border-shopee">
                     </div>
                     <button type="submit" id="authSubmitBtn" class="bg-shopee hover:bg-shopee-hover text-white font-bold p-3 rounded mt-2 shadow-md transition">Masuk</button>
                 </form>
@@ -450,6 +450,26 @@
                         <p class="text-sm font-bold text-shopee" id="coCarPrice">Rp 0 / hari</p>
                     </div>
                 </div>
+
+                <!-- Bagian Detail Sewa & Durasi Baru -->
+                <div class="mb-4 bg-gray-50 p-3 rounded border border-gray-200">
+                    <h4 class="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Pilih Tanggal Sewa</h4>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 block mb-1">Tanggal Ambil</label>
+                            <input type="date" id="coStartDate" onchange="calculateCheckoutTotal()" class="w-full p-2 border rounded text-xs outline-none focus:border-shopee bg-white shadow-inner">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 block mb-1">Tanggal Kembali</label>
+                            <input type="date" id="coEndDate" onchange="calculateCheckoutTotal()" class="w-full p-2 border rounded text-xs outline-none focus:border-shopee bg-white shadow-inner">
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-gray-700 bg-white p-2 rounded border">
+                        <span class="font-semibold">Total Durasi Sewa:</span>
+                        <span id="coDuration" class="font-black text-shopee text-sm" data-val="1">1 Hari</span>
+                    </div>
+                </div>
+
                 <div class="bg-blue-50 border border-blue-100 p-3 rounded mb-4">
                     <h4 class="text-xs font-bold text-blue-800 mb-2 uppercase">Pilih Metode Pembayaran</h4>
                     <div class="flex flex-col gap-2">
@@ -463,9 +483,9 @@
                     </div>
                 </div>
                 <div class="flex justify-between items-center mb-4">
-                    <span class="text-sm font-semibold text-gray-600">Total Pembayaran:</span><span class="text-xl font-black text-shopee" id="coTotal">Rp 0</span>
+                    <span class="text-sm font-semibold text-gray-600">Total Pembayaran:</span><span class="text-xl font-black text-shopee" id="coTotal" data-val="0">Rp 0</span>
                 </div>
-                <input type="hidden" id="coCarId"><input type="hidden" id="coOwnerPhone">
+                <input type="hidden" id="coCarId" data-price="0"><input type="hidden" id="coOwnerPhone">
                 <button onclick="processPayment()" id="btnBayarSekarang" class="w-full bg-shopee hover:bg-shopee-hover text-white font-bold p-3.5 rounded shadow-md transition text-sm flex items-center justify-center gap-2">
                     <i class="ph-fill ph-lock-key"></i> Bayar Sekarang
                 </button>
@@ -552,9 +572,9 @@
         import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // =================================================================================
-        // 🔥🔥🔥 CLOUD FIREBASE AKTIF 100% - KODE ANDA SUDAH TERSAMBUNG! 🔥🔥🔥
+        // 🔥 MESIN FIREBASE GLOBAL (REAL-TIME CLOUD SINKRONISASI)
         // =================================================================================
-        const myFirebaseConfig = {
+        const firebaseConfig = {
             apiKey: "AIzaSyCQ9wg4ezcqMgrSkL91wOVcx6JHN6PiUMU",
             authDomain: "remote-fd0d8.firebaseapp.com",
             projectId: "remote-fd0d8",
@@ -565,13 +585,13 @@
         };
         // =================================================================================
 
-        const useCloud = myFirebaseConfig.apiKey !== "";
+        const useCloud = firebaseConfig && firebaseConfig.apiKey !== "";
         let app, db;
         
         if(useCloud) {
-            app = initializeApp(myFirebaseConfig);
+            app = initializeApp(firebaseConfig);
             db = getFirestore(app);
-            console.log("🚀 CLOUD SERVER AKTIF - Web telah Online Lintas Perangkat!");
+            console.log("🚀 CLOUD SERVER AKTIF - Data Tersinkronisasi Global!");
         }
 
         // Global Variables
@@ -588,19 +608,18 @@
 
         function startApp() {
             if(useCloud) {
-                // Real-Time Cloud Listener
+                // Real-Time Cloud Listener with Anti-Silent Failure
                 onSnapshot(collection(db, 'users'), (snap) => {
                     window.usersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     const savedId = localStorage.getItem('oto_logged_in_id');
                     if(savedId && !window.currentUser) { window.currentUser = window.usersData.find(u => u.id === savedId) || null; window.updateUserUI(); }
                     else if (window.currentUser) { const me = window.usersData.find(u => u.id === window.currentUser.id); if(me) { window.currentUser = me; window.updateUserUI(); } }
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminUsers();
-                }, (error) => console.log("Reconnecting Users..."));
+                }, (error) => { console.error(error); setTimeout(() => window.showToast("Menyambung ulang Users...", false), 2000); });
                 
                 onSnapshot(collection(db, 'cars'), (snap) => {
                     window.carsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     
-                    // Smart Dummy Data Injection (If empty server)
                     if(window.carsData.length < 8) {
                         const dummies = [
                             { name: "Toyota Avanza", category: "Keluarga", priceDay: 350000, seat: 7, img: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
@@ -618,26 +637,26 @@
                     window.renderCars();
                     if(window.currentUser?.isPartner) window.renderMitraCars();
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) { window.loadAdminData(); window.loadAdminAllCars(); }
-                }, (error) => console.log("Reconnecting Cars..."));
+                }, (error) => { console.error(error); setTimeout(() => window.showToast("Menyambung ulang Cars...", false), 2000); });
 
                 onSnapshot(collection(db, 'orders'), (snap) => {
                     window.ordersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminOrders();
                     if(window.currentUser?.isPartner) window.renderMitraCars();
-                }, (error) => console.log("Reconnecting Orders..."));
+                }, (error) => { console.error(error); setTimeout(() => window.showToast("Menyambung ulang Orders...", false), 2000); });
 
                 onSnapshot(collection(db, 'withdrawals'), (snap) => {
                     window.withdrawalsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminWithdrawals();
                     if(window.currentUser?.isPartner) window.renderMitraCars();
-                }, (error) => console.log("Reconnecting Withdrawals..."));
+                }, (error) => { console.error(error); setTimeout(() => window.showToast("Menyambung ulang Withdrawals...", false), 2000); });
 
                 onSnapshot(collection(db, 'topups'), (snap) => {
                     window.topupsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminTopups();
-                }, (error) => console.log("Reconnecting TopUps..."));
+                }, (error) => { console.error(error); setTimeout(() => window.showToast("Menyambung ulang Topups...", false), 2000); });
                 
-                setTimeout(()=> window.showToast("Database Terhubung (Online)"), 1500);
+                setTimeout(()=> window.showToast("Sistem Online & Tersinkronisasi"), 1500);
 
             } else {
                 // Fallback / Offline
@@ -834,7 +853,7 @@
 
         window.processTopUp = async function() {
             const amount = parseInt(document.getElementById('topupAmount').value);
-            window.showConfirm("Instruksi Transfer", `Transfer ${formatRp(amount)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah, klik 'Ya, Yakin' untuk verifikasi Admin.`, async () => {
+            window.showConfirm("Instruksi Transfer", `Transfer ${formatRp(amount)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah, klik 'Ya, Yakin' untuk diproses.`, async () => {
                 const btn = document.getElementById('btnTopUp'); btn.innerText = "Memproses..."; btn.disabled = true;
                 try {
                     await window.fsAddDoc('topups', { topupRef: generateId("TP"), userId: window.currentUser.id, userName: window.currentUser.name, amount: amount, status: "pending" });
@@ -846,25 +865,87 @@
         window.openCheckoutModal = function(carId) {
             if(!window.currentUser) { window.showToast("Silakan login dulu.", false); window.openAuthModal(); return; }
             const c = window.carsData.find(x => x.id === carId); if(!c) return;
-            document.getElementById('coCarId').value = c.id; document.getElementById('coOwnerPhone').value = c.ownerPhone;
-            document.getElementById('coCarImg').src = c.img; document.getElementById('coCarName').innerText = c.name;
-            document.getElementById('coCarCat').innerText = c.category; document.getElementById('coCarPrice').innerText = formatRp(c.priceDay) + " / hari";
-            document.getElementById('coTotal').innerText = formatRp(c.priceDay); window.updateOtopayBalanceUI(); window.openModal('checkoutModal');
+            
+            document.getElementById('coCarId').value = c.id; 
+            document.getElementById('coOwnerPhone').value = c.ownerPhone;
+            document.getElementById('coCarImg').src = c.img; 
+            document.getElementById('coCarName').innerText = c.name;
+            document.getElementById('coCarCat').innerText = c.category; 
+            document.getElementById('coCarPrice').innerText = formatRp(c.priceDay) + " / hari";
+            
+            // Simpan harga per hari secara rahasia untuk dikalkulasi
+            document.getElementById('coCarId').dataset.price = c.priceDay;
+
+            // Set Tanggal Mulai (Hari ini) dan Selesai (Besok)
+            const today = new Date();
+            const tzoffset = today.getTimezoneOffset() * 60000; 
+            const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
+            const todayStr = localISOTime.split('T')[0];
+            
+            const tomorrow = new Date(Date.now() + 86400000);
+            const tomorrowStr = (new Date(tomorrow.getTime() - tzoffset)).toISOString().split('T')[0];
+            
+            const startInput = document.getElementById('coStartDate');
+            const endInput = document.getElementById('coEndDate');
+            
+            startInput.min = todayStr;
+            startInput.value = todayStr;
+            endInput.min = tomorrowStr;
+            endInput.value = tomorrowStr;
+
+            window.calculateCheckoutTotal();
+            window.updateOtopayBalanceUI(); 
+            window.openModal('checkoutModal');
+        };
+
+        window.calculateCheckoutTotal = function() {
+            const start = new Date(document.getElementById('coStartDate').value);
+            const end = new Date(document.getElementById('coEndDate').value);
+            const pricePerDay = parseInt(document.getElementById('coCarId').dataset.price);
+            const btn = document.getElementById('btnBayarSekarang');
+
+            // Validasi tanggal
+            if(end <= start) {
+                document.getElementById('coDuration').innerText = "Tanggal Tidak Valid";
+                document.getElementById('coTotal').innerText = "Rp 0";
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            document.getElementById('coDuration').innerText = diffDays + " Hari";
+            document.getElementById('coDuration').dataset.val = diffDays;
+            
+            const total = diffDays * pricePerDay;
+            document.getElementById('coTotal').innerText = formatRp(total);
+            document.getElementById('coTotal').dataset.val = total;
+            
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
         };
 
         window.processPayment = async function() {
             const pm = document.querySelector('input[name="payMethod"]:checked').value;
             const c = window.carsData.find(x => x.id === document.getElementById('coCarId').value);
+            
+            const total = parseInt(document.getElementById('coTotal').dataset.val);
+            const dur = parseInt(document.getElementById('coDuration').dataset.val);
+            const start = document.getElementById('coStartDate').value;
+            const end = document.getElementById('coEndDate').value;
+
             const btn = document.getElementById('btnBayarSekarang'); btn.innerHTML = `Memproses...`; btn.disabled = true;
             try {
                 if(pm === 'otopay') {
-                    if(window.currentUser.balance < c.priceDay) { window.showToast("Saldo OtoPay kurang.", false); btn.innerHTML = `Bayar Sekarang`; btn.disabled = false; return; }
-                    await window.fsUpdateDoc('users', window.currentUser.id, { balance: window.currentUser.balance - c.priceDay });
-                    await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: c.priceDay, status: "paid", payMethod: "otopay" });
+                    if(window.currentUser.balance < total) { window.showToast("Saldo OtoPay kurang.", false); btn.innerHTML = `Bayar Sekarang`; btn.disabled = false; return; }
+                    await window.fsUpdateDoc('users', window.currentUser.id, { balance: window.currentUser.balance - total });
+                    await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: total, duration: dur, startDate: start, endDate: end, status: "paid", payMethod: "otopay" });
                     window.showToast("Lunas! Pesanan dikonfirmasi otomatis."); window.closeAllModals();
                 } else {
-                    window.showConfirm("Transfer Bank BCA", `Transfer ${formatRp(c.priceDay)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah, klik 'Ya, Yakin' untuk diproses Admin.`, async () => {
-                        await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: c.priceDay, status: "pending_payment", payMethod: "transfer" });
+                    window.showConfirm("Transfer Bank BCA", `Transfer ${formatRp(total)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah, klik 'Ya, Yakin' untuk diproses Admin.`, async () => {
+                        await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: total, duration: dur, startDate: start, endDate: end, status: "pending_payment", payMethod: "transfer" });
                         window.showToast("Pesanan dibuat. Menunggu Verifikasi Admin."); window.closeAllModals();
                     });
                 }
@@ -973,7 +1054,10 @@
             window.ordersData.forEach(o => {
                 let sb = o.status === 'pending_payment' ? `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Tunggu Bayar</span>` : o.status === 'paid' ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">Jalan</span>` : `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">Selesai</span>`;
                 let ab = o.status === 'pending_payment' ? `<button onclick="updateOrderStatus('${o.id}', 'paid')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-blue-600">Verifikasi Tf</button>` : o.status === 'paid' ? `<button onclick="updateOrderStatus('${o.id}', 'completed')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-green-600">Selesaikan</button>` : `-`;
-                t.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xs">${o.orderRef}</td><td class="px-4 py-3 text-xs">P: ${o.userName}<br>M: ${o.ownerPhone}</td><td class="px-4 py-3 text-xs">${o.carName}<br><b class="text-shopee">${formatRp(o.total)}</b></td><td class="px-4 py-3">${sb}</td><td class="px-4 py-3 text-center">${ab}</td></tr>`;
+                // Menampilkan detail durasi di panel Admin
+                let detailSewa = `${o.carName}<br><span class="text-gray-500 text-[10px]">${o.duration || 1} Hari (${o.startDate || '-'})</span><br><b class="text-shopee">${formatRp(o.total)}</b>`;
+                
+                t.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 text-xs">${o.orderRef}</td><td class="px-4 py-3 text-xs">P: ${o.userName}<br>M: ${o.ownerPhone}</td><td class="px-4 py-3 text-xs">${detailSewa}</td><td class="px-4 py-3">${sb}</td><td class="px-4 py-3 text-center">${ab}</td></tr>`;
             });
         };
         window.updateOrderStatus = async function(id, st) { try { await window.fsUpdateDoc('orders', id, { status: st }); window.showToast("Status Diperbarui!"); } catch(e) {} };
