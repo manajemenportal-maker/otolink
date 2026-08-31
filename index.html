@@ -163,7 +163,7 @@
                         <h4 class="font-bold text-sm mb-4">Ikuti Kami</h4>
                         <div class="flex gap-4 text-gray-500 text-xl">
                             <a href="https://instagram.com/otolinkrent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-instagram-logo"></i></a>
-                            <a href="https://facebook.com/Otolink rent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-facebook-logo"></i></a>
+                            <a href="https://facebook.com/Otolink%20rent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-facebook-logo"></i></a>
                             <a href="https://threads.net/@otolinkrent" target="_blank" class="hover:text-shopee transition"><i class="ph-fill ph-threads-logo"></i></a>
                         </div>
                     </div>
@@ -313,7 +313,6 @@
                 </div>
             </div>
 
-            <!-- Form Tambah Iklan Mitra -->
             <div id="partnerAddCarForm" class="hidden bg-white p-6 rounded-lg shadow-sm border mb-6 transition-all">
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
                     <h4 class="font-bold text-gray-800 text-lg">Ajukan Iklan Unit Kendaraan Baru</h4>
@@ -578,8 +577,11 @@
 
                 <div class="bg-gray-50 border p-3 rounded">
                     <h4 class="text-xs font-bold text-gray-700 mb-2 border-b pb-1">Info Rekening Pencairan</h4>
-                    <div id="adBankInfo" class="text-sm font-semibold text-gray-800">
+                    <div id="adBankInfo" class="text-sm font-semibold text-gray-800 mb-2">
                         <!-- Data rekening tampil di sini -->
+                    </div>
+                    <div id="adEwalletLinkContainer" class="hidden border-t border-gray-200 pt-2">
+                        <!-- Link GoPay / OVO otomatis di sini -->
                     </div>
                 </div>
 
@@ -588,7 +590,7 @@
                         <i class="ph-fill ph-wallet"></i> Cairkan ke Saldo OtoPay Mitra
                     </button>
                     <button onclick="confirmDisbursement('transfer')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded shadow-md transition text-sm flex items-center justify-center gap-2">
-                        <i class="ph-fill ph-bank"></i> Tandai Sudah Transfer Bank
+                        <i class="ph-fill ph-bank"></i> Tandai Sudah Transfer Manual
                     </button>
                 </div>
             </div>
@@ -599,7 +601,7 @@
             <div class="p-5 flex flex-col gap-4">
                 <div class="bg-green-50 border border-green-200 p-3 rounded flex justify-between items-center"><span class="text-xs text-green-800 font-semibold">Saldo Tersedia:</span><span class="text-lg font-black text-green-700" id="wdAvailableBal">Rp 0</span></div>
                 <div><label class="text-xs font-bold text-gray-700 block mb-1">Nominal Penarikan</label><input type="number" id="wdAmount" placeholder="Min. Rp 50.000" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 text-sm"></div>
-                <div><label class="text-xs font-bold text-gray-700 block mb-1">Pilih Bank Tujuan</label><select id="wdBank" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 text-sm"><option value="BCA">BCA</option><option value="Mandiri">Mandiri</option><option value="BRI">BRI</option><option value="GoPay">GoPay</option></select></div>
+                <div><label class="text-xs font-bold text-gray-700 block mb-1">Pilih Bank Tujuan</label><select id="wdBank" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 text-sm"><option value="BCA">BCA</option><option value="Mandiri">Mandiri</option><option value="BRI">BRI</option><option value="GoPay">GoPay</option><option value="OVO">OVO</option></select></div>
                 <div><label class="text-xs font-bold text-gray-700 block mb-1">Nomor Rekening / HP</label><input type="text" id="wdAccount" placeholder="Cth: 0812345678" class="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 text-sm"></div>
                 <button onclick="submitWithdrawal()" id="btnWithdraw" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold p-3.5 rounded shadow-md transition text-sm">Ajukan Penarikan</button>
             </div>
@@ -631,6 +633,7 @@
             </div>
         </div>
 
+        <!-- Custom Confirm Dialog -->
         <div id="confirmModal" class="bg-white w-[90%] md:w-80 rounded-xl shadow-2xl overflow-hidden hidden flex-col absolute z-[110]">
             <div class="p-5 text-center">
                 <div class="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-fill ph-warning text-3xl"></i></div>
@@ -644,6 +647,7 @@
         </div>
     </div>
 
+    <!-- Global Toast Notification -->
     <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[150] bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-300 opacity-0 -translate-y-20 pointer-events-none min-w-[250px] justify-center">
         <i id="toastIcon" class="ph-fill ph-check-circle text-green-400 text-lg"></i><span id="toastMsg" class="font-medium text-sm">Notifikasi</span>
     </div>
@@ -689,7 +693,6 @@
 
         function startApp() {
             if(useCloud) {
-                // Real-Time Cloud Listener with Anti-Silent Failure
                 onSnapshot(collection(db, 'users'), (snap) => {
                     window.usersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     const savedId = localStorage.getItem('oto_logged_in_id');
@@ -740,7 +743,6 @@
                 setTimeout(()=> window.showToast("Sistem Online & Tersinkronisasi"), 1500);
 
             } else {
-                // Fallback / Offline
                 window.usersData = JSON.parse(localStorage.getItem('oto_users')) || [];
                 window.ordersData = JSON.parse(localStorage.getItem('oto_orders')) || [];
                 window.withdrawalsData = JSON.parse(localStorage.getItem('oto_withdrawals')) || [];
@@ -752,11 +754,7 @@
                         { id: "loc1", name: "Toyota Avanza", category: "Keluarga", priceDay: 350000, seat: 7, img: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
                         { id: "loc2", name: "Honda Brio", category: "Terlaris", priceDay: 250000, seat: 5, img: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
                         { id: "loc3", name: "Mitsubishi Pajero", category: "SUV", priceDay: 800000, seat: 7, img: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
-                        { id: "loc4", name: "Suzuki Ertiga", category: "Keluarga", priceDay: 300000, seat: 7, img: "https://images.unsplash.com/photo-1632245889029-e406faaa34cd?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
-                        { id: "loc5", name: "Toyota Fortuner", category: "SUV", priceDay: 850000, seat: 7, img: "https://images.unsplash.com/photo-1581022295087-35e593704911?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
-                        { id: "loc6", name: "Daihatsu Ayla", category: "Promo", priceDay: 200000, seat: 5, img: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fd?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
-                        { id: "loc7", name: "Honda HR-V", category: "Terlaris", priceDay: 500000, seat: 5, img: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" },
-                        { id: "loc8", name: "Mitsubishi Xpander", category: "Keluarga", priceDay: 400000, seat: 7, img: "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" }
+                        { id: "loc4", name: "Suzuki Ertiga", category: "Keluarga", priceDay: 300000, seat: 7, img: "https://images.unsplash.com/photo-1632245889029-e406faaa34cd?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official" }
                     ];
                     saveLocal('oto_cars', window.carsData);
                 } else { window.carsData = loadedCars; }
@@ -934,7 +932,7 @@
 
         window.processTopUp = async function() {
             const amount = parseInt(document.getElementById('topupAmount').value);
-            window.showConfirm("Instruksi Transfer", `Transfer ${formatRp(amount)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah, klik 'Ya, Yakin' untuk diproses.`, async () => {
+            window.showConfirm("Instruksi Transfer", `Transfer ${formatRp(amount)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah transfer, klik 'Ya, Yakin' agar kami proses.`, async () => {
                 const btn = document.getElementById('btnTopUp'); btn.innerText = "Memproses..."; btn.disabled = true;
                 try {
                     await window.fsAddDoc('topups', { topupRef: generateId("TP"), userId: window.currentUser.id, userName: window.currentUser.name, amount: amount, status: "pending" });
@@ -955,7 +953,6 @@
             document.getElementById('coCarPrice').innerText = formatRp(c.priceDay) + " / hari";
             document.getElementById('coCarId').dataset.price = c.priceDay;
 
-            // Reset Fields
             document.getElementById('coServiceType').value = 'lepas_kunci';
             document.getElementById('coPickupAddress').value = '';
             document.getElementById('coDestination').value = '';
@@ -1193,7 +1190,7 @@
         
         window.updateOrderStatus = async function(id, st) { try { await window.fsUpdateDoc('orders', id, { status: st }); window.showToast("Status Diperbarui!"); } catch(e) {} };
 
-        // Pencairan Pintar (Smart Disbursement)
+        // Pencairan Pintar & Integrasi Link OVO/GoPay
         window.openAdminDisburseModal = function(orderId, total, ownerPhone) {
             if(ownerPhone === 'official') {
                 window.showConfirm("Pendapatan Perusahaan", `Ini adalah mobil perusahaan (Official). Tandai pendapatan sebesar ${formatRp(total)} sudah masuk/selesai?`, async () => {
@@ -1214,9 +1211,27 @@
             document.getElementById('adAmountDisplay').innerText = formatRp(mitraShare);
 
             const bankInfoDiv = document.getElementById('adBankInfo');
+            const ewalletContainer = document.getElementById('adEwalletLinkContainer');
+            
+            ewalletContainer.classList.add('hidden');
+            ewalletContainer.innerHTML = '';
+
             if (mitraUser && mitraUser.bankName && mitraUser.bankAccount) {
                 bankInfoDiv.innerHTML = `<span class="text-green-600 block mb-1"><i class="ph-fill ph-check-circle"></i> Rekening Tersedia</span>
-                                         Bank: <b>${mitraUser.bankName}</b><br>No. Rek: <b>${mitraUser.bankAccount}</b>`;
+                                         Bank: <b>${mitraUser.bankName}</b><br>No. Rek/HP: <b>${mitraUser.bankAccount}</b>`;
+
+                let bName = mitraUser.bankName.toLowerCase();
+                if(bName === 'gopay' || bName === 'ovo') {
+                    let appColor = bName === 'gopay' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-purple-600 hover:bg-purple-700';
+                    let appScheme = bName === 'gopay' ? 'gojek://' : 'ovo://';
+                    let appName = bName === 'gopay' ? 'Gojek (GoPay)' : 'OVO';
+                    
+                    ewalletContainer.innerHTML = `<p class="text-[10px] text-gray-500 mb-1 mt-1">Integrasi E-Wallet Aktif. Klik untuk membuka aplikasi di HP Anda:</p>
+                                                  <a href="${appScheme}" target="_blank" class="w-full ${appColor} text-white font-bold p-2 rounded shadow-sm text-xs flex items-center justify-center gap-2 mt-2 transition">
+                                                      <i class="ph-fill ph-device-mobile"></i> Teruskan ke Aplikasi ${appName}
+                                                  </a>`;
+                    ewalletContainer.classList.remove('hidden');
+                }
             } else {
                 bankInfoDiv.innerHTML = `<span class="text-red-500 font-bold"><i class="ph-fill ph-warning-circle"></i> Mitra belum mengatur rekening bank di dashboard mereka. Pastikan hubungi mitra sebelum transfer manual.</span>`;
             }
