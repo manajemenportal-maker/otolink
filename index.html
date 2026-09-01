@@ -238,6 +238,7 @@
                 <button onclick="switchAdminTab('chat')" id="tab-chat" class="admin-tab px-4 py-2 bg-white text-gray-600 rounded font-bold text-sm whitespace-nowrap hover:bg-gray-50 border relative">Pesan Mitra <span id="adminChatBadge" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span></button>
             </div>
 
+            <!-- Admin Contents -->
             <div id="admin-verifikasi" class="admin-content bg-white rounded-lg shadow border p-5">
                 <h3 class="font-bold text-gray-800 border-b pb-3 mb-4 text-lg flex items-center gap-2"><i class="ph-fill ph-car"></i> Verifikasi Iklan Mobil</h3>
                 <div id="adminCarsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -464,6 +465,7 @@
             </div>
         </div>
 
+        <!-- Mitra Partner Reg Modal -->
         <div id="partnerModal" class="bg-white w-full md:w-[600px] md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col max-h-[90vh] absolute bottom-0 md:relative">
             <div class="bg-gray-900 p-4 text-white flex justify-between items-center sticky top-0 z-10 shrink-0">
                 <div class="flex items-center gap-2"><i class="ph-fill ph-handshake text-2xl text-green-400"></i><h2 class="font-bold text-lg">Pendaftaran Mitra Baru</h2></div>
@@ -1073,6 +1075,7 @@
         window.handlePartnerAddCar = async function(e) {
             e.preventDefault(); 
             const myCars = window.carsData.filter(c => c.ownerPhone === window.currentUser.email);
+            const carName = document.getElementById('pcName').value;
             
             const processUpload = async (isPaid = false) => {
                 const btn = document.getElementById('btnUploadIklan'); btn.innerHTML = `Mengunggah...`; btn.disabled = true;
@@ -1087,7 +1090,7 @@
             };
 
             if (myCars.length >= 1) {
-                window.showConfirm("Iklan Berbayar (Rp 11.200)", "Kuota 1 iklan gratis Anda telah habis.\n\nUntuk menayangkan iklan ini, silakan Transfer Rp 11.200 ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\n\nJika sudah transfer, klik 'Ya, Yakin' untuk dikirim ke Admin.", () => { processUpload(true); });
+                window.showConfirm("Iklan Berbayar (Rp 11.200/Bulan)", `Kuota 1 iklan gratis Anda telah habis.\n\nUnit: ${carName}\nMitra: ${window.currentUser.name}\n\nUntuk menayangkan iklan ini, silakan Transfer biaya langganan Rp 11.200 ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\n\nJika sudah transfer, klik 'Ya, Yakin' untuk dikirim ke Admin.`, () => { processUpload(true); });
             } else {
                 processUpload(false);
             }
@@ -1149,7 +1152,7 @@
             if(pc.length === 0) { c.innerHTML = `<div class="col-span-full text-center py-10 bg-gray-50 border border-dashed rounded text-gray-500">Bersih! Tidak ada antrian iklan.</div>`; return; }
             let h = ''; 
             pc.forEach(car => { 
-                const isPaidHtml = car.isPaidAd ? `<div class="bg-red-50 border border-red-200 text-red-700 p-2 rounded text-[10px] mb-2 font-bold"><i class="ph-fill ph-warning-circle"></i> Iklan Berbayar! Cek mutasi BCA PT KALIMAJA Rp 11.200 sebelum klik Terima.</div>` : `<div class="bg-green-50 border border-green-200 text-green-700 p-2 rounded text-[10px] mb-2 font-bold"><i class="ph-fill ph-check-circle"></i> Iklan Gratis (Pertama)</div>`;
+                const isPaidHtml = car.isPaidAd ? `<div class="bg-red-50 border border-red-200 text-red-700 p-2 rounded text-[10px] mb-2 font-bold leading-tight"><i class="ph-fill ph-warning-circle"></i> Iklan Berbayar! Cek mutasi BCA PT KALIMAJA Rp 11.200 dari ${car.ownerPhone} untuk unit ${car.name} sebelum klik Terima.</div>` : `<div class="bg-green-50 border border-green-200 text-green-700 p-2 rounded text-[10px] mb-2 font-bold"><i class="ph-fill ph-check-circle"></i> Iklan Gratis (Pertama)</div>`;
                 h += `<div class="bg-white border rounded shadow-sm flex flex-col"><img src="${car.img}" class="w-full h-32 object-cover bg-gray-200"><div class="p-3 flex-grow flex flex-col"><h4 class="font-bold text-sm">${car.name}</h4><p class="text-[10px] text-gray-400 mb-2">${car.ownerPhone}</p>${isPaidHtml}<div class="grid grid-cols-2 gap-2 mt-auto"><button onclick="approveCar('${car.id}', ${car.isPaidAd})" class="bg-green-500 text-white font-bold py-1.5 rounded text-xs hover:bg-green-600 transition">Terima</button><button onclick="rejectCar('${car.id}')" class="bg-red-500 text-white font-bold py-1.5 rounded text-xs hover:bg-red-600 transition">Tolak</button></div></div></div>`; 
             }); 
             c.innerHTML = h;
@@ -1185,7 +1188,6 @@
                 if(st === 'completed') {
                     let order = window.ordersData.find(o => o.id === id);
                     if(order && order.carId) {
-                        // Hilangkan tag disewa dan update timestamp agar naik peringkat 1 & laris
                         await window.fsUpdateDoc('cars', order.carId, { isBooked: false, timestamp: Date.now() });
                     }
                 }
