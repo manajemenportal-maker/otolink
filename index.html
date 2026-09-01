@@ -24,8 +24,6 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         #modalOverlay { padding: 1rem; }
-        
-        /* Carousel Styles */
         .carousel-container { position: relative; overflow: hidden; width: 100%; }
         .carousel-inner { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
         .carousel-item { min-width: 100%; height: 100%; position: relative; }
@@ -58,8 +56,9 @@
                             <button onclick="openMyOrders()" class="w-full text-left px-4 py-2.5 hover:bg-gray-100 border-b font-medium flex items-center gap-2">
                                 <i class="ph ph-receipt"></i> Pesanan Saya
                             </button>
-                            <button id="desktopPartnerBtn" onclick="openMitraDashboard()" class="w-full text-left px-4 py-2.5 hover:bg-orange-50 text-shopee font-bold border-b hidden flex items-center gap-2">
+                            <button id="desktopPartnerBtn" onclick="openMitraDashboard()" class="w-full text-left px-4 py-2.5 hover:bg-orange-50 text-shopee font-bold border-b hidden flex items-center gap-2 relative">
                                 <i class="ph-fill ph-handshake"></i> Dashboard Mitra
+                                <span id="desktopMitraChatBadge" class="hidden absolute top-2 right-4 w-2 h-2 bg-red-500 rounded-full"></span>
                             </button>
                             <button onclick="logout()" class="w-full text-left px-4 py-2.5 hover:bg-red-50 text-red-500 font-bold flex items-center gap-2">
                                 <i class="ph ph-sign-out"></i> Keluar
@@ -93,13 +92,9 @@
 
         <div class="bg-white">
             <div class="container mx-auto max-w-5xl">
-                <!-- CAROUSEL START -->
                 <div class="relative h-48 md:h-80 md:rounded-b-lg overflow-hidden group carousel-container">
-                    <div class="carousel-inner" id="carouselInner">
-                        <!-- Loaded via JS -->
-                    </div>
+                    <div class="carousel-inner" id="carouselInner"></div>
                     
-                    <!-- Carousel Controls -->
                     <button onclick="moveCarousel(-1)" class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full backdrop-blur-sm transition z-10 hidden group-hover:flex">
                         <i class="ph-bold ph-caret-left text-lg md:text-xl"></i>
                     </button>
@@ -107,12 +102,8 @@
                         <i class="ph-bold ph-caret-right text-lg md:text-xl"></i>
                     </button>
 
-                    <!-- Indicators -->
-                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10" id="carouselIndicators">
-                        <!-- Dynamic -->
-                    </div>
+                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10" id="carouselIndicators"></div>
                 </div>
-                <!-- CAROUSEL END -->
             </div>
         </div>
 
@@ -146,11 +137,12 @@
         <main id="mainCarSection" class="container mx-auto px-4 max-w-5xl my-6">
             <div class="flex justify-between items-end mb-4 border-b pb-2">
                 <h2 class="text-lg md:text-xl font-bold text-gray-800 border-l-4 border-shopee pl-2">Rekomendasi Mobil</h2>
-                <span class="text-xs text-gray-500" id="carCountIndicator">Menampilkan max 16 iklan</span>
+                <span class="text-xs text-gray-500" id="carCountIndicator">Menampilkan iklan</span>
             </div>
             <div id="carListContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                 <!-- Data Mobil akan dimuat ke sini via JS -->
             </div>
+            <div id="paginationContainer" class="flex justify-center items-center gap-2 mt-8 flex-wrap"></div>
         </main>
 
         <footer class="bg-white border-t mt-12 pb-20 md:pb-6 pt-10">
@@ -212,8 +204,9 @@
             <a href="javascript:void(0)" onclick="showToast('Belum ada notifikasi baru.')" class="flex flex-col items-center w-full py-1 hover:text-shopee transition">
                 <i class="ph ph-bell text-2xl mb-1"></i><span class="text-[10px]">Notifikasi</span>
             </a>
-            <a href="javascript:void(0)" onclick="handleMobileUserIcon()" class="flex flex-col items-center w-full py-1 hover:text-shopee transition">
+            <a href="javascript:void(0)" onclick="handleMobileUserIcon()" class="flex flex-col items-center w-full py-1 hover:text-shopee transition relative">
                 <i id="mobileUserIcon" class="ph ph-user text-2xl mb-1"></i><span id="mobileUserText" class="text-[10px]">Saya</span>
+                <span id="mobileMenuChatBadge" class="hidden absolute top-1 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span>
             </a>
         </nav>
     </div>
@@ -238,7 +231,6 @@
                 <button onclick="switchAdminTab('chat')" id="tab-chat" class="admin-tab px-4 py-2 bg-white text-gray-600 rounded font-bold text-sm whitespace-nowrap hover:bg-gray-50 border relative">Pesan Mitra <span id="adminChatBadge" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span></button>
             </div>
 
-            <!-- Admin Contents -->
             <div id="admin-verifikasi" class="admin-content bg-white rounded-lg shadow border p-5">
                 <h3 class="font-bold text-gray-800 border-b pb-3 mb-4 text-lg flex items-center gap-2"><i class="ph-fill ph-car"></i> Verifikasi Iklan Mobil</h3>
                 <div id="adminCarsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -306,6 +298,18 @@
                 <div class="flex justify-between items-center border-b pb-3 mb-4">
                     <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2"><i class="ph-fill ph-image"></i> Kelola Banner Utama (Max 5)</h3>
                     <span class="text-xs text-gray-500" id="bannerCount">0 / 5 Banner</span>
+                </div>
+
+                <div class="mb-4 bg-yellow-50 border border-yellow-100 p-3 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                    <div>
+                        <h4 class="font-bold text-yellow-800 text-sm"><i class="ph-fill ph-clock"></i> Kecepatan Slide Carousel</h4>
+                        <p class="text-[10px] text-yellow-700">Atur berapa detik banner berganti secara otomatis di halaman utama.</p>
+                    </div>
+                    <div class="flex gap-2 items-center shrink-0">
+                        <input type="number" id="bannerIntervalInput" min="1" max="20" value="5" class="w-16 p-2 border rounded text-sm text-center outline-none focus:border-yellow-500 bg-white">
+                        <span class="text-xs font-bold text-gray-600">Detik</span>
+                        <button onclick="saveBannerInterval(event)" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded text-sm font-bold shadow-sm transition">Simpan Waktu</button>
+                    </div>
                 </div>
                 
                 <div class="mb-6 bg-blue-50 border border-blue-100 p-4 rounded-lg">
@@ -465,7 +469,7 @@
             </div>
         </div>
 
-        <!-- Mitra Partner Reg Modal -->
+        <!-- Partner Reg Modal -->
         <div id="partnerModal" class="bg-white w-full md:w-[600px] md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden hidden flex-col max-h-[90vh] absolute bottom-0 md:relative">
             <div class="bg-gray-900 p-4 text-white flex justify-between items-center sticky top-0 z-10 shrink-0">
                 <div class="flex items-center gap-2"><i class="ph-fill ph-handshake text-2xl text-green-400"></i><h2 class="font-bold text-lg">Pendaftaran Mitra Baru</h2></div>
@@ -513,7 +517,6 @@
                     </div>
                 </div>
 
-                <!-- Bagian Detail Sewa & Durasi Baru -->
                 <div class="mb-4 bg-gray-50 p-3 rounded border border-gray-200">
                     <h4 class="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Pilih Tanggal & Detail</h4>
                     <div class="grid grid-cols-2 gap-3 mb-3">
@@ -742,11 +745,10 @@
         <i id="toastIcon" class="ph-fill ph-check-circle text-green-400 text-lg"></i><span id="toastMsg" class="font-medium text-sm">Notifikasi</span>
     </div>
 
-    <script type="module">
+        <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Configuration (Cloud Ready)
         const firebaseConfig = {
             apiKey: "AIzaSyCQ9wg4ezcqMgrSkL91wOVcx6JHN6PiUMU",
             authDomain: "remote-fd0d8.firebaseapp.com",
@@ -766,8 +768,9 @@
             console.log("🚀 CLOUD SERVER AKTIF - Data Tersinkronisasi Global!");
         }
 
-        window.currentUser = null; window.activeAdminChatEmail = null;
-        window.usersData = []; window.carsData = []; window.ordersData = []; window.withdrawalsData = []; window.topupsData = []; window.bannersData = []; window.messagesData = [];
+        window.currentUser = null; window.activeAdminChatEmail = null; window.configDocId = null; window.bannerInterval = 5000;
+        window.usersData = []; window.carsData = []; window.ordersData = []; window.withdrawalsData = []; window.topupsData = []; window.bannersData = []; window.messagesData = []; window.appSettingsData = [];
+        window.currentPage = 1; window.itemsPerPage = 20; window.currentCategory = ""; window.currentSearch = "";
         
         const formatRp = (num) => "Rp " + parseInt(num).toLocaleString('id-ID');
         const generateId = (prefix) => prefix + '-' + Math.floor(Math.random() * 10000);
@@ -775,34 +778,32 @@
 
         function startApp() {
             if(useCloud) {
-                // Real-time Listeners dengan Error Handling Anti-Putus
+                // Real-time Listeners
+                onSnapshot(collection(db, 'app_settings'), (snap) => {
+                    if(!snap.empty) {
+                        let config = snap.docs[0].data();
+                        window.configDocId = snap.docs[0].id;
+                        window.bannerInterval = config.carouselInterval || 5000;
+                    } else { window.bannerInterval = 5000; }
+                    let bi = document.getElementById('bannerIntervalInput');
+                    if(bi) bi.value = window.bannerInterval / 1000;
+                    window.startCarouselAutoPlay(); // Restart timer
+                }, (e) => console.error("Firebase Sync Error Settings:", e));
+
                 onSnapshot(collection(db, 'users'), (snap) => {
                     window.usersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     const savedId = localStorage.getItem('oto_logged_in_id');
                     if(savedId && !window.currentUser) { window.currentUser = window.usersData.find(u => u.id === savedId) || null; window.updateUserUI(); }
                     else if (window.currentUser) { const me = window.usersData.find(u => u.id === window.currentUser.id); if(me) { window.currentUser = me; window.updateUserUI(); } }
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminUsers();
-                }, (e) => console.error("Firebase Sync Error Users:", e));
+                }, (e) => console.error(e));
                 
                 onSnapshot(collection(db, 'cars'), (snap) => {
                     window.carsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                    if(window.carsData.length < 8) {
-                        const dummies = [
-                            { name: "Toyota Avanza", category: "Keluarga", priceDay: 350000, seat: 7, img: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official", timestamp: Date.now()-1000 },
-                            { name: "Honda Brio", category: "Terlaris", priceDay: 250000, seat: 5, img: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official", timestamp: Date.now()-2000 },
-                            { name: "Mitsubishi Pajero", category: "SUV", priceDay: 800000, seat: 7, img: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official", timestamp: Date.now()-3000 },
-                            { name: "Suzuki Ertiga", category: "Keluarga", priceDay: 300000, seat: 7, img: "https://images.unsplash.com/photo-1632245889029-e406faaa34cd?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official", timestamp: Date.now()-4000 },
-                            { name: "Toyota Fortuner", category: "SUV", priceDay: 850000, seat: 7, img: "https://images.unsplash.com/photo-1581022295087-35e593704911?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official", timestamp: Date.now()-5000 },
-                            { name: "Daihatsu Ayla", category: "Promo", priceDay: 200000, seat: 5, img: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fd?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official", timestamp: Date.now()-6000 },
-                            { name: "Honda HR-V", category: "Terlaris", priceDay: 500000, seat: 5, img: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official", timestamp: Date.now()-7000 },
-                            { name: "Mitsubishi Xpander", category: "Keluarga", priceDay: 400000, seat: 7, img: "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official", timestamp: Date.now()-8000 }
-                        ];
-                        dummies.forEach(d => window.fsAddDoc('cars', d));
-                    }
                     window.renderCars();
                     if(window.currentUser?.isPartner) window.renderMitraCars();
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) { window.loadAdminData(); window.loadAdminAllCars(); }
-                }, (e) => console.error("Firebase Sync Error Cars:", e));
+                }, (e) => console.error(e));
 
                 onSnapshot(collection(db, 'orders'), (snap) => {
                     window.ordersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -829,29 +830,29 @@
                 
                 onSnapshot(collection(db, 'messages'), (snap) => {
                     window.messagesData = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.timestamp - b.timestamp);
-                    window.updateChatBadges(); // Update red dot indicators
+                    window.updateChatBadges();
                     if(document.getElementById('mitraChatModal') && !document.getElementById('mitraChatModal').classList.contains('hidden')) window.renderMitraChat();
                     if(!document.getElementById('adminPanel').classList.contains('hidden')) window.loadAdminChatList();
                     if(document.getElementById('adminChatRoomModal') && !document.getElementById('adminChatRoomModal').classList.contains('hidden')) window.renderAdminChatRoom();
                 }, (e) => console.error(e));
                 
             } else {
-                // Offline Local Storage Fallback
                 window.usersData = JSON.parse(localStorage.getItem('oto_users')) || [];
                 window.ordersData = JSON.parse(localStorage.getItem('oto_orders')) || [];
                 window.withdrawalsData = JSON.parse(localStorage.getItem('oto_withdrawals')) || [];
                 window.topupsData = JSON.parse(localStorage.getItem('oto_topups')) || [];
                 window.bannersData = JSON.parse(localStorage.getItem('oto_banners')) || [];
                 window.messagesData = JSON.parse(localStorage.getItem('oto_messages')) || [];
-                let loadedCars = JSON.parse(localStorage.getItem('oto_cars'));
-                if (!loadedCars || loadedCars.length < 8) {
-                    window.carsData = [ { id: "loc1", name: "Toyota Avanza", category: "Keluarga", priceDay: 350000, seat: 7, img: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=400", status: "approved", ownerPhone: "official", timestamp: Date.now() } ];
-                    saveLocal('oto_cars', window.carsData);
-                } else { window.carsData = loadedCars; }
+                window.appSettingsData = JSON.parse(localStorage.getItem('oto_app_settings')) || [];
+                window.carsData = JSON.parse(localStorage.getItem('oto_cars')) || [];
+
+                if(window.appSettingsData.length > 0) {
+                    window.configDocId = window.appSettingsData[0].id; window.bannerInterval = window.appSettingsData[0].carouselInterval || 5000;
+                } else { window.bannerInterval = 5000; }
+                let bi = document.getElementById('bannerIntervalInput'); if(bi) bi.value = window.bannerInterval / 1000;
+
                 const savedId = localStorage.getItem('oto_logged_in_id'); if(savedId && !window.currentUser) { window.currentUser = window.usersData.find(u => u.id === savedId) || null; window.updateUserUI(); }
-                window.renderCars();
-                window.renderBanners();
-                window.updateChatBadges();
+                window.renderCars(); window.renderBanners(); window.updateChatBadges(); window.startCarouselAutoPlay();
             }
         }
 
@@ -866,6 +867,7 @@
                 else if(coll==='topups') { window.topupsData.push(d); saveLocal('oto_topups', window.topupsData); window.loadAdminTopups(); } 
                 else if(coll==='banners') { window.bannersData.push(d); saveLocal('oto_banners', window.bannersData); window.renderBanners(); window.loadAdminBanners(); }
                 else if(coll==='messages') { window.messagesData.push(d); saveLocal('oto_messages', window.messagesData); window.updateChatBadges(); if(window.currentUser?.isPartner) window.renderMitraChat(); window.loadAdminChatList(); window.renderAdminChatRoom(); }
+                else if(coll==='app_settings') { window.appSettingsData.push(d); saveLocal('oto_app_settings', window.appSettingsData); }
                 return { id: d.id }; 
             }
         };
@@ -874,7 +876,7 @@
             if(useCloud) { await updateDoc(doc(db, coll, id), data); } 
             else {
                 let arr, key;
-                if(coll==='users') { arr = window.usersData; key = 'oto_users'; } else if(coll==='cars') { arr = window.carsData; key = 'oto_cars'; } else if(coll==='orders') { arr = window.ordersData; key = 'oto_orders'; } else if(coll==='topups') { arr = window.topupsData; key = 'oto_topups'; } else if(coll==='banners') { arr = window.bannersData; key = 'oto_banners'; } else if(coll==='messages') { arr = window.messagesData; key = 'oto_messages'; } else { arr = window.withdrawalsData; key = 'oto_withdrawals'; }
+                if(coll==='users') { arr = window.usersData; key = 'oto_users'; } else if(coll==='cars') { arr = window.carsData; key = 'oto_cars'; } else if(coll==='orders') { arr = window.ordersData; key = 'oto_orders'; } else if(coll==='topups') { arr = window.topupsData; key = 'oto_topups'; } else if(coll==='banners') { arr = window.bannersData; key = 'oto_banners'; } else if(coll==='messages') { arr = window.messagesData; key = 'oto_messages'; } else if(coll==='app_settings') { arr = window.appSettingsData; key = 'oto_app_settings'; } else { arr = window.withdrawalsData; key = 'oto_withdrawals'; }
                 let i = arr.findIndex(x => x.id === id);
                 if(i > -1) { 
                     arr[i] = { ...arr[i], ...data }; saveLocal(key, arr); 
@@ -976,7 +978,7 @@
 
         window.processTopUp = async function() {
             const amount = parseInt(document.getElementById('topupAmount').value);
-            window.showConfirm("Instruksi Transfer", `Transfer ${formatRp(amount)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah transfer, klik 'Ya, Yakin' agar diverifikasi Admin.`, async () => {
+            window.showConfirm("Instruksi Transfer", `Transfer ${formatRp(amount)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\n\nJika sudah transfer, klik 'Ya, Yakin' agar diverifikasi Admin.`, async () => {
                 const btn = document.getElementById('btnTopUp'); btn.innerText = "Memproses..."; btn.disabled = true;
                 try {
                     await window.fsAddDoc('topups', { topupRef: generateId("TP"), userId: window.currentUser.id, userName: window.currentUser.name, amount: amount, status: "pending" });
@@ -1031,16 +1033,14 @@
                     await window.fsUpdateDoc('users', window.currentUser.id, { balance: window.currentUser.balance - total });
                     await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: total, duration: dur, startDate: start, endDate: end, serviceType: svcType, pickupAddress: pickup, destination: dest, status: "paid", payMethod: "otopay" });
                     
-                    // Tandai mobil disewa agar hilang dari muka dan tambah poin laris
-                    await window.fsUpdateDoc('cars', c.id, { isBooked: true, rentCount: (c.rentCount || 0) + 1 });
+                    await window.fsUpdateDoc('cars', c.id, { isBooked: true, rentCount: (c.rentCount || 0) + 1, timestamp: Date.now() });
                     
                     window.showToast("Lunas! Pesanan dikonfirmasi otomatis."); window.closeAllModals();
                 } else {
-                    window.showConfirm("Transfer Bank BCA", `Transfer ${formatRp(total)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\nCabang: KCU ALAM SUTERA\n\nJika sudah, klik 'Ya, Yakin' untuk diproses Admin.`, async () => {
+                    window.showConfirm("Transfer Bank BCA", `Transfer ${formatRp(total)} ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\n\nJika sudah, klik 'Ya, Yakin' untuk diproses Admin.`, async () => {
                         await window.fsAddDoc('orders', { orderRef: generateId("ORD"), userId: window.currentUser.id, userName: window.currentUser.name, carId: c.id, carName: c.name, ownerPhone: c.ownerPhone, total: total, duration: dur, startDate: start, endDate: end, serviceType: svcType, pickupAddress: pickup, destination: dest, status: "pending_payment", payMethod: "transfer" });
                         
-                        // Tandai mobil disewa
-                        await window.fsUpdateDoc('cars', c.id, { isBooked: true, rentCount: (c.rentCount || 0) + 1 });
+                        await window.fsUpdateDoc('cars', c.id, { isBooked: true, rentCount: (c.rentCount || 0) + 1, timestamp: Date.now() });
                         
                         window.showToast("Pesanan dibuat. Menunggu Verifikasi Admin."); window.closeAllModals();
                     });
@@ -1048,7 +1048,7 @@
             } catch(e) { window.showToast("Gagal memproses.", false); } finally { btn.innerHTML = `<i class="ph-fill ph-lock-key"></i> Bayar Sekarang`; btn.disabled = false; }
         };
 
-        window.openMyOrders = function() { window.showToast("Pemesanan sedang diproses sistem."); window.closeAllModals(); };
+        window.openMyOrders = function() { window.showToast("Cek notifikasi/pesan admin."); window.closeAllModals(); };
 
         window.handlePartnerClick = function() { if(!window.currentUser) { window.showToast("Silakan login dulu.", false); window.openAuthModal(); return; } if(window.currentUser.isPartner) { window.openMitraDashboard(); return; } window.openModal('partnerModal'); };
 
@@ -1090,7 +1090,7 @@
             };
 
             if (myCars.length >= 1) {
-                window.showConfirm("Iklan Berbayar (Rp 11.200/Bulan)", `Kuota 1 iklan gratis Anda telah habis.\n\nUnit: ${carName}\nMitra: ${window.currentUser.name}\n\nUntuk menayangkan iklan ini, silakan Transfer biaya langganan Rp 11.200 ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\n\nJika sudah transfer, klik 'Ya, Yakin' untuk dikirim ke Admin.`, () => { processUpload(true); });
+                window.showConfirm("Iklan Berbayar (Rp 11.200/Bulan)", `Kuota 1 iklan gratis Anda telah habis.\n\nUnit: ${carName}\nMitra: ${window.currentUser.name}\n\nUntuk menayangkan iklan ini, silakan Transfer Rp 11.200 ke:\nBank: BCA\nNo. Rek: 6044837263\nA/n: PT KALIMAJA SURYA ALAM\n\nJika sudah transfer, klik 'Ya, Yakin' untuk dikirim ke Admin.`, () => { processUpload(true); });
             } else {
                 processUpload(false);
             }
@@ -1152,7 +1152,11 @@
             if(pc.length === 0) { c.innerHTML = `<div class="col-span-full text-center py-10 bg-gray-50 border border-dashed rounded text-gray-500">Bersih! Tidak ada antrian iklan.</div>`; return; }
             let h = ''; 
             pc.forEach(car => { 
-                const isPaidHtml = car.isPaidAd ? `<div class="bg-red-50 border border-red-200 text-red-700 p-2 rounded text-[10px] mb-2 font-bold leading-tight"><i class="ph-fill ph-warning-circle"></i> Iklan Berbayar! Cek mutasi BCA PT KALIMAJA Rp 11.200 dari ${car.ownerPhone} untuk unit ${car.name} sebelum klik Terima.</div>` : `<div class="bg-green-50 border border-green-200 text-green-700 p-2 rounded text-[10px] mb-2 font-bold"><i class="ph-fill ph-check-circle"></i> Iklan Gratis (Pertama)</div>`;
+                let mitraNameDisplay = car.ownerPhone;
+                let mitraObj = window.usersData.find(u => u.email === car.ownerPhone);
+                if(mitraObj) mitraNameDisplay = mitraObj.name;
+
+                const isPaidHtml = car.isPaidAd ? `<div class="bg-red-50 border border-red-200 text-red-700 p-2 rounded text-[10px] mb-2 font-bold leading-tight"><i class="ph-fill ph-warning-circle"></i> Iklan Berbayar! Cek mutasi Rp 11.200 dari ${mitraNameDisplay} untuk unit <b>${car.name}</b> sebelum klik Terima.</div>` : `<div class="bg-green-50 border border-green-200 text-green-700 p-2 rounded text-[10px] mb-2 font-bold"><i class="ph-fill ph-check-circle"></i> Iklan Gratis (Pertama)</div>`;
                 h += `<div class="bg-white border rounded shadow-sm flex flex-col"><img src="${car.img}" class="w-full h-32 object-cover bg-gray-200"><div class="p-3 flex-grow flex flex-col"><h4 class="font-bold text-sm">${car.name}</h4><p class="text-[10px] text-gray-400 mb-2">${car.ownerPhone}</p>${isPaidHtml}<div class="grid grid-cols-2 gap-2 mt-auto"><button onclick="approveCar('${car.id}', ${car.isPaidAd})" class="bg-green-500 text-white font-bold py-1.5 rounded text-xs hover:bg-green-600 transition">Terima</button><button onclick="rejectCar('${car.id}')" class="bg-red-500 text-white font-bold py-1.5 rounded text-xs hover:bg-red-600 transition">Tolak</button></div></div></div>`; 
             }); 
             c.innerHTML = h;
@@ -1305,58 +1309,88 @@
             } catch(e) { window.showToast("Gagal", false); } finally { btn.innerHTML = "Simpan Data Mobil"; btn.disabled = false; }
         };
 
-        window.renderCars = function(cat = "") {
+        window.renderCars = function() {
             const c = document.getElementById('carListContainer'); if(!c) return; c.innerHTML = '';
+            const pc = document.getElementById('paginationContainer'); if(pc) pc.innerHTML = '';
             
             let f = window.carsData.filter(car => { 
                 if (car.status !== 'approved') return false;
                 if (car.isBooked) return false; 
-                if (cat && cat !== 'Terlaris' && (car.category || "").toLowerCase() !== cat.toLowerCase()) return false; 
+                if (window.currentCategory && window.currentCategory !== 'Terlaris' && (car.category || "").toLowerCase() !== window.currentCategory.toLowerCase()) return false; 
+                if (window.currentSearch && !car.name.toLowerCase().includes(window.currentSearch)) return false;
                 return true; 
             });
 
-            if (cat === 'Terlaris') {
+            if (window.currentCategory === 'Terlaris') {
                 f.sort((a, b) => (b.rentCount || 0) - (a.rentCount || 0));
             } else {
                 f.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
             }
             
+            const totalItems = f.length;
+            const totalPages = Math.ceil(totalItems / window.itemsPerPage) || 1;
+            
+            if (window.currentPage > totalPages) window.currentPage = totalPages;
+            if (window.currentPage < 1) window.currentPage = 1;
+
+            const startIndex = (window.currentPage - 1) * window.itemsPerPage;
+            const endIndex = startIndex + window.itemsPerPage;
+            const currentCars = f.slice(startIndex, endIndex);
+            
             const indicator = document.getElementById('carCountIndicator');
-            if(cat === "") {
-                if(indicator) indicator.classList.remove('hidden');
-                f = f.slice(0, 16);
-            } else {
-                if(indicator) indicator.classList.add('hidden');
+            if(indicator) {
+                if (totalItems > 0) {
+                    indicator.innerText = `Menampilkan ${startIndex + 1}-${Math.min(endIndex, totalItems)} dari ${totalItems} iklan`;
+                    indicator.classList.remove('hidden');
+                } else {
+                    indicator.classList.add('hidden');
+                }
             }
 
-            if(f.length === 0) { c.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 font-medium bg-gray-50 rounded border border-dashed">Belum ada mobil tersedia di kategori ini.</div>`; return; }
+            if(currentCars.length === 0) { c.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 font-medium bg-gray-50 rounded border border-dashed">Mobil tidak ditemukan atau sedang disewa.</div>`; return; }
             
-            f.forEach(car => {
+            currentCars.forEach(car => {
                 const bm = car.ownerPhone !== 'official' ? `<div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold shadow-md z-10"><i class="ph-fill ph-handshake mr-1"></i>Mitra</div>` : '';
                 c.innerHTML += `<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition flex flex-col group"><div class="h-32 md:h-40 overflow-hidden relative bg-gray-200"><img src="${car.img}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">${bm}<div class="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white shadow-sm backdrop-blur-sm">${car.seat} Kursi</div></div><div class="p-3 flex flex-col flex-grow"><h3 class="font-bold text-gray-800 text-sm md:text-base mb-1 truncate">${car.name}</h3><p class="text-[10px] text-gray-500 mb-2 uppercase font-semibold">${car.category || 'Mobil'}</p><div class="mt-auto pt-2 border-t border-gray-100"><p class="text-sm md:text-lg font-black text-shopee">${formatRp(car.priceDay)}<span class="text-[10px] md:text-xs font-normal text-gray-500"> / hari</span></p><button onclick="openCheckoutModal('${car.id}')" class="w-full mt-2 bg-orange-100 hover:bg-shopee hover:text-white text-shopee py-1.5 md:py-2 rounded text-xs md:text-sm font-bold transition">Pesan Sekarang</button></div></div></div>`;
             });
+
+            if (totalPages > 1 && pc) {
+                let paginationHtml = '';
+                if (window.currentPage > 1) { paginationHtml += `<button onclick="changePage(${window.currentPage - 1})" class="px-3 py-1.5 rounded border bg-white text-gray-600 hover:bg-gray-100 text-sm font-semibold shadow-sm transition"><i class="ph-bold ph-caret-left"></i></button>`; }
+                for (let i = 1; i <= totalPages; i++) {
+                    if (i === window.currentPage) { paginationHtml += `<button class="px-3.5 py-1.5 rounded border-2 border-shopee bg-orange-50 text-shopee text-sm font-bold shadow-sm">${i}</button>`; } 
+                    else if (i === 1 || i === totalPages || (i >= window.currentPage - 1 && i <= window.currentPage + 1)) { paginationHtml += `<button onclick="changePage(${i})" class="px-3.5 py-1.5 rounded border bg-white text-gray-600 hover:bg-gray-100 text-sm font-semibold shadow-sm transition">${i}</button>`; } 
+                    else if (i === window.currentPage - 2 || i === window.currentPage + 2) { paginationHtml += `<span class="px-2 py-1.5 text-gray-400">...</span>`; }
+                }
+                if (window.currentPage < totalPages) { paginationHtml += `<button onclick="changePage(${window.currentPage + 1})" class="px-3 py-1.5 rounded border bg-white text-gray-600 hover:bg-gray-100 text-sm font-semibold shadow-sm transition"><i class="ph-bold ph-caret-right"></i></button>`; }
+                pc.innerHTML = paginationHtml;
+            }
+        };
+
+        window.changePage = function(pageNumber) {
+            window.currentPage = pageNumber;
+            window.renderCars();
+            document.getElementById('mainCarSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
 
         window.filterCars = function(cat) { 
+            window.currentPage = 1;
+            const validCategories = ['', 'Terlaris', 'Promo', 'SUV', 'Keluarga'];
+            
+            if (validCategories.includes(cat)) {
+                window.currentCategory = cat;
+                document.getElementById('searchInput').value = "";
+                window.currentSearch = "";
+            } else {
+                window.currentSearch = document.getElementById('searchInput').value.toLowerCase();
+                window.currentCategory = ''; 
+            }
+
             document.querySelectorAll('.cat-btn').forEach(b => { b.querySelector('.cat-icon').className = "w-14 h-14 rounded-2xl bg-gray-50 text-gray-600 flex items-center justify-center text-3xl hover-trigger transition shadow-sm border border-gray-100 cat-icon"; b.querySelector('.cat-text').className = "text-xs font-medium text-gray-500 cat-text"; });
-            let ab = document.getElementById(cat === '' ? 'cat-Semua Mobil' : 'cat-' + cat);
+            let ab = document.getElementById(window.currentCategory === '' ? 'cat-Semua Mobil' : 'cat-' + window.currentCategory);
             if(ab) { ab.querySelector('.cat-icon').className = "w-14 h-14 rounded-2xl bg-orange-100 text-shopee flex items-center justify-center text-3xl group-hover:bg-shopee group-hover:text-white transition shadow-sm border border-transparent group-hover:border-shopee/20 cat-icon"; ab.querySelector('.cat-text').className = "text-xs font-bold text-gray-700 cat-text"; }
             
-            const searchVal = document.getElementById('searchInput').value.toLowerCase();
-            if(searchVal) {
-                const c = document.getElementById('carListContainer'); c.innerHTML = '';
-                let f = window.carsData.filter(car => car.status === 'approved' && !car.isBooked && car.name.toLowerCase().includes(searchVal));
-                f.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-                if(f.length === 0) { c.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 font-medium bg-gray-50 rounded border border-dashed">Mobil tidak ditemukan atau sedang disewa.</div>`; return; }
-                f.forEach(car => {
-                    const bm = car.ownerPhone !== 'official' ? `<div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold shadow-md z-10"><i class="ph-fill ph-handshake mr-1"></i>Mitra</div>` : '';
-                    c.innerHTML += `<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition flex flex-col group"><div class="h-32 md:h-40 overflow-hidden relative bg-gray-200"><img src="${car.img}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">${bm}<div class="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white shadow-sm backdrop-blur-sm">${car.seat} Kursi</div></div><div class="p-3 flex flex-col flex-grow"><h3 class="font-bold text-gray-800 text-sm md:text-base mb-1 truncate">${car.name}</h3><p class="text-[10px] text-gray-500 mb-2 uppercase font-semibold">${car.category || 'Mobil'}</p><div class="mt-auto pt-2 border-t border-gray-100"><p class="text-sm md:text-lg font-black text-shopee">${formatRp(car.priceDay)}<span class="text-[10px] md:text-xs font-normal text-gray-500"> / hari</span></p><button onclick="openCheckoutModal('${car.id}')" class="w-full mt-2 bg-orange-100 hover:bg-shopee hover:text-white text-shopee py-1.5 md:py-2 rounded text-xs md:text-sm font-bold transition">Pesan Sekarang</button></div></div></div>`;
-                });
-                document.getElementById('carCountIndicator').classList.add('hidden');
-            } else {
-                window.renderCars(cat); 
-            }
+            window.renderCars();
         };
 
         let currentSlide = 0; let slideInterval;
@@ -1390,7 +1424,31 @@
 
         window.moveCarousel = function(direction) { currentSlide += direction; window.updateCarouselView(); window.startCarouselAutoPlay(); };
         window.goToSlide = function(index) { currentSlide = index; window.updateCarouselView(); window.startCarouselAutoPlay(); };
-        window.startCarouselAutoPlay = function() { clearInterval(slideInterval); slideInterval = setInterval(() => { window.moveCarousel(1); }, 5000); };
+        
+        window.startCarouselAutoPlay = function() { 
+            clearInterval(slideInterval); 
+            let ms = window.bannerInterval || 5000;
+            slideInterval = setInterval(() => { window.moveCarousel(1); }, ms); 
+        };
+
+        window.saveBannerInterval = async function(e) {
+            let sec = parseInt(document.getElementById('bannerIntervalInput').value);
+            if(!sec || sec < 1) sec = 1;
+            let ms = sec * 1000;
+            const btn = e.target; const orig = btn.innerText;
+            btn.innerText = "Menyimpan..."; btn.disabled = true;
+            try {
+                if(window.configDocId) {
+                    await window.fsUpdateDoc('app_settings', window.configDocId, {carouselInterval: ms});
+                } else {
+                    let res = await window.fsAddDoc('app_settings', {carouselInterval: ms});
+                    window.configDocId = res.id;
+                }
+                window.bannerInterval = ms;
+                window.showToast("Waktu slide berhasil diubah!");
+            } catch(err) { window.showToast("Gagal menyimpan waktu", false); }
+            finally { btn.innerText = orig; btn.disabled = false; }
+        };
 
         window.loadAdminBanners = function() {
             const list = document.getElementById('adminBannerList'); document.getElementById('bannerCount').innerText = `${window.bannersData.length} / 5 Banner`;
@@ -1422,14 +1480,19 @@
         window.deleteBanner = function(id) { window.showConfirm("Hapus Banner?", "Banner ini tidak akan tampil lagi di halaman depan.", async () => { try { await window.fsDeleteDoc('banners', id); window.showToast("Banner dihapus."); } catch(e) {} }); };
 
         window.updateChatBadges = function() {
-            // Admin Badge Indicator
             const adminUnread = window.messagesData.some(m => m.sender === 'mitra' && !m.isRead);
             const aBadge = document.getElementById('adminChatBadge');
             if(aBadge) { adminUnread ? aBadge.classList.remove('hidden') : aBadge.classList.add('hidden'); }
 
-            // Mitra Badge Indicator
             if(window.currentUser && window.currentUser.isPartner) {
                 const mitraUnread = window.messagesData.some(m => m.mitraEmail === window.currentUser.email && m.sender === 'admin' && !m.isRead);
+                
+                const dtBadge = document.getElementById('desktopMitraChatBadge');
+                if(dtBadge) { mitraUnread ? dtBadge.classList.remove('hidden') : dtBadge.classList.add('hidden'); }
+                
+                const mbBadge = document.getElementById('mobileMenuChatBadge');
+                if(mbBadge) { mitraUnread ? mbBadge.classList.remove('hidden') : mbBadge.classList.add('hidden'); }
+
                 const mBadge = document.getElementById('mitraChatBadge');
                 if(mBadge) { mitraUnread ? mBadge.classList.remove('hidden') : mBadge.classList.add('hidden'); }
             }
@@ -1437,11 +1500,8 @@
 
         window.openMitraChatModal = function() {
             if(!window.currentUser || !window.currentUser.isPartner) return;
-            
-            // Mark all unread messages from Admin as Read
             const unread = window.messagesData.filter(m => m.mitraEmail === window.currentUser.email && m.sender === 'admin' && !m.isRead);
             unread.forEach(m => window.fsUpdateDoc('messages', m.id, {isRead: true}));
-
             window.openModal('mitraChatModal');
             window.renderMitraChat();
         };
@@ -1451,7 +1511,6 @@
             if(!window.currentUser) return;
             const myMsgs = window.messagesData.filter(m => m.mitraEmail === window.currentUser.email);
             
-            // If already open and a new message from admin arrives, mark it read automatically
             const unread = myMsgs.filter(m => m.sender === 'admin' && !m.isRead);
             if(unread.length > 0 && !document.getElementById('mitraChatModal').classList.contains('hidden')) {
                 unread.forEach(m => window.fsUpdateDoc('messages', m.id, {isRead: true}));
@@ -1469,11 +1528,9 @@
                 const textHtml = m.text ? `<span class="mb-1">${m.text}</span>` : '';
                 
                 if(m.sender === 'mitra') {
-                    // Outgoing message (Show checks)
                     const checkIcon = m.isRead ? '<i class="ph-bold ph-checks text-cyan-300 text-[12px] ml-1" title="Dibaca"></i>' : '<i class="ph-bold ph-check text-white/50 text-[12px] ml-1" title="Terkirim"></i>';
                     container.innerHTML += `<div class="self-end bg-blue-600 text-white p-2.5 rounded-lg rounded-br-none max-w-[85%] text-sm shadow-sm flex flex-col">${imgHtml}${textHtml}<div class="flex items-center justify-end gap-0.5 mt-1"><span class="text-[9px] text-blue-200">${timeStr}</span>${checkIcon}</div></div>`;
                 } else {
-                    // Incoming message
                     container.innerHTML += `<div class="self-start bg-white border border-gray-200 text-gray-800 p-2.5 rounded-lg rounded-bl-none max-w-[85%] text-sm shadow-sm flex flex-col">${imgHtml}${textHtml}<span class="text-[9px] text-gray-400 self-start mt-1">${timeStr}</span></div>`;
                 }
             });
@@ -1484,80 +1541,44 @@
             const input = document.getElementById('mcmInput'); const text = input.value.trim();
             if(!text || !window.currentUser) return;
             input.value = '';
-            try {
-                await window.fsAddDoc('messages', { mitraEmail: window.currentUser.email, mitraName: window.currentUser.name, sender: 'mitra', text: text, timestamp: Date.now(), isRead: false });
-            } catch(e) { window.showToast("Gagal kirim pesan", false); }
+            try { await window.fsAddDoc('messages', { mitraEmail: window.currentUser.email, mitraName: window.currentUser.name, sender: 'mitra', text: text, timestamp: Date.now(), isRead: false }); } catch(e) { window.showToast("Gagal kirim pesan", false); }
         };
 
         window.sendMitraImage = async function(e) {
             const file = e.target.files[0];
             if(!file || !window.currentUser) return;
-            const btn = e.target.nextElementSibling;
-            const origHtml = btn.innerHTML;
-            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i>`;
+            const btn = e.target.nextElementSibling; const origHtml = btn.innerHTML; btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i>`;
             try {
                 const imgBase64 = await compressImage(file, 800); 
                 await window.fsAddDoc('messages', { mitraEmail: window.currentUser.email, mitraName: window.currentUser.name, sender: 'mitra', text: '', img: imgBase64, timestamp: Date.now(), isRead: false });
                 window.showToast("Bukti transfer/gambar terkirim!");
-            } catch(err) { window.showToast("Gagal kirim gambar", false); }
-            finally { btn.innerHTML = origHtml; e.target.value = ''; }
+            } catch(err) { window.showToast("Gagal kirim gambar", false); } finally { btn.innerHTML = origHtml; e.target.value = ''; }
         };
 
         window.loadAdminChatList = function() {
-            const container = document.getElementById('adminChatList');
-            const grouped = {};
+            const container = document.getElementById('adminChatList'); const grouped = {};
             
-            window.messagesData.forEach(m => {
-                if(!grouped[m.mitraEmail] || grouped[m.mitraEmail].timestamp < m.timestamp) {
-                    grouped[m.mitraEmail] = m;
-                }
-            });
-
+            window.messagesData.forEach(m => { if(!grouped[m.mitraEmail] || grouped[m.mitraEmail].timestamp < m.timestamp) { grouped[m.mitraEmail] = m; } });
             const chatList = Object.values(grouped).sort((a,b) => b.timestamp - a.timestamp);
 
-            if(chatList.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-10 bg-gray-50 border border-dashed rounded text-gray-500">Belum ada riwayat pesan dari Mitra.</div>`;
-                return;
-            }
+            if(chatList.length === 0) { container.innerHTML = `<div class="col-span-full text-center py-10 bg-gray-50 border border-dashed rounded text-gray-500">Belum ada riwayat pesan dari Mitra.</div>`; return; }
 
             container.innerHTML = '';
             chatList.forEach(m => {
                 const timeStr = new Date(m.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                 const displayMsg = m.img ? '📷 Mengirim gambar' : m.text;
-                
-                // Count unread from this specific mitra
                 const unreadCount = window.messagesData.filter(x => x.mitraEmail === m.mitraEmail && x.sender === 'mitra' && !x.isRead).length;
                 const badgeHtml = unreadCount > 0 ? `<div class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">${unreadCount}</div>` : '';
                 
-                container.innerHTML += `
-                <div onclick="openAdminChatRoom('${m.mitraEmail}', '${m.mitraName}')" class="bg-white border p-3 rounded-lg shadow-sm hover:shadow-md cursor-pointer transition flex items-center gap-3 group">
-                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl shrink-0 group-hover:bg-blue-600 group-hover:text-white transition relative">
-                        <i class="ph-fill ph-user"></i>
-                    </div>
-                    <div class="flex-grow min-w-0">
-                        <div class="flex justify-between items-center mb-0.5">
-                            <h4 class="font-bold text-sm text-gray-800 truncate">${m.mitraName}</h4>
-                            <span class="text-[10px] text-gray-400 shrink-0">${timeStr}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <p class="text-xs text-gray-500 truncate ${unreadCount > 0 ? 'font-bold text-gray-800' : ''}">${m.sender === 'admin' ? 'Anda: ' : ''}${displayMsg}</p>
-                            ${badgeHtml}
-                        </div>
-                    </div>
-                </div>`;
+                container.innerHTML += `<div onclick="openAdminChatRoom('${m.mitraEmail}', '${m.mitraName}')" class="bg-white border p-3 rounded-lg shadow-sm hover:shadow-md cursor-pointer transition flex items-center gap-3 group"><div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl shrink-0 group-hover:bg-blue-600 group-hover:text-white transition relative"><i class="ph-fill ph-user"></i></div><div class="flex-grow min-w-0"><div class="flex justify-between items-center mb-0.5"><h4 class="font-bold text-sm text-gray-800 truncate">${m.mitraName}</h4><span class="text-[10px] text-gray-400 shrink-0">${timeStr}</span></div><div class="flex justify-between items-center"><p class="text-xs text-gray-500 truncate ${unreadCount > 0 ? 'font-bold text-gray-800' : ''}">${m.sender === 'admin' ? 'Anda: ' : ''}${displayMsg}</p>${badgeHtml}</div></div></div>`;
             });
         };
 
         window.openAdminChatRoom = function(mitraEmail, mitraName) {
-            window.activeAdminChatEmail = mitraEmail;
-            document.getElementById('acmTitle').innerText = `Chat: ${mitraName}`;
-            
-            // Mark as read when admin opens the chat
+            window.activeAdminChatEmail = mitraEmail; document.getElementById('acmTitle').innerText = `Chat: ${mitraName}`;
             const unread = window.messagesData.filter(m => m.mitraEmail === mitraEmail && m.sender === 'mitra' && !m.isRead);
             unread.forEach(m => window.fsUpdateDoc('messages', m.id, {isRead: true}));
-            
-            window.openModal('adminChatRoomModal');
-            window.renderAdminChatRoom();
+            window.openModal('adminChatRoomModal'); window.renderAdminChatRoom();
         };
 
         window.renderAdminChatRoom = function() {
@@ -1565,11 +1586,8 @@
             if(!window.activeAdminChatEmail) return;
             const myMsgs = window.messagesData.filter(m => m.mitraEmail === window.activeAdminChatEmail);
             
-            // Mark as read if receiving while modal is open
             const unread = myMsgs.filter(m => m.sender === 'mitra' && !m.isRead);
-            if(unread.length > 0 && !document.getElementById('adminChatRoomModal').classList.contains('hidden')) {
-                unread.forEach(m => window.fsUpdateDoc('messages', m.id, {isRead: true}));
-            }
+            if(unread.length > 0 && !document.getElementById('adminChatRoomModal').classList.contains('hidden')) { unread.forEach(m => window.fsUpdateDoc('messages', m.id, {isRead: true})); }
             
             container.innerHTML = '';
             myMsgs.forEach(m => {
@@ -1578,11 +1596,9 @@
                 const textHtml = m.text ? `<span class="mb-1">${m.text}</span>` : '';
 
                 if(m.sender === 'admin') {
-                    // Outgoing message (Show checks)
                     const checkIcon = m.isRead ? '<i class="ph-bold ph-checks text-cyan-300 text-[12px] ml-1" title="Dibaca"></i>' : '<i class="ph-bold ph-check text-white/50 text-[12px] ml-1" title="Terkirim"></i>';
                     container.innerHTML += `<div class="self-end bg-blue-600 text-white p-2.5 rounded-lg rounded-br-none max-w-[85%] text-sm shadow-sm flex flex-col">${imgHtml}${textHtml}<div class="flex items-center justify-end gap-0.5 mt-1"><span class="text-[9px] text-blue-200">${timeStr}</span>${checkIcon}</div></div>`;
                 } else {
-                    // Incoming message
                     container.innerHTML += `<div class="self-start bg-white border border-gray-200 text-gray-800 p-2.5 rounded-lg rounded-bl-none max-w-[85%] text-sm shadow-sm flex flex-col">${imgHtml}${textHtml}<span class="text-[9px] text-gray-400 self-start mt-1">${timeStr}</span></div>`;
                 }
             });
@@ -1591,24 +1607,15 @@
 
         window.sendAdminMsg = async function() {
             const input = document.getElementById('acmInput'); const text = input.value.trim();
-            if(!text || !window.activeAdminChatEmail) return;
-            input.value = '';
-            try {
-                await window.fsAddDoc('messages', { mitraEmail: window.activeAdminChatEmail, mitraName: document.getElementById('acmTitle').innerText.replace('Chat: ', ''), sender: 'admin', text: text, timestamp: Date.now(), isRead: false });
-            } catch(e) { window.showToast("Gagal kirim pesan", false); }
+            if(!text || !window.activeAdminChatEmail) return; input.value = '';
+            try { await window.fsAddDoc('messages', { mitraEmail: window.activeAdminChatEmail, mitraName: document.getElementById('acmTitle').innerText.replace('Chat: ', ''), sender: 'admin', text: text, timestamp: Date.now(), isRead: false }); } catch(e) { window.showToast("Gagal kirim pesan", false); }
         };
 
         window.sendAdminImage = async function(e) {
             const file = e.target.files[0];
             if(!file || !window.activeAdminChatEmail) return;
-            const btn = e.target.nextElementSibling;
-            const origHtml = btn.innerHTML;
-            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i>`;
-            try {
-                const imgBase64 = await compressImage(file, 800);
-                await window.fsAddDoc('messages', { mitraEmail: window.activeAdminChatEmail, mitraName: document.getElementById('acmTitle').innerText.replace('Chat: ', ''), sender: 'admin', text: '', img: imgBase64, timestamp: Date.now(), isRead: false });
-            } catch(err) { window.showToast("Gagal kirim gambar", false); }
-            finally { btn.innerHTML = origHtml; e.target.value = ''; }
+            const btn = e.target.nextElementSibling; const origHtml = btn.innerHTML; btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i>`;
+            try { const imgBase64 = await compressImage(file, 800); await window.fsAddDoc('messages', { mitraEmail: window.activeAdminChatEmail, mitraName: document.getElementById('acmTitle').innerText.replace('Chat: ', ''), sender: 'admin', text: '', img: imgBase64, timestamp: Date.now(), isRead: false }); } catch(err) { window.showToast("Gagal kirim gambar", false); } finally { btn.innerHTML = origHtml; e.target.value = ''; }
         };
 
         window.onload = function() { startApp(); };
