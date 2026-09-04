@@ -243,6 +243,20 @@
             setTimeout(() => t.classList.add('-translate-y-20', 'opacity-0'), 3000);
         };
         window.closeAllModals = () => { document.getElementById('modalContainer').innerHTML = ''; };
+        window.closeDashboard = () => {
+            window.closeAllModals();
+            const dash = document.getElementById('dashboardSection');
+            if(dash) dash.classList.add('hidden');
+            window.goHome();
+        };
+        // Klik area gelap di luar popup = tutup. Klik isi popup tidak ikut menutup.
+        document.addEventListener('click', (e) => {
+            if(e.target && e.target.classList && e.target.classList.contains('modal-overlay')) window.closeAllModals();
+        });
+        // ESC selalu menutup popup yang sedang aktif.
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'Escape' && document.getElementById('modalContainer')?.innerHTML.trim()) window.closeAllModals();
+        });
 
         window.fsAddDoc = async (colName, data) => { if(isFirebaseActive) await addDoc(collection(db, colName), data); };
         window.fsUpdateDoc = async (colName, docId, data) => { if(isFirebaseActive) await updateDoc(doc(db, colName, docId), data); };
@@ -1017,7 +1031,7 @@
                 <div class="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ph-fill ph-handshake text-9xl"></i></div>
                 <div class="flex justify-between items-start relative z-10">
                     <div><h2 class="text-2xl font-black flex items-center gap-2"><i class="ph-fill ph-shield-check text-green-300"></i> Dashboard Mitra</h2><p class="text-sm text-green-100 opacity-90">Hai, ${window.currentUser.name}!</p></div>
-                    <button onclick="logout()" class="bg-white/20 hover:bg-white/30 px-4 py-1.5 rounded text-sm font-bold backdrop-blur-sm transition">Keluar</button>
+                    <div class="flex gap-2"><button onclick="closeDashboard()" class="bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded text-sm font-bold backdrop-blur-sm transition" title="Tutup Dashboard"><i class="ph-bold ph-x"></i> Tutup</button><button onclick="logout()" class="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded text-sm font-bold backdrop-blur-sm transition"><i class="ph-bold ph-sign-out"></i> Keluar</button></div>
                 </div>
             </div>
             <div class="bg-white p-4 md:p-6 rounded-b-xl shadow-md border-x border-b mb-6 flex flex-wrap gap-4 items-center justify-between">
@@ -1070,8 +1084,24 @@
                 if(car.status === 'pending_payment') badge = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Pending Bayar Rp 11.200</span>`;
                 if(car.isBooked) badge += ` <span class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm animate-pulse">Sedang Disewa</span>`;
                 
-                const imgs = window.getCarImages(car); list.innerHTML += `<div class="flex items-center gap-3 border p-2 rounded hover:bg-gray-50 transition"><button onclick="openCarDetail('${car.id}')"><img src="${imgs[0] || car.img}" class="w-16 h-12 object-cover rounded bg-gray-200"></button><div class="flex-grow"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p></div><div class="text-right">${badge}</div></div>`;
+                const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><div class="mt-1">${badge}</div></div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
             });
+        };
+
+        window.openMitraCarEdit = function(carId) {
+            const car = window.carsData.find(c => c.id === carId);
+            if(!car || !window.currentUser || car.ownerPhone !== window.currentUser.email) return window.showToast("Iklan tidak ditemukan atau bukan milik akun ini.", false);
+            window.openCarModal(carId);
+        };
+
+        window.deleteMitraCar = async function(carId) {
+            const car = window.carsData.find(c => c.id === carId);
+            if(!car || !window.currentUser || car.ownerPhone !== window.currentUser.email) return window.showToast("Iklan tidak ditemukan atau bukan milik akun ini.", false);
+            if(car.isBooked) return window.showToast("Iklan sedang memiliki penyewaan aktif dan belum dapat dihapus.", false);
+            if(!confirm(`Hapus iklan ${car.name || 'mobil ini'}? Data iklan akan dihapus permanen.`)) return;
+            await window.fsDeleteDoc('cars', carId);
+            window.showToast("Iklan berhasil dihapus.");
+            window.loadMitraData();
         };
 
         window.renderMitraOrders = function(myOrders, myCustOrders) {
@@ -1277,7 +1307,7 @@
                 <div class="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ph-fill ph-shield-check text-9xl"></i></div>
                 <div class="flex justify-between items-center relative z-10">
                     <div><h2 class="text-2xl font-black flex items-center gap-2"><i class="ph-fill ph-shield-star text-blue-400"></i> Dashboard Admin</h2><p class="text-sm text-gray-300">Pusat Kendali OtoLink • pantau operasional dari satu tempat</p></div>
-                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-bold shadow-md transition flex items-center gap-2"><i class="ph-bold ph-x"></i> Tutup</button>
+                    <button onclick="closeDashboard()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-bold shadow-md transition flex items-center gap-2"><i class="ph-bold ph-x"></i> Tutup</button>
                 </div>
             </div>
 
@@ -1596,9 +1626,14 @@
 
         window.openCarModal = function(carId = null) {
             const car = carId ? window.carsData.find(c => c.id === carId) : null;
+            if(carId && !car) return window.showToast("Data iklan tidak ditemukan.", false);
+            const isAdmin = window.currentUser && window.currentUser.role === 'admin';
+            const isOwner = car && window.currentUser && car.ownerPhone === window.currentUser.email;
+            if(car && !isAdmin && !isOwner) return window.showToast("Anda tidak memiliki akses untuk mengedit iklan ini.", false);
+            const modalTitle = car ? (isAdmin ? 'Edit Iklan Mobil' : 'Edit Iklan Saya') : 'Tambah Mobil Official';
             const html = `
             <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden"><div class="bg-shopee p-4 text-white flex justify-between"><h2 class="font-bold">${car ? 'Edit Mobil Official' : 'Tambah Mobil Official'}</h2><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div>
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden"><div class="bg-shopee p-4 text-white flex justify-between"><h2 class="font-bold">${modalTitle}</h2><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div>
                     <div class="p-6">
                         <input type="hidden" id="ecId" value="${car ? car.id : ''}">
                         <input type="hidden" id="ecOwner" value="${car ? car.ownerPhone : 'official'}">
@@ -1610,7 +1645,7 @@
                         </div>
                         ${car ? `<div class="mb-3"><label class="block text-xs font-semibold mb-2">Galeri Saat Ini</label><div class="grid grid-cols-5 gap-2">${window.getCarImages(car).map((u,i)=>`<div class="relative"><img src="${u}" class="w-full h-14 object-cover rounded border"><span class="absolute top-0 left-0 bg-black/60 text-white text-[9px] px-1 rounded-br">${i+1}</span></div>`).join('')}</div></div>` : ''}
                         <div class="mb-4 p-3 border-2 border-dashed rounded-lg bg-gray-50"><label class="block text-xs font-bold mb-1">${car ? 'Ganti Galeri Foto (opsional)' : 'Foto Mobil (1–5 foto)'}</label><p class="text-[10px] text-gray-500 mb-2">Pilih maksimal 5 foto sekaligus. ${car ? 'Jika dipilih, galeri lama akan diganti.' : 'Foto pertama menjadi cover.'}</p><input type="file" id="ecImgInput" accept="image/*" multiple onchange="previewCarFiles('ecImgInput','ecImgPreview')" class="text-xs"><div id="ecImgPreview" class="mt-3"></div></div>
-                        <button onclick="saveCarEdit()" id="btnSaveCarEdit" class="w-full bg-shopee text-white font-bold py-2 rounded shadow">Simpan Data Mobil</button>
+                        <div class="flex gap-2">${car ? `<button onclick="${isAdmin ? `adminDeleteCar('${car.id}')` : `deleteMitraCar('${car.id}')`}; closeAllModals();" class="w-1/3 bg-red-50 text-red-600 border border-red-100 font-bold py-2 rounded shadow-sm"><i class="ph-bold ph-trash"></i> Hapus</button>` : ''}<button onclick="saveCarEdit()" id="btnSaveCarEdit" class="${car ? 'w-2/3' : 'w-full'} bg-shopee text-white font-bold py-2 rounded shadow"><i class="ph-bold ph-floppy-disk"></i> Simpan</button></div>
                     </div>
                 </div></div>`;
             document.getElementById('modalContainer').innerHTML = html;
@@ -1628,16 +1663,23 @@
                     const urls = await window.uploadCarImages(imgFiles, data.ownerPhone || 'official');
                     data.images = urls; data.img = urls[0];
                 }
-                if(id) { 
+                if(id) {
+                    const existing = window.carsData.find(c => c.id === id);
+                    const isAdmin = window.currentUser && window.currentUser.role === 'admin';
+                    if(!existing || (!isAdmin && existing.ownerPhone !== window.currentUser?.email)) throw new Error('Akses edit ditolak');
                     data.timestamp = Date.now();
-                    await window.fsUpdateDoc('cars', id, data); window.showToast("Berhasil Diperbarui!"); 
+                    // Perubahan oleh Mitra harus ditinjau ulang Admin karena harga/foto/kondisi unit bisa berubah.
+                    if(!isAdmin) data.status = 'pending';
+                    await window.fsUpdateDoc('cars', id, data); window.showToast(isAdmin ? "Iklan berhasil diperbarui!" : "Perubahan disimpan dan dikirim ulang untuk verifikasi Admin."); 
                 } else { 
                     if(!data.img || !data.images || !data.images.length) { window.showToast("Upload minimal 1 foto mobil!", false); btn.innerHTML = "Simpan Data Mobil"; btn.disabled = false; return; } 
                     data.status = 'approved'; data.timestamp = Date.now(); 
                     await window.fsAddDoc('cars', data); window.showToast("Ditambahkan!"); 
                 }
-                window.closeAllModals(); 
-            } catch(e) { window.showToast("Gagal", false); } finally { btn.innerHTML = "Simpan Data Mobil"; btn.disabled = false; }
+                window.closeAllModals();
+                if(window.currentUser?.role === 'admin') window.loadAdminData();
+                else if(window.currentUser?.role === 'mitra') window.loadMitraData();
+            } catch(e) { console.error(e); window.showToast("Gagal menyimpan perubahan", false); } finally { btn.innerHTML = "Simpan Data Mobil"; btn.disabled = false; }
         };
 
         document.addEventListener('contextmenu', event => {
