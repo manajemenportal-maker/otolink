@@ -208,13 +208,27 @@
         window.currentUser = null;
         try {
             const savedSession = localStorage.getItem('otolinkSession');
-            if(savedSession) window.currentUser = JSON.parse(savedSession);
+            if(savedSession) {
+                const parsedSession = JSON.parse(savedSession);
+                // Admin tidak dipersistenkan demi keamanan.
+                if(parsedSession && parsedSession.role === 'admin') {
+                    localStorage.removeItem('otolinkSession');
+                    window.currentUser = null;
+                } else {
+                    window.currentUser = parsedSession;
+                }
+            }
         } catch (e) {
             localStorage.removeItem('otolinkSession');
         }
 
         window.saveLoginSession = function(user) {
             if(!user) return;
+            // Sesi admin hanya hidup di memory tab saat ini.
+            if(user.role === 'admin') {
+                localStorage.removeItem('otolinkSession');
+                return;
+            }
             localStorage.setItem('otolinkSession', JSON.stringify({
                 email: user.email,
                 name: user.name,
@@ -224,6 +238,7 @@
 
         window.clearLoginSession = function() {
             localStorage.removeItem('otolinkSession');
+            try { sessionStorage.removeItem('otolinkAdminAuth'); } catch(e) {}
         };
         window.activeAdminChatEmail = null; 
         window.configDocId = null; 
@@ -466,7 +481,159 @@
             window.renderCars();
         }
 
-        // Shortcut admin: klik logo OtoLink 3x dengan cepat
+
+        // ===== ADMIN ACCESS PROTECTION =====
+        // Password admin TIDAK disimpan sebagai teks biasa.
+        // Yang tersimpan hanya salt + hasil PBKDF2-SHA256.
+        const ADMIN_AUTH_SALT_B64 = 'vtauQVbSt+FC+Jl6C4KAvw==';
+        const ADMIN_AUTH_HASH_B64 = 'OWJ7yfcpjzp+2dsyAL5q/eizFvjTPntjFAAtDlQBbWo=';
+        const ADMIN_AUTH_ITERATIONS = 150000;
+
+        window.base64ToBytes = function(value) {
+            const raw = atob(value);
+            return Uint8Array.from(raw, c => c.charCodeAt(0));
+        };
+
+        window.constantTimeEqual = function(a, b) {
+            if(!a || !b || a.length !== b.length) return false;
+            let diff = 0;
+            for(let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+            return diff === 0;
+        };
+
+        window.verifyAdminPassword = async function(password) {
+            try {
+                if(!password || !window.crypto?.subtle) return false;
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw',
+                    enc.encode(password),
+                    {name: 'PBKDF2'},
+                    false,
+                    ['deriveBits']
+                );
+                const bits = await crypto.subtle.deriveBits(
+                    {
+                        name: 'PBKDF2',
+                        salt: window.base64ToBytes(ADMIN_AUTH_SALT_B64),
+                        iterations: ADMIN_AUTH_ITERATIONS,
+                        hash: 'SHA-256'
+                    },
+                    keyMaterial,
+                    256
+                );
+                return window.constantTimeEqual(
+                    new Uint8Array(bits),
+                    window.base64ToBytes(ADMIN_AUTH_HASH_B64)
+                );
+            } catch(err) {
+                console.error('Admin auth error:', err);
+                return false;
+            }
+        };
+
+        window.enterAdminDashboard = function() {
+            const adminUser = window.usersData.find(u => u.email === 'admin') || {
+                name: 'Admin', email: 'admin', role: 'admin', saldo: 0
+            };
+            window.currentUser = {...adminUser, role:'admin', email:'admin', name: adminUser.name || 'Admin'};
+            // Jangan simpan sesi admin ke localStorage.
+            window.clearLoginSession();
+            window.closeAllModals();
+            document.getElementById('appContent').classList.add('hidden');
+            const dc = document.getElementById('dashboardContent');
+            dc.classList.remove('hidden');
+            window.loadAdminData();
+            refreshUI();
+            window.showToast('Berhasil masuk sebagai Admin');
+        };
+
+        window.openAdminPasswordModal = function() {
+            window.closeAllModals();
+            document.getElementById('modalContainer').innerHTML = `
+            <div class="fixed inset-0 modal-overlay flex items-center justify-center z-[100] p-4">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+                    <div class="bg-[#101827] p-5 text-white relative">
+                        <div class="flex items-center gap-3">
+                            <div class="w-11 h-11 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                <i class="ph-fill ph-shield-lock text-2xl text-blue-300"></i>
+                            </div>
+                            <div>
+                                <h2 class="font-black text-lg">Akses Admin</h2>
+                                <p class="text-xs text-gray-300">Masukkan password sebelum membuka dashboard.</p>
+                            </div>
+                        </div>
+                        <button onclick="closeAllModals()" class="absolute right-4 top-4 text-white/70 hover:text-white">
+                            <i class="ph-bold ph-x text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="p-5">
+                        <label class="block text-xs font-bold text-gray-600 mb-2">Password Admin</label>
+                        <div class="relative">
+                            <input id="adminAccessPassword" type="password" autocomplete="off"
+                                onkeyup="if(event.key==='Enter') submitAdminPassword()"
+                                class="w-full border rounded-xl px-4 py-3 pr-12 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Masukkan password admin">
+                            <button type="button" onclick="toggleAdminPasswordVisibility()"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                                <i id="adminPassEye" class="ph-bold ph-eye"></i>
+                            </button>
+                        </div>
+                        <p id="adminPasswordError" class="hidden text-xs text-red-600 font-bold mt-2">
+                            Password admin salah.
+                        </p>
+                        <button id="adminPasswordSubmit" onclick="submitAdminPassword()"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl mt-4 shadow">
+                            <i class="ph-bold ph-lock-key mr-1"></i> Masuk Dashboard Admin
+                        </button>
+                        <button onclick="closeAllModals()"
+                            class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl mt-2">
+                            Batal
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+            setTimeout(() => document.getElementById('adminAccessPassword')?.focus(), 50);
+        };
+
+        window.toggleAdminPasswordVisibility = function() {
+            const input = document.getElementById('adminAccessPassword');
+            const eye = document.getElementById('adminPassEye');
+            if(!input) return;
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            if(eye) eye.className = show ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye';
+        };
+
+        window.submitAdminPassword = async function() {
+            const input = document.getElementById('adminAccessPassword');
+            const btn = document.getElementById('adminPasswordSubmit');
+            const err = document.getElementById('adminPasswordError');
+            if(!input || !input.value) {
+                err?.classList.remove('hidden');
+                input?.focus();
+                return;
+            }
+            if(btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="ph-bold ph-spinner-gap animate-spin mr-1"></i> Memeriksa...';
+            }
+            const ok = await window.verifyAdminPassword(input.value);
+            input.value = '';
+            if(!ok) {
+                if(err) err.classList.remove('hidden');
+                if(btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="ph-bold ph-lock-key mr-1"></i> Masuk Dashboard Admin';
+                }
+                input.focus();
+                return;
+            }
+            window.enterAdminDashboard();
+        };
+
+        // Shortcut admin: klik logo OtoLink 3x dengan cepat.
+        // Tiga klik hanya membuka permintaan password, tidak langsung masuk.
         let logoClickCount = 0;
         let logoClickTimer = null;
         window.handleLogoClick = function(event) {
@@ -476,17 +643,7 @@
 
             if(logoClickCount >= 3) {
                 logoClickCount = 0;
-                const adminUser = window.usersData.find(u => u.email === 'admin') || {
-                    name: 'Admin', email: 'admin', role: 'admin', saldo: 0
-                };
-                window.currentUser = adminUser;
-                window.closeAllModals();
-                document.getElementById('appContent').classList.add('hidden');
-                const dc = document.getElementById('dashboardContent');
-                dc.classList.remove('hidden');
-                window.loadAdminData();
-                window.refreshUI && window.refreshUI();
-                window.showToast('Dashboard Admin dibuka');
+                window.openAdminPasswordModal();
                 return;
             }
 
@@ -598,16 +755,13 @@
             const pass = document.getElementById('authPass').value;
             if(!email || !pass) return window.showToast("Masukkan email/No. HP dan password!", false);
 
-            // Login admin lama tetap dipertahankan
+            // Login admin memakai verifikasi hash yang sama dengan akses logo 3x.
             if(email === 'admin') {
-                if(pass !== atob('WWFraW41MzdA')) return window.showToast("Password Admin Salah!", false);
-                const adminUser = window.usersData.find(u => u.email === 'admin') || { name: 'Admin', email: 'admin', role: 'admin', saldo: 0 };
-                window.currentUser = adminUser;
-                window.saveLoginSession(adminUser);
-                window.closeAllModals();
-                refreshUI();
-                window.openUserDashboard();
-                return window.showToast("Berhasil Masuk sebagai Admin!");
+                const ok = await window.verifyAdminPassword(pass);
+                document.getElementById('authPass').value = '';
+                if(!ok) return window.showToast("Password Admin Salah!", false);
+                window.enterAdminDashboard();
+                return;
             }
 
             const user = window.usersData.find(u => u.email === email);
@@ -648,11 +802,22 @@
         };
 
         window.logout = function() {
+            const wasAdmin = window.currentUser?.role === 'admin';
             window.currentUser = null;
+            window.activeAdminChatEmail = null;
             window.clearLoginSession();
-            window.goHome();
+            window.closeAllModals();
+
+            const app = document.getElementById('appContent');
+            const dash = document.getElementById('dashboardContent');
+            if(app) app.classList.remove('hidden');
+            if(dash) {
+                dash.classList.add('hidden');
+                dash.innerHTML = '';
+            }
+
             refreshUI();
-            window.showToast("Berhasil Keluar");
+            window.showToast(wasAdmin ? "Admin berhasil keluar" : "Berhasil Keluar");
         };
 
         let currentSlide = 0; let slideInterval;
@@ -1350,7 +1515,10 @@
                 <div class="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ph-fill ph-shield-check text-9xl"></i></div>
                 <div class="flex justify-between items-center relative z-10">
                     <div><h2 class="text-2xl font-black flex items-center gap-2"><i class="ph-fill ph-shield-star text-blue-400"></i> Dashboard Admin</h2><p class="text-sm text-gray-300">Pusat Kendali OtoLink • pantau operasional dari satu tempat</p></div>
-                    <button onclick="closeDashboard()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-bold shadow-md transition flex items-center gap-2"><i class="ph-bold ph-x"></i> Tutup</button>
+                    <div class="flex gap-2">
+                        <button onclick="closeDashboard()" class="bg-white/10 hover:bg-white/20 px-3 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2"><i class="ph-bold ph-x"></i> Tutup Dashboard</button>
+                        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2"><i class="ph-bold ph-sign-out"></i> Keluar Admin</button>
+                    </div>
                 </div>
             </div>
 
