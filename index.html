@@ -1080,10 +1080,23 @@
             const dest = document.getElementById('coDest').value || '-';
             
             const car = window.carsData.find(c => c.id === carId);
+            if(!car) return window.showToast("Data mobil tidak ditemukan.", false);
 
             if(method === 'otopay') {
                 const currentWalletBalance = window.getOtoPayBalance(window.currentUser.email);
-                if(currentWalletBalance < total) { window.showToast("Saldo OtoPay tidak cukup!", false); btn.innerHTML = "Bayar Sekarang"; btn.disabled = false; return; }
+                if(currentWalletBalance < total) {
+                    window.showToast("Saldo OtoPay tidak cukup!", false);
+                    btn.innerHTML = "Bayar Sekarang";
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
+            window.closeAllModals();
+            window.showToast("Memproses pesanan...");
+
+            if(method === 'otopay') {
+                const currentWalletBalance = window.getOtoPayBalance(window.currentUser.email);
                 const newSaldo = currentWalletBalance - total;
                 window.currentUser.saldo = newSaldo;
                 await window.fsUpdateDoc('users', window.currentUser.id, { saldo: newSaldo });
@@ -1103,7 +1116,6 @@
             let newRentCount = (car.rentCount || 0) + 1;
             await window.fsUpdateDoc('cars', car.id, { isBooked: true, rentCount: newRentCount });
 
-            window.closeAllModals();
             if(method === 'bank') {
                 document.getElementById('modalContainer').innerHTML = `
                 <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
@@ -1139,13 +1151,27 @@
 
         window.submitTopup = async function() {
             const inp = document.getElementById('topupAmount');
-            const amount = parseInt(inp.value);
+            const amount = parseInt(inp?.value || '0');
             if(!amount || amount < 10000) return window.showToast('Minimal top up Rp 10.000', false);
-            const btn = document.getElementById('btnSubmitTopup');
-            btn.disabled = true; btn.innerText = 'Mengirim...';
-            await window.fsAddDoc('topups', { email: window.currentUser.email, name: window.currentUser.name, amount, status: 'pending', timestamp: Date.now() });
+
+            const snapshot = {
+                email: window.currentUser.email,
+                name: window.currentUser.name,
+                amount,
+                status: 'pending',
+                timestamp: Date.now()
+            };
+
             window.closeAllModals();
-            window.showToast('Pengajuan top up dikirim. Menunggu verifikasi admin.');
+            window.showToast('Mengirim pengajuan top up...');
+            try {
+                await window.fsAddDoc('topups', snapshot);
+                window.showToast('Pengajuan top up dikirim. Menunggu verifikasi admin.');
+            } catch(err) {
+                console.error(err);
+                window.showToast('Gagal mengirim top up. Silakan coba lagi.', false);
+                setTimeout(() => window.openTopupModal(), 500);
+            }
         };
 
         window.loadUserData = function() {
@@ -1360,8 +1386,12 @@
         window.saveMitraProfile = async function(submitForVerification=false) {
             const current = window.currentUser;
             if(!current?.id) return window.showToast('Data akun mitra tidak ditemukan.', false);
+
             const val = id => (document.getElementById(id)?.value || '').trim();
             const consent = !!document.getElementById('mpConsent')?.checked;
+            const ktpFile = document.getElementById('mpKtpPhoto')?.files?.[0] || null;
+            const selfieFile = document.getElementById('mpSelfieKtp')?.files?.[0] || null;
+
             const data = {
                 fullName: val('mpFullName'),
                 nik: val('mpNik').replace(/\D/g,''),
@@ -1380,36 +1410,92 @@
                 partnerDataConsent: consent,
                 partnerProfileUpdatedAt: Date.now()
             };
-            if(data.nik && data.nik.length !== 16) return window.showToast('NIK harus 16 digit.', false);
-            if(submitForVerification && !consent) return window.showToast('Persetujuan penggunaan data wajib dicentang.', false);
 
-            const ktpFile = document.getElementById('mpKtpPhoto')?.files?.[0];
-            const selfieFile = document.getElementById('mpSelfieKtp')?.files?.[0];
-            try {
+            if(data.nik && data.nik.length !== 16)
+                return window.showToast('NIK harus 16 digit.', false);
+
+            if(submitForVerification && !consent)
+                return window.showToast('Persetujuan penggunaan data wajib dicentang.', false);
+
+            // Validasi kelengkapan sebelum form ditutup.
+            // File baru dianggap memenuhi dokumen wajib walaupun URL upload belum terbentuk.
+            const precheck = {
+                ...current,
+                ...data,
+                ktpPhoto: ktpFile ? '__new_file__' : (current.ktpPhoto || ''),
+                selfieKtpPhoto: selfieFile ? '__new_file__' : (current.selfieKtpPhoto || '')
+            };
+            const profileCheck = window.getMitraProfileStatus(precheck);
+
+            if(submitForVerification && !profileCheck.complete) {
+                return window.showToast(
+                    'Belum lengkap: ' +
+                    profileCheck.missing.slice(0,3).join(', ') +
+                    (profileCheck.missing.length > 3 ? ' dan lainnya' : ''),
+                    false
+                );
+            }
+
+            const submitBtn = document.querySelector('[onclick="saveMitraProfile(true)"]');
+            const draftBtn = document.querySelector('[onclick="saveMitraProfile(false)"]');
+            if(submitBtn) submitBtn.disabled = true;
+            if(draftBtn) draftBtn.disabled = true;
+
+            // Sesuai alur aplikasi: setelah user menekan Kirim dan validasi lolos,
+            // form langsung ditutup. Proses upload/simpan diteruskan di belakang layar.
+            if(submitForVerification) {
+                window.closeAllModals();
+                window.showToast('Mengirim data verifikasi...');
+            } else {
                 window.showToast('Menyimpan profil mitra...');
+            }
+
+            try {
                 if(ktpFile) data.ktpPhoto = await window.uploadPartnerDocument(ktpFile, 'ktp');
                 if(selfieFile) data.selfieKtpPhoto = await window.uploadPartnerDocument(selfieFile, 'selfie_ktp');
 
-                const merged = {...current, ...data};
-                const profileCheck = window.getMitraProfileStatus(merged);
-                if(submitForVerification && !profileCheck.complete) {
-                    return window.showToast('Belum lengkap: ' + profileCheck.missing.slice(0,3).join(', ') + (profileCheck.missing.length>3?' dan lainnya':''), false);
-                }
                 data.partnerVerificationStatus = submitForVerification ? 'pending' :
-                    (current.partnerVerificationStatus === 'verified' ? 'verified' : (current.partnerVerificationStatus || 'incomplete'));
+                    (current.partnerVerificationStatus === 'verified'
+                        ? 'verified'
+                        : (current.partnerVerificationStatus || 'incomplete'));
+
                 if(submitForVerification) {
                     data.partnerVerificationSubmittedAt = Date.now();
                     data.partnerVerificationNote = '';
                 }
+
                 await window.fsUpdateDoc('users', current.id, data);
+
                 window.currentUser = {...current, ...data};
                 window.saveLoginSession(window.currentUser);
-                window.closeAllModals();
-                window.showToast(submitForVerification ? 'Profil dikirim untuk verifikasi Admin.' : 'Draft profil tersimpan.');
+
+                // Paksa modal tetap bersih setelah seluruh proses selesai,
+                // lalu segarkan Dashboard Mitra.
+                const modal = document.getElementById('modalContainer');
+                if(modal) modal.innerHTML = '';
+
                 window.loadMitraData();
+                window.showToast(
+                    submitForVerification
+                        ? 'Data berhasil dikirim. Menunggu verifikasi Admin.'
+                        : 'Draft profil tersimpan.'
+                );
+
+                // Draft juga ditutup setelah penyimpanan sukses.
+                if(!submitForVerification) window.closeAllModals();
+
             } catch(err) {
                 console.error(err);
                 window.showToast(err.message || 'Gagal menyimpan profil.', false);
+
+                // Jika Kirim gagal setelah form sudah tertutup, tampilkan kembali form
+                // agar mitra dapat memperbaiki/mencoba lagi tanpa kehilangan alur.
+                if(submitForVerification) {
+                    setTimeout(() => window.openMitraProfile(), 500);
+                } else {
+                    if(submitBtn) submitBtn.disabled = false;
+                    if(draftBtn) draftBtn.disabled = false;
+                }
             }
         };
 
@@ -1452,20 +1538,32 @@
         };
 
         window.adminSetPartnerVerification = async function(userId, status) {
-            const u = window.usersData.find(x=>x.id===userId); if(!u) return;
+            const u = window.usersData.find(x=>x.id===userId);
+            if(!u) return;
             const ps = window.getMitraProfileStatus(u);
             if(status==='verified' && !ps.complete) return window.showToast('Profil mitra belum lengkap.', false);
+
             const note = (document.getElementById('adminPartnerNote')?.value||'').trim();
             if(status==='rejected' && !note) return window.showToast('Berikan catatan perbaikan untuk mitra.', false);
-            await window.fsUpdateDoc('users', userId, {
+
+            const payload = {
                 partnerVerificationStatus: status,
                 partnerVerificationNote: note,
                 partnerVerifiedAt: status==='verified' ? Date.now() : null,
                 partnerVerifiedBy: status==='verified' ? 'admin' : null
-            });
+            };
+
             window.closeAllModals();
-            window.showToast(status==='verified'?'Mitra berhasil diverifikasi.':'Mitra diminta memperbaiki data.');
-            window.loadAdminData();
+            window.showToast(status==='verified' ? 'Memverifikasi mitra...' : 'Mengirim permintaan perbaikan...');
+            try {
+                await window.fsUpdateDoc('users', userId, payload);
+                window.showToast(status==='verified'?'Mitra berhasil diverifikasi.':'Mitra diminta memperbaiki data.');
+                window.loadAdminData();
+            } catch(err) {
+                console.error(err);
+                window.showToast('Proses verifikasi gagal. Silakan coba lagi.', false);
+                setTimeout(() => window.openAdminMitraProfile(userId), 500);
+            }
         };
 
         window.loadMitraData = function() {
@@ -1663,21 +1761,41 @@
             </div>`;
         };
         window.processWithdraw = async function() {
-            const am = parseInt(document.getElementById('wdAmount').value);
+            const am = parseInt(document.getElementById('wdAmount')?.value || '0');
             if(!am || am < 50000) return window.showToast("Minimal tarik Rp 50.000", false);
-            if(am > window.currentUser.saldo) return window.showToast("Saldo tidak cukup!", false);
-            
-            await window.fsUpdateDoc('users', window.currentUser.id, { saldo: window.currentUser.saldo - am });
-            const fee = am * 0.025; const net = am - fee;
-            await window.fsAddDoc('withdrawals', {
-                email: window.currentUser.email, name: window.currentUser.name,
-                amount: am, fee, netAmount: net, status: 'pending', timestamp: Date.now(),
+            if(am > Number(window.currentUser.saldo || 0)) return window.showToast("Saldo tidak cukup!", false);
+
+            const beforeSaldo = Number(window.currentUser.saldo || 0);
+            const fee = am * 0.025;
+            const net = am - fee;
+            const wdData = {
+                email: window.currentUser.email,
+                name: window.currentUser.name,
+                amount: am,
+                fee,
+                netAmount: net,
+                status: 'pending',
+                timestamp: Date.now(),
                 bankName: window.currentUser.bankName || '',
                 bankAccount: window.currentUser.bankAccount || '',
                 bankHolder: window.currentUser.bankHolder || '',
                 partnerVerifiedAt: window.currentUser.partnerVerifiedAt || null
-            });
-            window.closeAllModals(); window.showToast("Pengajuan berhasil!");
+            };
+
+            window.closeAllModals();
+            window.showToast("Memproses pengajuan pencairan...");
+            try {
+                const newSaldo = beforeSaldo - am;
+                await window.fsUpdateDoc('users', window.currentUser.id, { saldo: newSaldo });
+                await window.fsAddDoc('withdrawals', wdData);
+                window.currentUser.saldo = newSaldo;
+                window.showToast("Pengajuan pencairan berhasil dikirim!");
+                window.loadMitraData();
+            } catch(err) {
+                console.error(err);
+                window.showToast("Pengajuan pencairan gagal. Silakan coba lagi.", false);
+                setTimeout(() => window.openWithdrawModal(), 500);
+            }
         };
 
         window.renderMitraChatRoom = function() {
@@ -2149,34 +2267,57 @@
         };
 
         window.saveCarEdit = async function() {
-            const btn = document.getElementById('btnSaveCarEdit'); btn.innerHTML = "Menyimpan..."; btn.disabled = true;
+            const id = document.getElementById('ecId')?.value || '';
+            const data = {
+                name: (document.getElementById('ecName')?.value || '').trim(),
+                category: document.getElementById('ecCategory')?.value || '',
+                priceDay: parseInt(document.getElementById('ecPrice')?.value || '0') || 0,
+                seat: parseInt(document.getElementById('ecSeat')?.value || '0') || 0,
+                ownerPhone: document.getElementById('ecOwner')?.value || 'official'
+            };
+            const imgFiles = Array.from(document.getElementById('ecImgInput')?.files || []);
+
+            if(!data.name || !data.priceDay || !data.seat)
+                return window.showToast("Lengkapi nama, harga, dan jumlah kursi.", false);
+            if(imgFiles.length > 5)
+                return window.showToast("Maksimal 5 foto per iklan!", false);
+
+            const existing = id ? window.carsData.find(c => c.id === id) : null;
+            const isAdmin = window.currentUser && window.currentUser.role === 'admin';
+            if(id && (!existing || (!isAdmin && existing.ownerPhone !== window.currentUser?.email)))
+                return window.showToast('Akses edit ditolak', false);
+            if(!id && imgFiles.length < 1)
+                return window.showToast("Upload minimal 1 foto mobil!", false);
+
+            window.closeAllModals();
+            window.showToast(imgFiles.length ? "Mengunggah foto dan menyimpan iklan..." : "Menyimpan perubahan iklan...");
+
             try {
-                let id = document.getElementById('ecId').value;
-                let data = { name: document.getElementById('ecName').value, category: document.getElementById('ecCategory').value, priceDay: parseInt(document.getElementById('ecPrice').value) || 0, seat: parseInt(document.getElementById('ecSeat').value) || 0, ownerPhone: document.getElementById('ecOwner').value || 'official' };
-                const imgFiles = Array.from(document.getElementById('ecImgInput').files || []);
-                if(imgFiles.length > 5) { window.showToast("Maksimal 5 foto per iklan!", false); btn.innerHTML = "Simpan Data Mobil"; btn.disabled = false; return; }
                 if(imgFiles.length) {
-                    window.showToast("Mengunggah galeri foto...");
                     const urls = await window.uploadCarImages(imgFiles, data.ownerPhone || 'official');
-                    data.images = urls; data.img = urls[0];
+                    data.images = urls;
+                    data.img = urls[0];
                 }
+
                 if(id) {
-                    const existing = window.carsData.find(c => c.id === id);
-                    const isAdmin = window.currentUser && window.currentUser.role === 'admin';
-                    if(!existing || (!isAdmin && existing.ownerPhone !== window.currentUser?.email)) throw new Error('Akses edit ditolak');
                     data.timestamp = Date.now();
-                    // Perubahan oleh Mitra harus ditinjau ulang Admin karena harga/foto/kondisi unit bisa berubah.
                     if(!isAdmin) data.status = 'pending';
-                    await window.fsUpdateDoc('cars', id, data); window.showToast(isAdmin ? "Iklan berhasil diperbarui!" : "Perubahan disimpan dan dikirim ulang untuk verifikasi Admin."); 
-                } else { 
-                    if(!data.img || !data.images || !data.images.length) { window.showToast("Upload minimal 1 foto mobil!", false); btn.innerHTML = "Simpan Data Mobil"; btn.disabled = false; return; } 
-                    data.status = 'approved'; data.timestamp = Date.now(); 
-                    await window.fsAddDoc('cars', data); window.showToast("Ditambahkan!"); 
+                    await window.fsUpdateDoc('cars', id, data);
+                    window.showToast(isAdmin ? "Iklan berhasil diperbarui!" : "Perubahan disimpan dan dikirim ulang untuk verifikasi Admin.");
+                } else {
+                    data.status = 'approved';
+                    data.timestamp = Date.now();
+                    await window.fsAddDoc('cars', data);
+                    window.showToast("Mobil official berhasil ditambahkan!");
                 }
-                window.closeAllModals();
+
                 if(window.currentUser?.role === 'admin') window.loadAdminData();
                 else if(window.currentUser?.role === 'mitra') window.loadMitraData();
-            } catch(e) { console.error(e); window.showToast("Gagal menyimpan perubahan", false); } finally { btn.innerHTML = "Simpan Data Mobil"; btn.disabled = false; }
+            } catch(err) {
+                console.error(err);
+                window.showToast("Gagal menyimpan iklan. Silakan coba lagi.", false);
+                setTimeout(() => window.openCarModal(id || null), 500);
+            }
         };
 
         document.addEventListener('contextmenu', event => {
