@@ -278,7 +278,14 @@
         window.fsDeleteDoc = async (colName, docId) => { if(isFirebaseActive) await deleteDoc(doc(db, colName, docId)); };
 
         if (isFirebaseActive) {
-            onSnapshot(collection(db, 'users'), (snap) => { window.usersData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(collection(db, 'users'), (snap) => {
+                window.usersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                refreshUI();
+                const openAdminPartnerId = document.getElementById('adminPartnerProfileUserId')?.value;
+                if(openAdminPartnerId && window.currentUser?.role === 'admin') {
+                    setTimeout(()=>window.openAdminMitraProfile(openAdminPartnerId), 50);
+                }
+            });
             onSnapshot(collection(db, 'cars'), (snap) => { window.carsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
             onSnapshot(collection(db, 'orders'), (snap) => { window.ordersData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
             onSnapshot(collection(db, 'withdrawals'), (snap) => { window.withdrawalsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
@@ -1427,6 +1434,29 @@
             return await getDownloadURL(storageRef);
         };
 
+
+        window.previewPartnerDocument = function(inputId, imgId, emptyId) {
+            const input = document.getElementById(inputId);
+            const img = document.getElementById(imgId);
+            const empty = document.getElementById(emptyId);
+            const file = input?.files?.[0];
+            if(!file) return;
+            if(!file.type.startsWith('image/')) {
+                window.showToast('File harus berupa gambar.', false);
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = e => {
+                if(img) {
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                }
+                if(empty) empty.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        };
+
         window.openMitraProfile = function() {
             const u = window.currentUser || {};
             if(u.role !== 'mitra') return;
@@ -1479,14 +1509,24 @@
                   <h3 class="font-black text-gray-800 mt-6 mb-3 border-b pb-2">4. Dokumen Verifikasi</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="border rounded-xl p-3">
-                      <p class="font-bold text-sm">Foto KTP *</p><p class="text-[10px] text-gray-500 mb-2">JPG/PNG, maksimal 5 MB.</p>
-                      ${u.ktpPhoto?`<img src="${u.ktpPhoto}" class="w-full h-32 object-contain bg-gray-100 rounded mb-2 border">`:''}
-                      <input id="mpKtpPhoto" type="file" accept="image/*" class="text-xs w-full">
+                      <p class="font-bold text-sm">Foto KTP *</p>
+                      <p class="text-[10px] text-gray-500 mb-2">JPG/PNG/WebP. Foto akan dikompres agar hemat storage.</p>
+                      <div class="w-full h-40 bg-gray-100 rounded mb-2 border flex items-center justify-center overflow-hidden">
+                        <img id="mpKtpPreview" src="${u.ktpPhoto || ''}" class="w-full h-full object-contain ${u.ktpPhoto?'':'hidden'}">
+                        <div id="mpKtpEmpty" class="${u.ktpPhoto?'hidden':''} text-center text-gray-400 text-xs"><i class="ph-fill ph-identification-card text-3xl block mb-1"></i>Belum ada foto KTP</div>
+                      </div>
+                      <input id="mpKtpPhoto" type="file" accept="image/*" onchange="previewPartnerDocument('mpKtpPhoto','mpKtpPreview','mpKtpEmpty')" class="text-xs w-full">
+                      <p class="text-[10px] text-gray-400 mt-1">${u.ktpPhoto?'Foto tersimpan. Pilih file baru untuk mengganti.':'Wajib diisi sebelum verifikasi.'}</p>
                     </div>
                     <div class="border rounded-xl p-3">
-                      <p class="font-bold text-sm">Selfie sambil memegang KTP *</p><p class="text-[10px] text-gray-500 mb-2">Pastikan wajah dan identitas terlihat.</p>
-                      ${u.selfieKtpPhoto?`<img src="${u.selfieKtpPhoto}" class="w-full h-32 object-contain bg-gray-100 rounded mb-2 border">`:''}
-                      <input id="mpSelfieKtp" type="file" accept="image/*" class="text-xs w-full">
+                      <p class="font-bold text-sm">Selfie sambil memegang KTP *</p>
+                      <p class="text-[10px] text-gray-500 mb-2">Pastikan wajah dan identitas terlihat jelas.</p>
+                      <div class="w-full h-40 bg-gray-100 rounded mb-2 border flex items-center justify-center overflow-hidden">
+                        <img id="mpSelfiePreview" src="${u.selfieKtpPhoto || ''}" class="w-full h-full object-contain ${u.selfieKtpPhoto?'':'hidden'}">
+                        <div id="mpSelfieEmpty" class="${u.selfieKtpPhoto?'hidden':''} text-center text-gray-400 text-xs"><i class="ph-fill ph-user-square text-3xl block mb-1"></i>Belum ada selfie KTP</div>
+                      </div>
+                      <input id="mpSelfieKtp" type="file" accept="image/*" onchange="previewPartnerDocument('mpSelfieKtp','mpSelfiePreview','mpSelfieEmpty')" class="text-xs w-full">
+                      <p class="text-[10px] text-gray-400 mt-1">${u.selfieKtpPhoto?'Foto tersimpan. Pilih file baru untuk mengganti.':'Wajib diisi sebelum verifikasi.'}</p>
                     </div>
                   </div>
                   <label class="mt-5 flex items-start gap-2 text-xs text-gray-600"><input id="mpConsent" type="checkbox" class="mt-0.5" ${u.partnerDataConsent?'checked':''}><span>Saya menyatakan data yang diberikan benar dan menyetujui penggunaannya untuk verifikasi kemitraan, komunikasi operasional, dan pencairan dana OtoLink.</span></label>
@@ -1501,12 +1541,10 @@
         };
 
         window.saveMitraProfile = async function(submitForVerification=false) {
-            const current = window.currentUser;
-            if(!current?.id) {
-                const live = window.usersData.find(u => String(u.email||'').toLowerCase() === String(current?.email||'').toLowerCase());
-                if(live?.id) window.currentUser = live;
-            }
-            const user = window.currentUser;
+            const sessionUser = window.currentUser;
+            const liveUser = window.usersData.find(u => String(u.email||'').trim().toLowerCase() === String(sessionUser?.email||'').trim().toLowerCase());
+            const user = liveUser ? {...sessionUser, ...liveUser} : sessionUser;
+            if(user?.id) window.currentUser = user;
             if(!user?.id) return window.showToast('Data akun mitra belum tersinkron. Keluar lalu masuk kembali.', false);
 
             const val = id => (document.getElementById(id)?.value || '').trim();
@@ -1561,13 +1599,18 @@
                 // Tahap 2: upload dokumen terpisah ke Storage.
                 const docs = {};
                 if(ktpFile) docs.ktpPhoto = await window.uploadPartnerDocument(ktpFile,'ktp');
-                else if(user.ktpPhoto) docs.ktpPhoto = user.ktpPhoto;
+                else docs.ktpPhoto = user.ktpPhoto || '';
 
                 if(selfieFile) docs.selfieKtpPhoto = await window.uploadPartnerDocument(selfieFile,'selfie_ktp');
-                else if(user.selfieKtpPhoto) docs.selfieKtpPhoto = user.selfieKtpPhoto;
+                else docs.selfieKtpPhoto = user.selfieKtpPhoto || '';
+
+                if(submitForVerification && (!docs.ktpPhoto || !docs.selfieKtpPhoto)) {
+                    throw new Error('Foto KTP dan selfie KTP wajib tersimpan sebelum dikirim.');
+                }
 
                 const finalData = {
                     ...docs,
+                    partnerDocumentVersion: Date.now(),
                     partnerVerificationStatus: submitForVerification ? 'pending' :
                         (user.partnerVerificationStatus === 'verified' ? 'verified' : (user.partnerVerificationStatus || 'incomplete')),
                     partnerProfileUpdatedAt: Date.now()
@@ -1601,9 +1644,20 @@
             }
         };
 
+
+        window.partnerDocUrl = function(url, version) {
+            if(!url) return '';
+            // data URL tidak perlu cache bust.
+            if(String(url).startsWith('data:')) return url;
+            const sep = String(url).includes('?') ? '&' : '?';
+            return `${url}${sep}v=${version || Date.now()}`;
+        };
+
         window.openAdminMitraProfile = function(userId) {
             const u = window.usersData.find(x=>x.id===userId);
             if(!u) return;
+            const ktpUrl = window.partnerDocUrl(u.ktpPhoto, u.partnerDocumentVersion || u.partnerProfileUpdatedAt);
+            const selfieUrl = window.partnerDocUrl(u.selfieKtpPhoto, u.partnerDocumentVersion || u.partnerProfileUpdatedAt);
             const ps = window.getMitraProfileStatus(u);
             const safe = v => String(v||'-').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
             const maskNik = u.nik ? `${safe(u.nik.slice(0,6))}******${safe(u.nik.slice(-4))}` : '-';
@@ -1614,15 +1668,15 @@
                   <div><h2 class="font-black"><i class="ph-fill ph-shield-check mr-1"></i> Pemeriksaan Mitra</h2><p class="text-xs text-gray-300">${safe(u.name||u.fullName)} • ${safe(u.email)}</p></div>
                   <button onclick="closeAllModals()" class="w-9 h-9 rounded-full hover:bg-white/10"><i class="ph-bold ph-x"></i></button>
                 </div>
-                <div class="overflow-y-auto p-5">
-                  <div class="flex flex-wrap gap-3 items-center mb-5"><div>${window.partnerVerificationBadge(ps.status)}</div><div class="text-xs text-gray-500">Kelengkapan ${ps.percent}%</div></div>
+                <div class="overflow-y-auto p-5"><input type="hidden" id="adminPartnerProfileUserId" value="${u.id}">
+                  <div class="flex flex-wrap gap-3 items-center mb-5"><div>${window.partnerVerificationBadge(ps.status)}</div><div class="text-xs text-gray-500">Kelengkapan ${ps.percent}%</div>${u.partnerDocumentVersion?`<div class="text-[10px] text-blue-600 font-bold"><i class="ph-fill ph-images mr-1"></i>Dokumen diperbarui ${new Date(u.partnerDocumentVersion).toLocaleString('id-ID')}</div>`:''}</div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div class="border rounded-xl p-4"><h3 class="font-black mb-3">Identitas</h3><p><b>Nama:</b> ${safe(u.fullName||u.name)}</p><p><b>NIK:</b> ${maskNik}</p><p><b>Tgl Lahir:</b> ${safe(u.birthDate)}</p><p><b>WhatsApp:</b> ${safe(u.phone)}</p><p><b>Alamat:</b> ${safe(u.address)}, ${safe(u.city)}, ${safe(u.province)}</p></div>
                     <div class="border rounded-xl p-4"><h3 class="font-black mb-3">Pencairan & Kemitraan</h3><p><b>Bank:</b> ${safe(u.bankName)}</p><p><b>No. Rekening:</b> ${safe(u.bankAccount)}</p><p><b>Atas Nama:</b> ${safe(u.bankHolder)}</p><p><b>Kepemilikan unit:</b> ${safe(u.vehicleOwnership)}</p><p><b>Usaha:</b> ${safe(u.businessName)}</p><p><b>Darurat:</b> ${safe(u.emergencyName)} • ${safe(u.emergencyPhone)}</p></div>
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div class="border rounded-xl p-3"><p class="font-bold text-sm mb-2">Foto KTP</p>${u.ktpPhoto?`<img src="${u.ktpPhoto}" class="w-full max-h-72 object-contain bg-gray-100 rounded">`:'<p class="text-xs text-red-500">Belum ada.</p>'}</div>
-                    <div class="border rounded-xl p-3"><p class="font-bold text-sm mb-2">Selfie dengan KTP</p>${u.selfieKtpPhoto?`<img src="${u.selfieKtpPhoto}" class="w-full max-h-72 object-contain bg-gray-100 rounded">`:'<p class="text-xs text-red-500">Belum ada.</p>'}</div>
+                    <div class="border rounded-xl p-3"><p class="font-bold text-sm mb-2">Foto KTP</p>${u.ktpPhoto?`<img src="${ktpUrl}" class="w-full max-h-72 object-contain bg-gray-100 rounded">`:'<p class="text-xs text-red-500">Belum ada.</p>'}</div>
+                    <div class="border rounded-xl p-3"><p class="font-bold text-sm mb-2">Selfie dengan KTP</p>${u.selfieKtpPhoto?`<img src="${selfieUrl}" class="w-full max-h-72 object-contain bg-gray-100 rounded">`:'<p class="text-xs text-red-500">Belum ada.</p>'}</div>
                   </div>
                   ${ps.missing.length?`<div class="mt-4 bg-yellow-50 border border-yellow-100 rounded-xl p-3 text-xs text-yellow-800"><b>Belum lengkap:</b> ${ps.missing.map(safe).join(', ')}</div>`:''}
                   <div class="mt-5">
