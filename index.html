@@ -1350,8 +1350,8 @@
                 fullName: user.fullName || user.name || '',
                 phone: user.phone || user.whatsapp || user.noHp || '',
                 bankHolder: user.bankHolder || user.accountHolder || user.fullName || user.name || '',
-                ktpPhoto: user.ktpPhoto || user.ktpUrl || '',
-                selfieKtpPhoto: user.selfieKtpPhoto || user.selfieKtpUrl || ''
+                ktpPhoto: user.ktpPhoto || user.ktpPhotoFallback || user.ktpUrl || '',
+                selfieKtpPhoto: user.selfieKtpPhoto || user.selfieKtpPhotoFallback || user.selfieKtpUrl || ''
             };
 
             const required = [
@@ -1375,7 +1375,7 @@
             let status=user.partnerVerificationStatus || (missing.length?'incomplete':'pending');
 
             // Jika seluruh data lengkap tetapi status lama masih "incomplete", otomatis masuk antrean Admin.
-            if(!missing.length && status==='incomplete') status='pending';
+            if(!missing.length && ['incomplete','uploading'].includes(status)) status='pending';
 
             return {complete:missing.length===0,percent,missing,status,normalized};
         };
@@ -1421,17 +1421,28 @@
         };
 
         window.uploadPartnerDocument = async function(file, fieldName) {
-            if(!file) return '';
+            if(!file) return { url:'', fallback:'' };
             if(file.size > 8 * 1024 * 1024) throw new Error('Ukuran file awal maksimal 8 MB');
             if(!file.type.startsWith('image/')) throw new Error('Dokumen harus berupa gambar JPG/PNG/WebP');
-            if(!isFirebaseActive || !storage) throw new Error('Firebase Storage belum aktif.');
 
-            const dataUrl = await window.compressPartnerDocument(file, 1000, 180);
-            const safeOwner = String(window.currentUser?.email || 'mitra').replace(/[^a-z0-9_-]/gi,'_');
-            const path = `partner-documents/${safeOwner}/${fieldName}_${Date.now()}.webp`;
-            const storageRef = ref(storage, path);
-            await uploadString(storageRef, dataUrl, 'data_url');
-            return await getDownloadURL(storageRef);
+            // Kompres agresif agar jalur cadangan tetap kecil.
+            const compactData = await window.compressPartnerDocument(file, 850, 120);
+
+            // Prioritas 1: Firebase Storage.
+            try {
+                if(!isFirebaseActive || !storage) throw new Error('Firebase Storage belum aktif');
+                const safeOwner = String(window.currentUser?.email || 'mitra').replace(/[^a-z0-9_-]/gi,'_');
+                const path = `partner-documents/${safeOwner}/${fieldName}_${Date.now()}.webp`;
+                const storageRef = ref(storage, path);
+                await uploadString(storageRef, compactData, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                return { url, fallback:'' };
+            } catch(storageErr) {
+                console.warn('Upload Storage dokumen gagal, memakai fallback terkompresi:', storageErr);
+                // Prioritas 2: simpan versi WebP kecil di Firestore user.
+                // Sekitar <=120 KB per dokumen, sehingga 2 dokumen tetap jauh di bawah batas 1 MB dokumen Firestore.
+                return { url:'', fallback:compactData };
+            }
         };
 
 
@@ -1512,21 +1523,21 @@
                       <p class="font-bold text-sm">Foto KTP *</p>
                       <p class="text-[10px] text-gray-500 mb-2">JPG/PNG/WebP. Foto akan dikompres agar hemat storage.</p>
                       <div class="w-full h-40 bg-gray-100 rounded mb-2 border flex items-center justify-center overflow-hidden">
-                        <img id="mpKtpPreview" src="${u.ktpPhoto || ''}" class="w-full h-full object-contain ${u.ktpPhoto?'':'hidden'}">
-                        <div id="mpKtpEmpty" class="${u.ktpPhoto?'hidden':''} text-center text-gray-400 text-xs"><i class="ph-fill ph-identification-card text-3xl block mb-1"></i>Belum ada foto KTP</div>
+                        <img id="mpKtpPreview" src="${u.ktpPhoto || u.ktpPhotoFallback || ''}" class="w-full h-full object-contain ${(u.ktpPhoto||u.ktpPhotoFallback)?'':'hidden'}">
+                        <div id="mpKtpEmpty" class="${(u.ktpPhoto||u.ktpPhotoFallback)?'hidden':''} text-center text-gray-400 text-xs"><i class="ph-fill ph-identification-card text-3xl block mb-1"></i>Belum ada foto KTP</div>
                       </div>
                       <input id="mpKtpPhoto" type="file" accept="image/*" onchange="previewPartnerDocument('mpKtpPhoto','mpKtpPreview','mpKtpEmpty')" class="text-xs w-full">
-                      <p class="text-[10px] text-gray-400 mt-1">${u.ktpPhoto?'Foto tersimpan. Pilih file baru untuk mengganti.':'Wajib diisi sebelum verifikasi.'}</p>
+                      <p class="text-[10px] text-gray-400 mt-1">${(u.ktpPhoto||u.ktpPhotoFallback)?'Foto tersimpan. Pilih file baru untuk mengganti.':'Wajib diisi sebelum verifikasi.'}</p>
                     </div>
                     <div class="border rounded-xl p-3">
                       <p class="font-bold text-sm">Selfie sambil memegang KTP *</p>
                       <p class="text-[10px] text-gray-500 mb-2">Pastikan wajah dan identitas terlihat jelas.</p>
                       <div class="w-full h-40 bg-gray-100 rounded mb-2 border flex items-center justify-center overflow-hidden">
-                        <img id="mpSelfiePreview" src="${u.selfieKtpPhoto || ''}" class="w-full h-full object-contain ${u.selfieKtpPhoto?'':'hidden'}">
-                        <div id="mpSelfieEmpty" class="${u.selfieKtpPhoto?'hidden':''} text-center text-gray-400 text-xs"><i class="ph-fill ph-user-square text-3xl block mb-1"></i>Belum ada selfie KTP</div>
+                        <img id="mpSelfiePreview" src="${u.selfieKtpPhoto || u.selfieKtpPhotoFallback || ''}" class="w-full h-full object-contain ${(u.selfieKtpPhoto||u.selfieKtpPhotoFallback)?'':'hidden'}">
+                        <div id="mpSelfieEmpty" class="${(u.selfieKtpPhoto||u.selfieKtpPhotoFallback)?'hidden':''} text-center text-gray-400 text-xs"><i class="ph-fill ph-user-square text-3xl block mb-1"></i>Belum ada selfie KTP</div>
                       </div>
                       <input id="mpSelfieKtp" type="file" accept="image/*" onchange="previewPartnerDocument('mpSelfieKtp','mpSelfiePreview','mpSelfieEmpty')" class="text-xs w-full">
-                      <p class="text-[10px] text-gray-400 mt-1">${u.selfieKtpPhoto?'Foto tersimpan. Pilih file baru untuk mengganti.':'Wajib diisi sebelum verifikasi.'}</p>
+                      <p class="text-[10px] text-gray-400 mt-1">${(u.selfieKtpPhoto||u.selfieKtpPhotoFallback)?'Foto tersimpan. Pilih file baru untuk mengganti.':'Wajib diisi sebelum verifikasi.'}</p>
                     </div>
                   </div>
                   <label class="mt-5 flex items-start gap-2 text-xs text-gray-600"><input id="mpConsent" type="checkbox" class="mt-0.5" ${u.partnerDataConsent?'checked':''}><span>Saya menyatakan data yang diberikan benar dan menyetujui penggunaannya untuk verifikasi kemitraan, komunikasi operasional, dan pencairan dana OtoLink.</span></label>
@@ -1597,14 +1608,29 @@
                 Object.assign(user, textData);
 
                 // Tahap 2: upload dokumen terpisah ke Storage.
-                const docs = {};
-                if(ktpFile) docs.ktpPhoto = await window.uploadPartnerDocument(ktpFile,'ktp');
-                else docs.ktpPhoto = user.ktpPhoto || '';
+                const docs = {
+                    ktpPhoto: user.ktpPhoto || '',
+                    ktpPhotoFallback: user.ktpPhotoFallback || '',
+                    selfieKtpPhoto: user.selfieKtpPhoto || '',
+                    selfieKtpPhotoFallback: user.selfieKtpPhotoFallback || ''
+                };
 
-                if(selfieFile) docs.selfieKtpPhoto = await window.uploadPartnerDocument(selfieFile,'selfie_ktp');
-                else docs.selfieKtpPhoto = user.selfieKtpPhoto || '';
+                if(ktpFile) {
+                    const r = await window.uploadPartnerDocument(ktpFile,'ktp');
+                    docs.ktpPhoto = r.url || '';
+                    docs.ktpPhotoFallback = r.fallback || '';
+                }
 
-                if(submitForVerification && (!docs.ktpPhoto || !docs.selfieKtpPhoto)) {
+                if(selfieFile) {
+                    const r = await window.uploadPartnerDocument(selfieFile,'selfie_ktp');
+                    docs.selfieKtpPhoto = r.url || '';
+                    docs.selfieKtpPhotoFallback = r.fallback || '';
+                }
+
+                const hasKtp = !!(docs.ktpPhoto || docs.ktpPhotoFallback);
+                const hasSelfie = !!(docs.selfieKtpPhoto || docs.selfieKtpPhotoFallback);
+
+                if(submitForVerification && (!hasKtp || !hasSelfie)) {
                     throw new Error('Foto KTP dan selfie KTP wajib tersimpan sebelum dikirim.');
                 }
 
@@ -1656,8 +1682,10 @@
         window.openAdminMitraProfile = function(userId) {
             const u = window.usersData.find(x=>x.id===userId);
             if(!u) return;
-            const ktpUrl = window.partnerDocUrl(u.ktpPhoto, u.partnerDocumentVersion || u.partnerProfileUpdatedAt);
-            const selfieUrl = window.partnerDocUrl(u.selfieKtpPhoto, u.partnerDocumentVersion || u.partnerProfileUpdatedAt);
+            const ktpSource = u.ktpPhoto || u.ktpPhotoFallback || '';
+            const selfieSource = u.selfieKtpPhoto || u.selfieKtpPhotoFallback || '';
+            const ktpUrl = window.partnerDocUrl(ktpSource, u.partnerDocumentVersion || u.partnerProfileUpdatedAt);
+            const selfieUrl = window.partnerDocUrl(selfieSource, u.partnerDocumentVersion || u.partnerProfileUpdatedAt);
             const ps = window.getMitraProfileStatus(u);
             const safe = v => String(v||'-').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
             const maskNik = u.nik ? `${safe(u.nik.slice(0,6))}******${safe(u.nik.slice(-4))}` : '-';
@@ -1675,8 +1703,8 @@
                     <div class="border rounded-xl p-4"><h3 class="font-black mb-3">Pencairan & Kemitraan</h3><p><b>Bank:</b> ${safe(u.bankName)}</p><p><b>No. Rekening:</b> ${safe(u.bankAccount)}</p><p><b>Atas Nama:</b> ${safe(u.bankHolder)}</p><p><b>Kepemilikan unit:</b> ${safe(u.vehicleOwnership)}</p><p><b>Usaha:</b> ${safe(u.businessName)}</p><p><b>Darurat:</b> ${safe(u.emergencyName)} • ${safe(u.emergencyPhone)}</p></div>
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div class="border rounded-xl p-3"><p class="font-bold text-sm mb-2">Foto KTP</p>${u.ktpPhoto?`<img src="${ktpUrl}" class="w-full max-h-72 object-contain bg-gray-100 rounded">`:'<p class="text-xs text-red-500">Belum ada.</p>'}</div>
-                    <div class="border rounded-xl p-3"><p class="font-bold text-sm mb-2">Selfie dengan KTP</p>${u.selfieKtpPhoto?`<img src="${selfieUrl}" class="w-full max-h-72 object-contain bg-gray-100 rounded">`:'<p class="text-xs text-red-500">Belum ada.</p>'}</div>
+                    <div class="border rounded-xl p-3"><p class="font-bold text-sm mb-2">Foto KTP</p>${ktpSource?`<img src="${ktpUrl}" class="w-full max-h-72 object-contain bg-gray-100 rounded">`:'<p class="text-xs text-red-500">Belum ada.</p>'}</div>
+                    <div class="border rounded-xl p-3"><p class="font-bold text-sm mb-2">Selfie dengan KTP</p>${selfieSource?`<img src="${selfieUrl}" class="w-full max-h-72 object-contain bg-gray-100 rounded">`:'<p class="text-xs text-red-500">Belum ada.</p>'}</div>
                   </div>
                   ${ps.missing.length?`<div class="mt-4 bg-yellow-50 border border-yellow-100 rounded-xl p-3 text-xs text-yellow-800"><b>Belum lengkap:</b> ${ps.missing.map(safe).join(', ')}</div>`:''}
                   <div class="mt-5">
@@ -1688,9 +1716,26 @@
                     <button onclick="adminSetPartnerVerification('${u.id}','rejected')" class="bg-red-600 text-white py-3 rounded-xl font-bold"><i class="ph-bold ph-warning-circle mr-1"></i> Tolak / Minta Perbaikan</button>
                   </div>
                   ${!ps.complete?'<p class="text-[10px] text-red-500 text-center mt-2">Verifikasi tidak dapat disetujui sebelum data wajib lengkap.</p>':''}
+                  ${ps.status==='uploading'?`<button onclick="adminRecoverPartnerDocuments('${u.id}')" class="w-full mt-2 bg-blue-50 text-blue-700 border border-blue-100 py-2 rounded-xl text-xs font-bold">Cek Ulang Dokumen Tersimpan</button>`:''}
                 </div>
               </div>
             </div>`;
+        };
+
+
+        window.adminRecoverPartnerDocuments = async function(userId) {
+            const u = window.usersData.find(x=>x.id===userId);
+            if(!u) return;
+            const ps = window.getMitraProfileStatus(u);
+            if(!ps.complete) return window.showToast('Dokumen masih belum tersimpan. Mitra perlu kirim ulang Foto KTP dan Selfie.', false);
+            await window.fsUpdateDoc('users', userId, {
+                partnerVerificationStatus:'pending',
+                partnerVerificationSubmittedAt: u.partnerVerificationSubmittedAt || Date.now(),
+                partnerProfileUpdatedAt: Date.now()
+            });
+            window.showToast('Status dokumen dipulihkan. Silakan buka ulang profil Mitra.');
+            window.closeAllModals();
+            window.loadAdminData();
         };
 
         window.adminSetPartnerVerification = async function(userId, status) {
@@ -2111,15 +2156,58 @@
         window.loadAdminData = function() {
             const dc = document.getElementById('dashboardContent');
             const notif = window.getAdminNotificationCounts();
-            const pendingCarsCount = window.carsData.filter(c => c.status === 'pending' || c.status === 'pending_payment').length;
+
+            // Ringkasan seluruh aktivitas Admin
+            const totalOrdersCount = window.ordersData.length;
             const pendingOrdersCount = window.ordersData.filter(o => o.status === 'pending').length;
-            const pendingTopupCount = window.topupsData.filter(t => t.status === 'pending').length;
-            const pendingWdCount = window.withdrawalsData.filter(w => w.status === 'pending').length;
-            const unreadChatCount = window.messagesData.filter(m => m.receiverEmail === 'admin' && !m.isRead).length;
-            const pendingPartnerCount = window.usersData.filter(u => u.role === 'mitra' && ['pending','uploading'].includes(u.partnerVerificationStatus)).length;
             const activeOrdersCount = window.ordersData.filter(o => o.status === 'paid').length;
-            const totalUsersCount = window.usersData.filter(u => u.role !== 'admin').length;
+            const completedOrdersCount = window.ordersData.filter(o => o.status === 'completed').length;
+            const cancelledOrdersCount = window.ordersData.filter(o => ['cancelled','rejected'].includes(o.status)).length;
+
+            const totalCarsCount = window.carsData.length;
+            const pendingCarsCount = window.carsData.filter(c => ['pending','pending_payment'].includes(c.status)).length;
             const approvedCarsCount = window.carsData.filter(c => c.status === 'approved').length;
+            const rejectedCarsCount = window.carsData.filter(c => ['rejected','inactive'].includes(c.status)).length;
+
+            const totalTopupCount = window.topupsData.length;
+            const pendingTopupCount = window.topupsData.filter(x => x.status === 'pending').length;
+            const completedTopupCount = window.topupsData.filter(x => ['completed','approved'].includes(x.status)).length;
+            const rejectedTopupCount = window.topupsData.filter(x => ['rejected','cancelled'].includes(x.status)).length;
+
+            const mitraUsers = window.usersData.filter(u => u.role === 'mitra');
+            const totalPartnerCount = mitraUsers.length;
+            const pendingPartnerCount = mitraUsers.filter(u => ['pending','uploading'].includes(u.partnerVerificationStatus)).length;
+            const verifiedPartnerCount = mitraUsers.filter(u => u.partnerVerificationStatus === 'verified').length;
+            const rejectedPartnerCount = mitraUsers.filter(u => u.partnerVerificationStatus === 'rejected').length;
+            const incompletePartnerCount = mitraUsers.filter(u => !u.partnerVerificationStatus || u.partnerVerificationStatus === 'incomplete').length;
+
+            const totalWdCount = window.withdrawalsData.length;
+            const pendingWdCount = window.withdrawalsData.filter(w => w.status === 'pending').length;
+            const completedWdCount = window.withdrawalsData.filter(w => ['completed','approved'].includes(w.status)).length;
+            const rejectedWdCount = window.withdrawalsData.filter(w => ['rejected','cancelled'].includes(w.status)).length;
+
+            const unreadChatCount = window.messagesData.filter(m => m.receiverEmail === 'admin' && !m.isRead).length;
+            const totalChatCount = window.messagesData.filter(m => m.senderEmail === 'admin' || m.receiverEmail === 'admin').length;
+            const repliedChatCount = window.messagesData.filter(m => m.senderEmail === 'admin').length;
+
+            const totalUsersCount = window.usersData.filter(u => u.role !== 'admin').length;
+            const totalRegularUsersCount = window.usersData.filter(u => u.role === 'user').length;
+            const totalBannerCount = window.bannersData.length;
+
+            const totalAdminActivities =
+                totalOrdersCount + totalCarsCount + totalTopupCount +
+                totalPartnerCount + totalWdCount + totalChatCount;
+
+            const openAdminActivities =
+                pendingOrdersCount + activeOrdersCount + pendingCarsCount +
+                pendingTopupCount + pendingPartnerCount + pendingWdCount + unreadChatCount;
+
+            const finishedAdminActivities =
+                completedOrdersCount + cancelledOrdersCount +
+                approvedCarsCount + rejectedCarsCount +
+                completedTopupCount + rejectedTopupCount +
+                verifiedPartnerCount + rejectedPartnerCount +
+                completedWdCount + rejectedWdCount + repliedChatCount;
 
             const badge = (n, tone='red') => n > 0 ? `<span data-admin-notif-badge="1" class="ml-1 inline-flex min-w-[20px] h-5 px-1 items-center justify-center rounded-full text-[10px] font-black ${tone==='red'?'bg-red-500 text-white':'bg-blue-100 text-blue-700'}">${n > 99 ? '99+' : n}</span>` : '';
 
@@ -2127,7 +2215,7 @@
             <div class="bg-[#101827] rounded-t-xl p-6 text-white shadow-md relative overflow-hidden">
                 <div class="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ph-fill ph-shield-check text-9xl"></i></div>
                 <div class="flex justify-between items-center relative z-10">
-                    <div><h2 class="text-2xl font-black flex items-center gap-2 relative"><i class="ph-fill ph-shield-star text-blue-400"></i> Dashboard Admin <span id="adminGlobalNotifBadge" class="${notif.total?'':'hidden'} inline-flex min-w-[22px] h-5 px-1.5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black">${notif.total > 99 ? '99+' : (notif.total || '')}</span></h2><p class="text-sm text-gray-300">Pusat Kendali OtoLink • pantau operasional dari satu tempat</p></div>
+                    <div><h2 class="text-2xl font-black flex items-center gap-2 relative"><i class="ph-fill ph-shield-star text-blue-400"></i> Dashboard Admin <span id="adminGlobalNotifBadge" class="${notif.total?'':'hidden'} inline-flex min-w-[22px] h-5 px-1.5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black">${notif.total > 99 ? '99+' : (notif.total || '')}</span></h2><p class="text-sm text-gray-300">Total aktivitas ${totalAdminActivities} • berjalan ${openAdminActivities} • sudah ditindak ${finishedAdminActivities}</p></div>
                     <div class="flex gap-2">
                         <button onclick="closeDashboard()" class="bg-white/10 hover:bg-white/20 px-3 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2"><i class="ph-bold ph-x"></i> Tutup Dashboard</button>
                         <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2"><i class="ph-bold ph-sign-out"></i> Keluar Admin</button>
@@ -2135,14 +2223,70 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 bg-white border-x p-4">
-                <button onclick="switchAdminTab('adPesanan')" class="text-left p-3 rounded-xl border hover:shadow-md transition bg-blue-50 border-blue-100"><p class="text-[10px] uppercase font-bold text-blue-600">Pesanan Aktif</p><p class="text-2xl font-black text-blue-800 mt-1">${activeOrdersCount}</p></button>
-                <button onclick="switchAdminTab('adVerifikasi')" class="text-left p-3 rounded-xl border hover:shadow-md transition bg-orange-50 border-orange-100"><p class="text-[10px] uppercase font-bold text-orange-600">Iklan Pending</p><p class="text-2xl font-black text-orange-700 mt-1">${pendingCarsCount}</p></button>
-                <button onclick="switchAdminTab('adTopup')" class="text-left p-3 rounded-xl border hover:shadow-md transition bg-green-50 border-green-100"><p class="text-[10px] uppercase font-bold text-green-600">Top Up Pending</p><p class="text-2xl font-black text-green-700 mt-1">${pendingTopupCount}</p></button>
-                <button onclick="switchAdminTab('adUsers')" class="text-left p-3 rounded-xl border hover:shadow-md transition bg-red-50 border-red-100 relative"><p class="text-[10px] uppercase font-bold text-red-600">Verifikasi Mitra</p><p class="text-2xl font-black text-red-700 mt-1">${pendingPartnerCount}</p>${notif.adUsers?`<span class="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>`:''}</button>
-                <button onclick="switchAdminTab('adChat')" class="text-left p-3 rounded-xl border hover:shadow-md transition bg-purple-50 border-purple-100"><p class="text-[10px] uppercase font-bold text-purple-600">Chat Belum Dibaca</p><p class="text-2xl font-black text-purple-700 mt-1">${unreadChatCount}</p></button>
+            <div class="bg-white border-x p-4">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-2 mb-3">
+                    <div>
+                        <p class="text-sm font-black text-gray-800"><i class="ph-fill ph-chart-bar mr-1 text-blue-600"></i> Ringkasan Aktivitas Admin</p>
+                        <p class="text-[11px] text-gray-500">Setiap kartu mencakup data masuk, yang sedang diproses, dan yang sudah selesai.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-[10px] font-bold">
+                        <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">Total ${totalAdminActivities}</span>
+                        <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Berjalan ${openAdminActivities}</span>
+                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded">Sudah ditindak ${finishedAdminActivities}</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <button onclick="switchAdminTab('adPesanan')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-blue-50 border-blue-100">
+                        <div class="flex justify-between"><p class="text-[10px] uppercase font-black text-blue-600">Pesanan</p>${notif.adPesanan?`<span class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>`:''}</div>
+                        <p class="text-2xl font-black text-blue-800 mt-1">${totalOrdersCount}</p>
+                        <div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span class="bg-yellow-100 text-yellow-700 rounded px-1 py-1 text-center">Bayar ${pendingOrdersCount}</span><span class="bg-blue-100 text-blue-700 rounded px-1 py-1 text-center">Aktif ${activeOrdersCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">Selesai ${completedOrdersCount}</span></div>
+                    </button>
+
+                    <button onclick="switchAdminTab('adVerifikasi')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-orange-50 border-orange-100">
+                        <div class="flex justify-between"><p class="text-[10px] uppercase font-black text-orange-600">Iklan Mobil</p>${notif.adVerifikasi?`<span class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>`:''}</div>
+                        <p class="text-2xl font-black text-orange-700 mt-1">${totalCarsCount}</p>
+                        <div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span class="bg-yellow-100 text-yellow-700 rounded px-1 py-1 text-center">Pending ${pendingCarsCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">Aktif ${approvedCarsCount}</span><span class="bg-gray-100 text-gray-600 rounded px-1 py-1 text-center">Nonaktif ${rejectedCarsCount}</span></div>
+                    </button>
+
+                    <button onclick="switchAdminTab('adTopup')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-green-50 border-green-100">
+                        <div class="flex justify-between"><p class="text-[10px] uppercase font-black text-green-600">Top Up OtoPay</p>${notif.adTopup?`<span class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>`:''}</div>
+                        <p class="text-2xl font-black text-green-700 mt-1">${totalTopupCount}</p>
+                        <div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span class="bg-yellow-100 text-yellow-700 rounded px-1 py-1 text-center">Pending ${pendingTopupCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">ACC ${completedTopupCount}</span><span class="bg-red-100 text-red-700 rounded px-1 py-1 text-center">Tolak ${rejectedTopupCount}</span></div>
+                    </button>
+
+                    <button onclick="switchAdminTab('adUsers')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-red-50 border-red-100">
+                        <div class="flex justify-between"><p class="text-[10px] uppercase font-black text-red-600">Verifikasi Mitra</p>${notif.adUsers?`<span class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>`:''}</div>
+                        <p class="text-2xl font-black text-red-700 mt-1">${totalPartnerCount}</p>
+                        <div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span class="bg-yellow-100 text-yellow-700 rounded px-1 py-1 text-center">Pending ${pendingPartnerCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">Verified ${verifiedPartnerCount}</span><span class="bg-gray-100 text-gray-600 rounded px-1 py-1 text-center">Belum ${incompletePartnerCount}</span></div>
+                    </button>
+
+                    <button onclick="switchAdminTab('adPencairan')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-purple-50 border-purple-100">
+                        <div class="flex justify-between"><p class="text-[10px] uppercase font-black text-purple-600">Pencairan Mitra</p>${notif.adPencairan?`<span class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>`:''}</div>
+                        <p class="text-2xl font-black text-purple-700 mt-1">${totalWdCount}</p>
+                        <div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span class="bg-yellow-100 text-yellow-700 rounded px-1 py-1 text-center">Pending ${pendingWdCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">Selesai ${completedWdCount}</span><span class="bg-red-100 text-red-700 rounded px-1 py-1 text-center">Tolak ${rejectedWdCount}</span></div>
+                    </button>
+
+                    <button onclick="switchAdminTab('adUsers')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-cyan-50 border-cyan-100">
+                        <p class="text-[10px] uppercase font-black text-cyan-700">Akun Platform</p>
+                        <p class="text-2xl font-black text-cyan-800 mt-1">${totalUsersCount}</p>
+                        <div class="grid grid-cols-2 gap-1 mt-2 text-[9px]"><span class="bg-blue-100 text-blue-700 rounded px-1 py-1 text-center">User ${totalRegularUsersCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">Mitra ${totalPartnerCount}</span></div>
+                    </button>
+
+                    <button onclick="switchAdminTab('adBanner')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-amber-50 border-amber-100">
+                        <p class="text-[10px] uppercase font-black text-amber-700">Banner / Carousel</p>
+                        <p class="text-2xl font-black text-amber-800 mt-1">${totalBannerCount}</p>
+                        <p class="text-[9px] text-amber-700 mt-2">Banner yang sedang dikelola Admin</p>
+                    </button>
+
+                    <button onclick="switchAdminTab('adChat')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-fuchsia-50 border-fuchsia-100">
+                        <div class="flex justify-between"><p class="text-[10px] uppercase font-black text-fuchsia-700">Chat Internal</p>${unreadChatCount?`<span class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>`:''}</div>
+                        <p class="text-2xl font-black text-fuchsia-800 mt-1">${totalChatCount}</p>
+                        <div class="grid grid-cols-2 gap-1 mt-2 text-[9px]"><span class="bg-red-100 text-red-700 rounded px-1 py-1 text-center">Belum ${unreadChatCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">Balasan Admin ${repliedChatCount}</span></div>
+                    </button>
+                </div>
             </div>
-            
+
             <div class="bg-white rounded-b-xl shadow-md border-x border-b p-2 md:p-4 flex flex-wrap gap-2 md:gap-3 justify-center md:justify-start mb-6">
                 <button onclick="switchAdminTab('adOverview')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm admin-tab bg-blue-600 text-white border-blue-600" id="tab-adOverview"><i class="ph-fill ph-house mr-1"></i> Beranda Admin</button>
                 <button onclick="switchAdminTab('adVerifikasi')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adVerifikasi"><i class="ph-fill ph-list-checks mr-1"></i> Verifikasi Iklan ${badge(notif.adVerifikasi)}</button>
