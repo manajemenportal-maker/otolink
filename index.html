@@ -2465,7 +2465,7 @@
                     const ps = u.role==='mitra' ? window.getMitraProfileStatus(u) : null;
                     const verifyHtml = u.role==='mitra' ? `<div class="mt-1">${window.partnerVerificationBadge(ps.status)} <span class="text-[9px] text-gray-400">${ps.percent}%</span></div>` : '';
                     const verifyBtn = u.role==='mitra' ? `<button onclick="openAdminMitraProfile('${u.id}')" class="${ps.status==='pending'?'bg-orange-500 text-white':'bg-green-50 text-green-700'} px-2 py-1.5 rounded text-[10px] font-bold">${ps.status==='pending'?'Periksa & Verifikasi':'Lihat Profil'}</button>` : '';
-                    hU += `<tr data-admin-user-row data-role="${esc(u.role||'user')}" data-search="${esc(search)}"><td class="p-3"><p class="font-bold text-xs">${esc(u.name||'-')}</p><p class="text-[10px] text-gray-500">${esc(u.email||'-')}</p></td><td class="p-3"><span class="${u.role==='mitra'?'bg-green-100 text-green-700':'bg-blue-100 text-blue-700'} px-2 py-1 rounded text-[10px] font-bold uppercase">${esc(u.role||'user')}</span>${verifyHtml}</td><td class="p-3 text-xs"><p>${orders} pesanan</p><p class="text-gray-500">${cars} mobil</p></td><td class="p-3 text-xs"><p class="font-black text-shopee">${money(u.saldo)}</p><p class="text-[10px] text-gray-500">${u.bankName?esc(u.bankName)+' • '+esc(u.bankAccount||'-'):'Rekening belum diatur'}</p>${u.bankHolder?`<p class="text-[10px] text-gray-400">a.n. ${esc(u.bankHolder)}</p>`:''}</td><td class="p-3"><div class="flex flex-wrap gap-1">${verifyBtn}<button onclick="renderAdminChatRoom('${u.email}')" class="bg-blue-50 text-blue-700 px-2 py-1.5 rounded text-[10px] font-bold">Chat</button><button onclick="openAdminSaldoModal('${u.id}')" class="bg-yellow-50 text-yellow-700 px-2 py-1.5 rounded text-[10px] font-bold">Saldo</button><button onclick="adminToggleUserRole('${u.id}')" class="bg-gray-100 text-gray-700 px-2 py-1.5 rounded text-[10px] font-bold">Jadikan ${u.role==='mitra'?'User':'Mitra'}</button></div></td></tr>`;
+                    hU += `<tr data-admin-user-row data-role="${esc(u.role||'user')}" data-search="${esc(search)}"><td class="p-3"><p class="font-bold text-xs">${esc(u.name||'-')}</p><p class="text-[10px] text-gray-500">${esc(u.email||'-')}</p></td><td class="p-3"><span class="${u.role==='mitra'?'bg-green-100 text-green-700':'bg-blue-100 text-blue-700'} px-2 py-1 rounded text-[10px] font-bold uppercase">${esc(u.role||'user')}</span>${verifyHtml}</td><td class="p-3 text-xs"><p>${orders} pesanan</p><p class="text-gray-500">${cars} mobil</p></td><td class="p-3 text-xs"><p class="font-black text-shopee">${money(u.saldo)}</p><p class="text-[10px] text-gray-500">${u.bankName?esc(u.bankName)+' • '+esc(u.bankAccount||'-'):'Rekening belum diatur'}</p>${u.bankHolder?`<p class="text-[10px] text-gray-400">a.n. ${esc(u.bankHolder)}</p>`:''}</td><td class="p-3"><div class="flex flex-wrap gap-1">${verifyBtn}<button onclick="renderAdminChatRoom('${u.email}')" class="bg-blue-50 text-blue-700 px-2 py-1.5 rounded text-[10px] font-bold">Chat</button><button onclick="openAdminSaldoModal('${u.id}')" class="bg-yellow-50 text-yellow-700 px-2 py-1.5 rounded text-[10px] font-bold">Saldo</button><button onclick="adminToggleUserRole('${u.id}')" class="bg-gray-100 text-gray-700 px-2 py-1.5 rounded text-[10px] font-bold">Jadikan ${u.role==='mitra'?'User':'Mitra'}</button><button onclick="adminDeleteAccount('${u.id}')" class="bg-red-50 text-red-600 border border-red-100 px-2 py-1.5 rounded text-[10px] font-bold"><i class="ph-bold ph-trash mr-1"></i>Hapus</button></div></td></tr>`;
                 });
                 c_adU.innerHTML = hU + `</tbody></table></div><p id="adminUserNoResult" class="hidden text-center text-xs text-gray-400 py-5">Tidak ada akun yang cocok dengan filter.</p>`;
             }
@@ -2569,6 +2569,72 @@
         window.adminRejectTopup = async function(id) { if(!confirm('Tolak pengajuan top up ini? Saldo tidak akan ditambahkan.'))return; await window.fsUpdateDoc('topups',id,{status:'rejected',processedAt:Date.now()}); window.showToast('Top up ditolak'); };
         window.adminRejectWithdraw = async function(id) { if(!confirm('Tolak pengajuan pencairan ini?'))return; await window.fsUpdateDoc('withdrawals',id,{status:'rejected',processedAt:Date.now()}); window.showToast('Pencairan ditolak'); };
         window.adminCancelOrder = async function(id,carId) { if(!confirm('Batalkan pesanan ini? Mobil akan dibuat tersedia kembali.'))return; await window.fsUpdateDoc('orders',id,{status:'cancelled'}); if(carId)await window.fsUpdateDoc('cars',carId,{isBooked:false,timestamp:Date.now()}); window.showToast('Pesanan dibatalkan'); };
+        window.adminDeleteAccount = function(userId) {
+            const u = window.usersData.find(x => x.id === userId);
+            if(!u) return window.showToast('Akun tidak ditemukan.', false);
+            if(u.role === 'admin') return window.showToast('Akun Admin tidak dapat dihapus.', false);
+
+            const email = String(u.email || '').toLowerCase();
+            const activeOrders = window.ordersData.filter(o =>
+                (String(o.customerEmail||'').toLowerCase() === email ||
+                 String(o.ownerEmail||'').toLowerCase() === email) &&
+                ['pending','paid'].includes(o.status)
+            );
+            const name = u.name || u.fullName || u.email || 'Akun';
+
+            document.getElementById('modalContainer').innerHTML = `
+            <div class="fixed inset-0 modal-overlay flex items-center justify-center z-[100] p-4">
+              <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+                <div class="bg-red-600 text-white p-4 flex justify-between items-center">
+                  <div><h2 class="font-black"><i class="ph-bold ph-trash mr-1"></i> Hapus ${u.role==='mitra'?'Mitra':'User'}</h2><p class="text-xs text-red-100">Konfirmasi penghapusan akun OtoLink</p></div>
+                  <button onclick="closeAllModals()" class="text-xl"><i class="ph-bold ph-x"></i></button>
+                </div>
+                <div class="p-5">
+                  <div class="bg-gray-50 border rounded-xl p-3">
+                    <p class="font-black">${esc(name)}</p>
+                    <p class="text-xs text-gray-500">${esc(u.email||'')}</p>
+                    <p class="text-xs mt-1">Jenis akun: <b>${String(u.role||'user').toUpperCase()}</b></p>
+                  </div>
+                  ${activeOrders.length ? `<div class="mt-3 bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-xl text-xs"><b>Tidak dapat dihapus sekarang.</b><br>Akun masih mempunyai ${activeOrders.length} pesanan aktif/menunggu. Selesaikan atau batalkan transaksi tersebut terlebih dahulu.</div>` : `<div class="mt-3 bg-red-50 border border-red-100 text-red-700 p-3 rounded-xl text-xs">Data akun akan dihapus dari daftar pengguna OtoLink. Riwayat transaksi yang sudah selesai tetap dipertahankan untuk pencatatan Admin.</div>`}
+                  <label class="block text-xs font-bold text-gray-600 mt-4 mb-1">Ketik <b>HAPUS</b> untuk konfirmasi</label>
+                  <input id="deleteAccountConfirm" autocomplete="off" placeholder="HAPUS" class="w-full border rounded-lg p-2.5 text-sm uppercase">
+                  <div class="grid grid-cols-2 gap-2 mt-4">
+                    <button onclick="closeAllModals()" class="bg-gray-100 text-gray-700 py-2.5 rounded-lg font-bold">Batal</button>
+                    <button onclick="confirmAdminDeleteAccount('${u.id}')" ${activeOrders.length?'disabled':''} class="${activeOrders.length?'bg-gray-300 cursor-not-allowed':'bg-red-600 hover:bg-red-700'} text-white py-2.5 rounded-lg font-bold">Ya, Hapus</button>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        };
+
+        window.confirmAdminDeleteAccount = async function(userId) {
+            const u = window.usersData.find(x => x.id === userId);
+            if(!u || u.role === 'admin') return window.showToast('Akun tidak dapat dihapus.', false);
+
+            const confirmText = (document.getElementById('deleteAccountConfirm')?.value || '').trim().toUpperCase();
+            if(confirmText !== 'HAPUS') return window.showToast('Ketik HAPUS untuk melanjutkan.', false);
+
+            const email = String(u.email || '').toLowerCase();
+            const activeOrders = window.ordersData.filter(o =>
+                (String(o.customerEmail||'').toLowerCase() === email ||
+                 String(o.ownerEmail||'').toLowerCase() === email) &&
+                ['pending','paid'].includes(o.status)
+            );
+            if(activeOrders.length) return window.showToast('Akun masih mempunyai transaksi aktif.', false);
+
+            window.closeAllModals();
+            window.showToast('Menghapus akun...');
+            try {
+                await window.fsDeleteDoc('users', userId);
+                window.showToast('Akun berhasil dihapus.');
+                setTimeout(()=>window.loadAdminData(),100);
+            } catch(err) {
+                console.error('Hapus akun gagal:',err);
+                window.showToast('Gagal menghapus akun.', false);
+            }
+        };
+
+
         window.adminToggleUserRole = async function(id) { const u=window.usersData.find(x=>x.id===id); if(!u)return; const next=u.role==='mitra'?'user':'mitra'; if(!confirm(`Ubah akun ${u.name||u.email} menjadi ${next.toUpperCase()}?`))return; await window.fsUpdateDoc('users',id,{role:next}); window.showToast('Role akun diperbarui'); };
         window.openAdminSaldoModal = function(id) { const u=window.usersData.find(x=>x.id===id); if(!u)return; document.getElementById('modalContainer').innerHTML=`<div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"><div class="bg-yellow-500 text-white p-4 flex justify-between"><h2 class="font-bold">Koreksi Saldo OtoPay</h2><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div><div class="p-5"><p class="text-sm font-bold">${u.name||u.email}</p><p class="text-xs text-gray-500 mb-4">Saldo sekarang: <b>${formatRp(u.saldo||0)}</b></p><label class="text-xs font-bold">Nominal koreksi</label><input id="adminSaldoAmount" type="number" placeholder="Contoh 50000 atau -50000" class="w-full border p-2 rounded-lg mt-1 mb-3"><label class="text-xs font-bold">Catatan</label><input id="adminSaldoNote" type="text" placeholder="Alasan koreksi saldo" class="w-full border p-2 rounded-lg mt-1 mb-4"><button onclick="adminApplySaldo('${u.id}')" class="w-full bg-yellow-500 text-white py-2.5 rounded-lg font-bold">Terapkan Koreksi</button></div></div></div>`; };
         window.adminApplySaldo = async function(id) { const u=window.usersData.find(x=>x.id===id); const amt=Number(document.getElementById('adminSaldoAmount')?.value||0); const note=document.getElementById('adminSaldoNote')?.value.trim()||'Koreksi saldo oleh admin'; if(!u||!amt)return window.showToast('Masukkan nominal koreksi',false); const next=(Number(u.saldo)||0)+amt; if(next<0)return window.showToast('Saldo tidak boleh menjadi minus',false); await window.fsUpdateDoc('users',id,{saldo:next}); await window.fsAddDoc('topups',{name:u.name,email:u.email,amount:amt,status:'completed',type:'admin_adjustment',note,timestamp:Date.now()}); window.closeAllModals(); window.showToast('Saldo berhasil dikoreksi'); };
