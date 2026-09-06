@@ -249,6 +249,12 @@
 
         const formatRp = (num) => "Rp " + parseInt(num).toLocaleString('id-ID');
 
+        window.escapeHtml = function(value='') {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+            }[ch]));
+        };
+
         // UI Helpers
         window.showToast = (msg, isSuccess = true) => {
             const t = document.getElementById('toast');
@@ -279,7 +285,7 @@
 
         if (isFirebaseActive) {
             onSnapshot(collection(db, 'users'), (snap) => {
-                window.usersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                window.usersData = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(u => !u.isDeleted && u.accountStatus !== 'deleted');
                 refreshUI();
                 const openAdminPartnerId = document.getElementById('adminPartnerProfileUserId')?.value;
                 if(openAdminPartnerId && window.currentUser?.role === 'admin') {
@@ -534,6 +540,18 @@
                 .filter(o => String(o.customerEmail || '').trim().toLowerCase() === key && o.payMethod === 'otopay' && (o.status === 'paid' || o.status === 'completed'))
                 .reduce((sum,o) => sum + Number(o.totalAmount || 0), 0);
             return Math.max(0, credits - debits);
+        };
+
+
+        // ===== FEE TRANSAKSI SEWA OTOLINK =====
+        // Fee 5% = fee marketing + jasa aplikasi. Dipotong sekali dari nilai sewa.
+        window.RENTAL_PLATFORM_FEE_RATE = 0.05;
+
+        window.getRentalFeeBreakdown = function(totalAmount) {
+            const gross = Math.max(0, Number(totalAmount) || 0);
+            const fee = Math.round(gross * window.RENTAL_PLATFORM_FEE_RATE);
+            const net = Math.max(0, gross - fee);
+            return { gross, feeRate: window.RENTAL_PLATFORM_FEE_RATE, fee, net };
         };
 
         window.syncCurrentUserWallet = async function() {
@@ -851,8 +869,8 @@
                 return;
             }
 
-            const user = window.usersData.find(u => u.email === email);
-            if(!user) return window.showToast("Akun belum terdaftar. Silakan pilih menu Daftar.", false);
+            const user = window.usersData.find(u => u.email === email && !u.isDeleted && u.accountStatus !== 'deleted');
+            if(!user) return window.showToast("Akun belum terdaftar atau sudah dinonaktifkan.", false);
             if(user.password !== pass) return window.showToast("Password Salah!", false);
 
             window.currentUser = user;
@@ -874,7 +892,7 @@
             if(email === 'admin') return window.showToast("Nama akun ini tidak dapat digunakan.", false);
             if(pass.length < 4) return window.showToast("Password minimal 4 karakter.", false);
             if(pass !== confirmPass) return window.showToast("Ulangi password tidak sama!", false);
-            if(window.usersData.some(u => u.email === email)) return window.showToast("Akun sudah terdaftar. Silakan masuk.", false);
+            if(window.usersData.some(u => u.email === email && !u.isDeleted && u.accountStatus !== 'deleted')) return window.showToast("Akun sudah terdaftar. Silakan masuk.", false);
 
             const user = { name, email, password: pass, role, saldo: 0, bankName: '', bankAccount: '', timestamp: Date.now() };
             await window.fsAddDoc('users', user);
@@ -1192,11 +1210,15 @@
             }
 
             const orderId = "ORD-" + Math.floor(1000 + Math.random() * 9000);
+            const rentalFee = window.getRentalFeeBreakdown(total);
             const orderData = { 
                 orderId, carId, carName: car.name, carImg: car.img, 
                 customerEmail: window.currentUser.email, customerName: window.currentUser.name,
                 ownerEmail: car.ownerPhone, 
                 totalAmount: total, days, service, pickup, dest,
+                platformFeeRate: rentalFee.feeRate,
+                platformFee: rentalFee.fee,
+                ownerNetAmount: rentalFee.net,
                 payMethod: method, status: method === 'otopay' ? 'paid' : 'pending', 
                 timestamp: Date.now(), isWithdrawn: false 
             };
@@ -1953,7 +1975,7 @@
                     <div class="p-6">
                         <div class="bg-gray-50 p-3 rounded border text-center mb-3"><p class="text-xs text-gray-500">Saldo Tersedia</p><p class="text-xl font-black text-shopee">${formatRp(window.currentUser.saldo)}</p></div>
                         <div class="bg-green-50 border border-green-100 p-3 rounded-lg text-xs mb-3"><p class="font-bold text-green-800">${window.currentUser.bankName} • ${window.currentUser.bankAccount}</p><p class="text-green-700">a.n. ${window.currentUser.bankHolder}</p></div>
-                        <p class="text-xs text-red-500 mb-4 text-center">*Pencairan dikenakan potongan admin 2.5%</p>
+                        <p class="text-xs text-green-600 mb-4 text-center">*Tidak ada potongan pencairan. Fee 5% sudah dipotong pada transaksi sewa.</p>
                         <div class="mb-6"><label class="block text-xs font-semibold text-gray-600 mb-1">Jumlah Tarik (Rp)</label><input type="number" id="wdAmount" placeholder="Minimal 50000" class="w-full border p-2 text-sm rounded outline-none focus:border-shopee"></div>
                         <button onclick="processWithdraw()" class="w-full bg-shopee text-white font-bold py-2 rounded shadow">Ajukan Penarikan</button>
                     </div>
@@ -1966,8 +1988,8 @@
             if(am > Number(window.currentUser.saldo || 0)) return window.showToast("Saldo tidak cukup!", false);
 
             const beforeSaldo = Number(window.currentUser.saldo || 0);
-            const fee = am * 0.025;
-            const net = am - fee;
+            const fee = 0;
+            const net = am;
             const wdData = {
                 email: window.currentUser.email,
                 name: window.currentUser.name,
@@ -2413,7 +2435,7 @@
                     else if(o.status==='completed'){statBadge='<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-[10px] font-bold">SELESAI</span>'; actionBtn=!o.isWithdrawn?`<button onclick="openAdminDisburse('${o.id}','${o.ownerEmail}',${Number(o.totalAmount)||0})" class="bg-orange-500 text-white px-3 py-1.5 rounded text-xs font-bold">Cairkan Mitra</button>`:'<span class="text-xs text-green-600 font-bold"><i class="ph-bold ph-check"></i> Sudah Cair</span>';}
                     else {statBadge=`<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-[10px] font-bold">${esc(o.status||'-')}</span>`;}
                     const search = `${o.orderId||''} ${o.customerName||''} ${o.customerEmail||''} ${o.carName||''} ${o.ownerEmail||''}`.toLowerCase().replace(/"/g,'');
-                    const detail = `<div class="text-xs text-gray-500"><p class="font-bold text-gray-800 text-sm">${esc(o.carName||'-')}</p><p>${esc(o.days||1)} hari • ${new Date(o.timestamp||Date.now()).toLocaleDateString('id-ID')}</p>${o.service==='dengan_supir_luar_kota'?'<p class="text-purple-600 font-bold text-[10px] uppercase">Dengan Sopir - Luar Kota</p>':(o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir')?'<p class="text-blue-600 font-bold text-[10px] uppercase">Dengan Sopir - Dalam Kota</p>':''}<p class="mt-1"><span class="font-semibold">Jemput:</span> ${esc(o.pickup||'-')}<br><span class="font-semibold">Tujuan:</span> ${esc(o.dest||'-')}</p><p class="text-shopee font-black mt-2 text-sm">${money(o.totalAmount)}</p></div>`;
+                    const detail = `<div class="text-xs text-gray-500"><p class="font-bold text-gray-800 text-sm">${esc(o.carName||'-')}</p><p>${esc(o.days||1)} hari • ${new Date(o.timestamp||Date.now()).toLocaleDateString('id-ID')}</p>${o.service==='dengan_supir_luar_kota'?'<p class="text-purple-600 font-bold text-[10px] uppercase">Dengan Sopir - Luar Kota</p>':(o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir')?'<p class="text-blue-600 font-bold text-[10px] uppercase">Dengan Sopir - Dalam Kota</p>':''}<p class="mt-1"><span class="font-semibold">Jemput:</span> ${esc(o.pickup||'-')}<br><span class="font-semibold">Tujuan:</span> ${esc(o.dest||'-')}</p><p class="text-shopee font-black mt-2 text-sm">${money(o.totalAmount)}</p><div class="mt-1 text-[10px] text-gray-500"><span>Fee OtoLink 5%: <b>${money(o.platformFee ?? window.getRentalFeeBreakdown(o.totalAmount).fee)}</b></span><br><span>Diterima Mitra: <b class="text-green-600">${money(o.ownerNetAmount ?? window.getRentalFeeBreakdown(o.totalAmount).net)}</b></span></div></div>`;
                     hP += `<tr data-admin-order-row data-status="${esc(o.status||'')}" data-search="${esc(search)}"><td class="p-3 text-xs font-bold">${esc(o.orderId||'-')}</td><td class="p-3 text-xs"><p class="font-semibold">${esc(o.customerName||o.customerEmail||'-')}</p><p class="text-gray-500">Mitra: ${esc(o.ownerEmail||'-')}</p><p class="text-gray-400 mt-1">Bayar: ${esc(o.payMethod||'-')}</p></td><td class="p-3">${detail}</td><td class="p-3">${statBadge}</td><td class="p-3">${actionBtn}</td></tr>`;
                 });
                 c_adP.innerHTML = hP + `</tbody></table></div><p id="adminOrderNoResult" class="hidden text-center text-xs text-gray-400 py-5">Tidak ada pesanan yang cocok dengan filter.</p>`;
@@ -2452,7 +2474,7 @@
             // ===== PENGGUNA & MITRA =====
             const c_adU = document.getElementById('adUsers');
             if(c_adU) {
-                const users = window.usersData.filter(u=>u.role!=='admin');
+                const users = window.usersData.filter(u=>u.role!=='admin' && !u.isDeleted && u.accountStatus!=='deleted');
                 const uCount = users.filter(u=>u.role==='user').length, mCount=users.filter(u=>u.role==='mitra').length;
                 let hU = `<div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 border-b pb-3"><div><h3 class="font-black text-gray-800"><i class="ph-fill ph-users mr-1"></i> Pengguna & Mitra</h3><p class="text-xs text-gray-500 mt-1">User: ${uCount} • Mitra: ${mCount} • Total akun: ${users.length}</p></div><div class="flex gap-2"><input id="adminUserSearch" oninput="filterAdminUsers()" placeholder="Cari nama / email" class="border rounded-lg px-3 py-2 text-xs w-40 md:w-56"><select id="adminUserRole" onchange="filterAdminUsers()" class="border rounded-lg px-2 py-2 text-xs"><option value="">Semua</option><option value="user">User</option><option value="mitra">Mitra</option></select></div></div>`;
                 hU += helpBox('Tugas admin di menu ini','Kelola akun penyewa dan mitra. Untuk mitra, periksa identitas, rekening, kontak darurat dan dokumen pendukung sebelum mengaktifkan pencairan. Admin juga dapat membuka chat, mengubah jenis akun bila salah daftar, dan melakukan koreksi saldo OtoPay bila diperlukan.',['Cari akun','Verifikasi mitra','Cek rekening & dokumen','Chat langsung','Ubah role','Koreksi saldo']);
@@ -2574,63 +2596,111 @@
             if(!u) return window.showToast('Akun tidak ditemukan.', false);
             if(u.role === 'admin') return window.showToast('Akun Admin tidak dapat dihapus.', false);
 
-            const email = String(u.email || '').toLowerCase();
-            const activeOrders = window.ordersData.filter(o =>
-                (String(o.customerEmail||'').toLowerCase() === email ||
-                 String(o.ownerEmail||'').toLowerCase() === email) &&
-                ['pending','paid'].includes(o.status)
+            const email = String(u.email || '').trim().toLowerCase();
+            const relatedOrders = window.ordersData.filter(o =>
+                String(o.customerEmail||'').trim().toLowerCase() === email ||
+                String(o.ownerEmail||'').trim().toLowerCase() === email
             );
+            const activeOrders = relatedOrders.filter(o => ['pending','paid'].includes(o.status));
             const name = u.name || u.fullName || u.email || 'Akun';
 
             document.getElementById('modalContainer').innerHTML = `
             <div class="fixed inset-0 modal-overlay flex items-center justify-center z-[100] p-4">
               <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
                 <div class="bg-red-600 text-white p-4 flex justify-between items-center">
-                  <div><h2 class="font-black"><i class="ph-bold ph-trash mr-1"></i> Hapus ${u.role==='mitra'?'Mitra':'User'}</h2><p class="text-xs text-red-100">Konfirmasi penghapusan akun OtoLink</p></div>
-                  <button onclick="closeAllModals()" class="text-xl"><i class="ph-bold ph-x"></i></button>
+                  <div><h2 class="font-black"><i class="ph-bold ph-trash mr-1"></i> Hapus ${u.role==='mitra'?'Mitra':'User'}</h2><p class="text-xs text-red-100">Akun akan dicabut dari OtoLink</p></div>
+                  <button type="button" onclick="closeAllModals()" class="text-xl"><i class="ph-bold ph-x"></i></button>
                 </div>
                 <div class="p-5">
                   <div class="bg-gray-50 border rounded-xl p-3">
-                    <p class="font-black">${esc(name)}</p>
-                    <p class="text-xs text-gray-500">${esc(u.email||'')}</p>
-                    <p class="text-xs mt-1">Jenis akun: <b>${String(u.role||'user').toUpperCase()}</b></p>
+                    <p class="font-black">${window.escapeHtml(name)}</p>
+                    <p class="text-xs text-gray-500">${window.escapeHtml(u.email||'')}</p>
+                    <p class="text-xs mt-1">Jenis akun: <b>${String(u.role||'user').toUpperCase()}</b> • Riwayat transaksi: <b>${relatedOrders.length}</b></p>
                   </div>
-                  ${activeOrders.length ? `<div class="mt-3 bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-xl text-xs"><b>Tidak dapat dihapus sekarang.</b><br>Akun masih mempunyai ${activeOrders.length} pesanan aktif/menunggu. Selesaikan atau batalkan transaksi tersebut terlebih dahulu.</div>` : `<div class="mt-3 bg-red-50 border border-red-100 text-red-700 p-3 rounded-xl text-xs">Data akun akan dihapus dari daftar pengguna OtoLink. Riwayat transaksi yang sudah selesai tetap dipertahankan untuk pencatatan Admin.</div>`}
+                  ${activeOrders.length ? `<div class="mt-3 bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-xl text-xs"><b>Ada ${activeOrders.length} transaksi aktif/pending.</b><br>Saat akun dihapus, transaksi tersebut akan ditandai dibatalkan secara administratif. Riwayat tetap disimpan.</div>` : `<div class="mt-3 bg-red-50 border border-red-100 text-red-700 p-3 rounded-xl text-xs">Akun akan dihapus/dinonaktifkan. Riwayat transaksi yang sudah selesai tetap disimpan sebagai audit Admin.</div>`}
                   <label class="block text-xs font-bold text-gray-600 mt-4 mb-1">Ketik <b>HAPUS</b> untuk konfirmasi</label>
                   <input id="deleteAccountConfirm" autocomplete="off" placeholder="HAPUS" class="w-full border rounded-lg p-2.5 text-sm uppercase">
                   <div class="grid grid-cols-2 gap-2 mt-4">
-                    <button onclick="closeAllModals()" class="bg-gray-100 text-gray-700 py-2.5 rounded-lg font-bold">Batal</button>
-                    <button onclick="confirmAdminDeleteAccount('${u.id}')" ${activeOrders.length?'disabled':''} class="${activeOrders.length?'bg-gray-300 cursor-not-allowed':'bg-red-600 hover:bg-red-700'} text-white py-2.5 rounded-lg font-bold">Ya, Hapus</button>
+                    <button type="button" onclick="closeAllModals()" class="bg-gray-100 text-gray-700 py-2.5 rounded-lg font-bold">Batal</button>
+                    <button type="button" id="btnConfirmDeleteAccount" onclick="confirmAdminDeleteAccount('${u.id}')" class="bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-bold">Ya, Hapus</button>
                   </div>
                 </div>
               </div>
             </div>`;
+            setTimeout(()=>document.getElementById('deleteAccountConfirm')?.focus(),50);
         };
 
         window.confirmAdminDeleteAccount = async function(userId) {
             const u = window.usersData.find(x => x.id === userId);
             if(!u || u.role === 'admin') return window.showToast('Akun tidak dapat dihapus.', false);
 
-            const confirmText = (document.getElementById('deleteAccountConfirm')?.value || '').trim().toUpperCase();
-            if(confirmText !== 'HAPUS') return window.showToast('Ketik HAPUS untuk melanjutkan.', false);
+            const input = document.getElementById('deleteAccountConfirm');
+            const confirmText = (input?.value || '').trim().toUpperCase();
+            if(confirmText !== 'HAPUS') {
+                window.showToast('Ketik HAPUS untuk melanjutkan.', false);
+                input?.focus();
+                return;
+            }
 
-            const email = String(u.email || '').toLowerCase();
-            const activeOrders = window.ordersData.filter(o =>
-                (String(o.customerEmail||'').toLowerCase() === email ||
-                 String(o.ownerEmail||'').toLowerCase() === email) &&
+            const btn = document.getElementById('btnConfirmDeleteAccount');
+            if(btn) { btn.disabled=true; btn.innerHTML='<i class="ph-bold ph-spinner-gap animate-spin mr-1"></i> Menghapus...'; }
+
+            const email = String(u.email || '').trim().toLowerCase();
+            const relatedActiveOrders = window.ordersData.filter(o =>
+                (String(o.customerEmail||'').trim().toLowerCase() === email ||
+                 String(o.ownerEmail||'').trim().toLowerCase() === email) &&
                 ['pending','paid'].includes(o.status)
             );
-            if(activeOrders.length) return window.showToast('Akun masih mempunyai transaksi aktif.', false);
 
             window.closeAllModals();
-            window.showToast('Menghapus akun...');
+            window.showToast('Memproses penghapusan akun...');
+
             try {
-                await window.fsDeleteDoc('users', userId);
-                window.showToast('Akun berhasil dihapus.');
-                setTimeout(()=>window.loadAdminData(),100);
+                // Tutup transaksi aktif agar tidak menggantung.
+                for(const o of relatedActiveOrders) {
+                    await window.fsUpdateDoc('orders', o.id, {
+                        status:'cancelled',
+                        adminCancelledAt:Date.now(),
+                        adminCancelReason:'Akun dihapus oleh Admin'
+                    });
+                    if(o.carId) {
+                        try { await window.fsUpdateDoc('cars', o.carId, {isBooked:false, timestamp:Date.now()}); } catch(e) {}
+                    }
+                }
+
+                // Iklan milik Mitra dihapus bila tidak sedang digunakan.
+                const ownedCars = window.carsData.filter(c => String(c.ownerPhone||'').trim().toLowerCase() === email);
+                for(const car of ownedCars) {
+                    try { await window.fsDeleteDoc('cars', car.id); }
+                    catch(e) {
+                        try { await window.fsUpdateDoc('cars', car.id, {status:'inactive', isDeleted:true, deletedAt:Date.now()}); } catch(_) {}
+                    }
+                }
+
+                let hardDeleted = false;
+                try {
+                    await window.fsDeleteDoc('users', userId);
+                    hardDeleted = true;
+                } catch(deleteErr) {
+                    console.warn('deleteDoc users ditolak, memakai soft-delete:', deleteErr);
+                    // Fallback bila Security Rules tidak mengizinkan delete.
+                    await window.fsUpdateDoc('users', userId, {
+                        isDeleted:true,
+                        accountStatus:'deleted',
+                        deletedAt:Date.now(),
+                        deletedBy:'admin',
+                        roleBeforeDelete:u.role,
+                        password:'__DELETED__'
+                    });
+                }
+
+                // Langsung keluarkan dari cache UI, snapshot Firestore akan menyusul.
+                window.usersData = window.usersData.filter(x => x.id !== userId);
+                window.showToast(hardDeleted ? 'Akun berhasil dihapus permanen.' : 'Akun berhasil dinonaktifkan dan dihapus dari akses.');
+                if(window.currentUser?.role === 'admin') window.loadAdminData();
             } catch(err) {
-                console.error('Hapus akun gagal:',err);
-                window.showToast('Gagal menghapus akun.', false);
+                console.error('Penghapusan akun gagal:', err);
+                window.showToast('Penghapusan gagal. Firestore menolak delete maupun update akun.', false);
             }
         };
 
@@ -2640,8 +2710,9 @@
         window.adminApplySaldo = async function(id) { const u=window.usersData.find(x=>x.id===id); const amt=Number(document.getElementById('adminSaldoAmount')?.value||0); const note=document.getElementById('adminSaldoNote')?.value.trim()||'Koreksi saldo oleh admin'; if(!u||!amt)return window.showToast('Masukkan nominal koreksi',false); const next=(Number(u.saldo)||0)+amt; if(next<0)return window.showToast('Saldo tidak boleh menjadi minus',false); await window.fsUpdateDoc('users',id,{saldo:next}); await window.fsAddDoc('topups',{name:u.name,email:u.email,amount:amt,status:'completed',type:'admin_adjustment',note,timestamp:Date.now()}); window.closeAllModals(); window.showToast('Saldo berhasil dikoreksi'); };
 
         window.openAdminDisburse = function(orderId, mitraEmail, totalAmount) {
-            const fee = totalAmount * 0.07; // Komisi 7%
-            const netAmount = totalAmount - fee;
+            const feeInfo = window.getRentalFeeBreakdown(totalAmount);
+            const fee = feeInfo.fee; // 5% fee marketing + jasa aplikasi
+            const netAmount = feeInfo.net;
             const u = window.usersData.find(x => x.email === mitraEmail);
             
             let bankInfo = `<div class="text-sm text-red-500 mb-4 font-semibold text-center bg-red-50 p-2 rounded border border-red-200">Mitra belum mengatur Rekening Bank!</div>`;
@@ -2676,13 +2747,40 @@
         };
 
         window.executeDisburse = async function(orderId, mitraEmail, amount, method) {
-            await window.fsUpdateDoc('orders', orderId, { isWithdrawn: true });
+            const order = window.ordersData.find(o => o.id === orderId || o.orderId === orderId);
+            const gross = Number(order?.totalAmount || 0);
+            const feeInfo = window.getRentalFeeBreakdown(gross || (Number(amount)||0) / 0.95);
+            const netAmount = Number(amount) || feeInfo.net;
+            const platformFee = gross ? (Number(order?.platformFee ?? feeInfo.fee)) : Math.max(0, feeInfo.gross - netAmount);
+
+            await window.fsUpdateDoc('orders', orderId, {
+                isWithdrawn: true,
+                platformFeeRate: window.RENTAL_PLATFORM_FEE_RATE,
+                platformFee,
+                ownerNetAmount: netAmount,
+                disbursedAt: Date.now()
+            });
+
             if(method === 'otopay') {
                 const u = window.usersData.find(x => x.email === mitraEmail);
-                if(u) await window.fsUpdateDoc('users', u.id, { saldo: (u.saldo || 0) + amount });
+                if(u) await window.fsUpdateDoc('users', u.id, { saldo: (Number(u.saldo)||0) + netAmount });
             }
-            await window.fsAddDoc('withdrawals', { email: mitraEmail, name: 'Sistem Admin', amount: amount, fee: 0, netAmount: amount, status: 'completed', timestamp: Date.now(), note: 'Pencairan Otomatis Pesanan ' + orderId });
-            window.closeAllModals(); window.showToast("Dana Berhasil Dicairkan!");
+
+            await window.fsAddDoc('withdrawals', {
+                email: mitraEmail,
+                name: 'Sistem Admin',
+                grossAmount: gross || feeInfo.gross,
+                amount: gross || feeInfo.gross,
+                feeRate: window.RENTAL_PLATFORM_FEE_RATE,
+                fee: platformFee,
+                netAmount,
+                status: 'completed',
+                timestamp: Date.now(),
+                note: 'Pencairan Pesanan ' + (order?.orderId || orderId) + ' • Fee OtoLink 5%'
+            });
+
+            window.closeAllModals();
+            window.showToast("Dana Mitra berhasil dicairkan setelah potongan fee 5%.");
         };
 
         window.updateOrderStatus = async function(id, st, carId=null) { 
