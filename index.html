@@ -279,7 +279,7 @@
             if(e.key === 'Escape' && document.getElementById('modalContainer')?.innerHTML.trim()) window.closeAllModals();
         });
 
-        window.fsAddDoc = async (colName, data) => { if(isFirebaseActive) await addDoc(collection(db, colName), data); };
+        window.fsAddDoc = async (colName, data) => { if(!isFirebaseActive) throw new Error('Firebase belum aktif'); const r = await addDoc(collection(db, colName), data); return r.id; };
         window.fsUpdateDoc = async (colName, docId, data) => { if(isFirebaseActive) await updateDoc(doc(db, colName, docId), data); };
         window.fsDeleteDoc = async (colName, docId) => { if(isFirebaseActive) await deleteDoc(doc(db, colName, docId)); };
 
@@ -292,7 +292,7 @@
                     setTimeout(()=>window.openAdminMitraProfile(openAdminPartnerId), 50);
                 }
             });
-            onSnapshot(collection(db, 'cars'), (snap) => { window.carsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(collection(db, 'cars'), (snap) => { window.carsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); if(window.currentUser?.role==='admin') window.renderAdminGlobalNotif?.(); });
             onSnapshot(collection(db, 'orders'), (snap) => { window.ordersData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
             onSnapshot(collection(db, 'withdrawals'), (snap) => { window.withdrawalsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
             onSnapshot(collection(db, 'topups'), (snap) => { window.topupsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
@@ -465,20 +465,32 @@
             const files = Array.from(fileList || []);
             if(!files.length) return [];
             if(files.length > 5) throw new Error('Maksimal 5 foto per iklan.');
-            if(!isFirebaseActive || !storage) throw new Error('Firebase Storage belum aktif. Foto tidak disimpan ke Firestore agar database tidak cepat penuh.');
 
             const urls = [];
             let totalBytes = 0;
             const safeOwner = String(ownerKey || 'official').replace(/[^a-z0-9_-]/gi,'_');
 
             for(let i=0; i<files.length; i++) {
-                window.showToast(`Kompres & upload foto ${i+1} dari ${files.length}...`);
-                const packed = await window.compressCarImage(files[i], 180);
+                window.showToast(`Kompres & simpan foto ${i+1} dari ${files.length}...`);
+                // Maksimum kecil agar fallback 5 foto tetap aman untuk satu dokumen Firestore.
+                const packed = await window.compressCarImage(files[i], 95);
                 totalBytes += packed.approxBytes || 0;
-                const path = `car-photos/${safeOwner}/${Date.now()}_${i}_${Math.random().toString(36).slice(2,8)}.webp`;
-                const storageRef = ref(storage, path);
-                await uploadString(storageRef, packed.dataUrl, 'data_url', {contentType:'image/webp'});
-                urls.push(await getDownloadURL(storageRef));
+                let saved = '';
+
+                // Coba Storage lebih dulu. Bila rules/bucket menolak, simpan dataURL terkompresi
+                // langsung bersama dokumen iklan sehingga upload Mitra tidak macet.
+                if(isFirebaseActive && storage) {
+                    try {
+                        const path = `car-photos/${safeOwner}/${Date.now()}_${i}_${Math.random().toString(36).slice(2,8)}.webp`;
+                        const storageRef = ref(storage, path);
+                        await uploadString(storageRef, packed.dataUrl, 'data_url', {contentType:'image/webp'});
+                        saved = await getDownloadURL(storageRef);
+                    } catch(storageErr) {
+                        console.warn('Storage foto iklan gagal; memakai fallback Firestore:', storageErr);
+                    }
+                }
+                if(!saved) saved = packed.dataUrl;
+                urls.push(saved);
             }
             window.lastCarUploadBytes = totalBytes;
             return urls;
@@ -2011,6 +2023,23 @@
             });
         };
 
+        window.createAdminActivityNotification = async function(type, title, message, relatedId='', senderEmail='') {
+            try {
+                await window.fsAddDoc('messages', {
+                    senderEmail: senderEmail || window.currentUser?.email || 'system',
+                    receiverEmail: 'admin',
+                    type: type || 'system_notification',
+                    title: title || 'Aktivitas baru',
+                    text: message || '',
+                    relatedId: relatedId || '',
+                    isRead: false,
+                    timestamp: Date.now()
+                });
+            } catch(err) {
+                console.warn('Notif Admin gagal dibuat:',err);
+            }
+        };
+
         window.handlePartnerAddCar = async function() {
             const name = document.getElementById('addCarName').value; const cat = document.getElementById('addCarCat').value;
             const price = parseInt(document.getElementById('addCarPrice').value); const seat = parseInt(document.getElementById('addCarSeat').value);
@@ -2026,7 +2055,7 @@
             window.showToast("Mengunggah foto unit...");
             let photoUrls;
             try { photoUrls = await window.uploadCarImages(imgFiles, window.currentUser.email); }
-            catch(e) { console.error(e); return window.showToast("Upload foto gagal. Periksa Firebase Storage lalu coba lagi.", false); }
+            catch(e) { console.error(e); return window.showToast("Upload foto gagal diproses. Coba foto yang lebih kecil atau format JPG/PNG.", false); }
             let carData = { name, category: cat, priceDay: price, seat, allow24h, allow12h, allowHourly, ownerPhone: window.currentUser.email, status: 'pending', timestamp: Date.now(), images: photoUrls, img: photoUrls[0] };
 
             if (myCars.length >= 1) {
@@ -2050,15 +2079,30 @@
                     </div>
                 </div>`;
             } else {
-                await window.fsAddDoc('cars', carData); window.showToast(`Berhasil! ${photoUrls.length} foto tersimpan (${Math.max(1,Math.round((window.lastCarUploadBytes||0)/1024))} KB). Menunggu ACC Admin.`);
-                window.loadMitraData();
+                try {
+                    const newCarId = await window.fsAddDoc('cars', carData);
+                    await window.createAdminActivityNotification('new_car_ad','Iklan Mitra Baru',`${window.currentUser.name || window.currentUser.email} mengirim iklan ${name} untuk diverifikasi.`, newCarId || '', window.currentUser.email);
+                    window.showToast(`Berhasil! ${photoUrls.length} foto tersimpan. Iklan masuk ke antrean Admin.`);
+                    window.loadMitraData();
+                } catch(err) {
+                    console.error('Simpan iklan gagal:',err);
+                    window.showToast('Iklan belum tersimpan. Periksa izin Firestore collection cars.', false);
+                }
             }
         };
 
         window.submitPaidCar = async function(dataStr) {
-            const data = JSON.parse(decodeURIComponent(dataStr));
-            await window.fsAddDoc('cars', data); window.closeAllModals(); window.showToast("Dikirim! Menunggu ACC Admin.");
-            window.loadMitraData();
+            try {
+                const data = JSON.parse(decodeURIComponent(dataStr));
+                const newCarId = await window.fsAddDoc('cars', data);
+                await window.createAdminActivityNotification('new_car_ad','Iklan Mitra Baru',`${window.currentUser?.name || window.currentUser?.email || 'Mitra'} mengirim iklan ${data.name || 'mobil'} dan menunggu verifikasi/pembayaran.`, newCarId || '', window.currentUser?.email || '');
+                window.closeAllModals();
+                window.showToast("Iklan berhasil dikirim dan Admin sudah mendapat notifikasi.");
+                window.loadMitraData();
+            } catch(err) {
+                console.error('Simpan iklan berbayar gagal:',err);
+                window.showToast('Iklan belum tersimpan. Periksa izin Firestore collection cars.', false);
+            }
         };
 
         window.openRekeningSetting = function() {
