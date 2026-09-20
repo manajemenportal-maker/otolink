@@ -465,33 +465,19 @@
             const files = Array.from(fileList || []);
             if(!files.length) return [];
             if(files.length > 5) throw new Error('Maksimal 5 foto per iklan.');
-
             const urls = [];
             let totalBytes = 0;
-            const safeOwner = String(ownerKey || 'official').replace(/[^a-z0-9_-]/gi,'_');
-
-            for(let i=0; i<files.length; i++) {
-                window.showToast(`Kompres & simpan foto ${i+1} dari ${files.length}...`);
-                // Maksimum kecil agar fallback 5 foto tetap aman untuk satu dokumen Firestore.
-                const packed = await window.compressCarImage(files[i], 95);
+            for(let i=0;i<files.length;i++) {
+                const progress = document.getElementById('partnerAddCarProgress');
+                if(progress) progress.textContent = `Memproses foto ${i+1} dari ${files.length}...`;
+                const packed = await window.compressCarImage(files[i], 55);
+                if(!packed?.dataUrl) throw new Error(`Foto ${i+1} gagal diproses.`);
+                if(packed.approxBytes > 80*1024) throw new Error(`Foto ${i+1} masih terlalu besar setelah kompresi.`);
+                urls.push(packed.dataUrl);
                 totalBytes += packed.approxBytes || 0;
-                let saved = '';
-
-                // Coba Storage lebih dulu. Bila rules/bucket menolak, simpan dataURL terkompresi
-                // langsung bersama dokumen iklan sehingga upload Mitra tidak macet.
-                if(isFirebaseActive && storage) {
-                    try {
-                        const path = `car-photos/${safeOwner}/${Date.now()}_${i}_${Math.random().toString(36).slice(2,8)}.webp`;
-                        const storageRef = ref(storage, path);
-                        await uploadString(storageRef, packed.dataUrl, 'data_url', {contentType:'image/webp'});
-                        saved = await getDownloadURL(storageRef);
-                    } catch(storageErr) {
-                        console.warn('Storage foto iklan gagal; memakai fallback Firestore:', storageErr);
-                    }
-                }
-                if(!saved) saved = packed.dataUrl;
-                urls.push(saved);
             }
+            // Batas konservatif agar dokumen cars tidak mendekati limit Firestore 1 MiB.
+            if(totalBytes > 400*1024) throw new Error('Total foto terlalu besar. Gunakan foto yang lebih kecil.');
             window.lastCarUploadBytes = totalBytes;
             return urls;
         };
@@ -1966,7 +1952,8 @@
                     <p class="text-[10px] text-gray-500 mb-2">Pilih 1 sampai 5 foto sekaligus. Foto pertama menjadi cover iklan.</p>
                     ${window.carPhotoSlotsHtml('addCarImg','addCarPreview')}
                 </div>
-                <button onclick="handlePartnerAddCar()" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded shadow transition flex justify-center items-center gap-2"><i class="ph-bold ph-paper-plane-tilt"></i> Kirim Pengajuan Iklan</button>
+                <button id="btnPartnerAddCar" type="button" onclick="handlePartnerAddCar()" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded shadow transition flex justify-center items-center gap-2"><i class="ph-bold ph-paper-plane-tilt"></i> <span id="btnPartnerAddCarText">Kirim Pengajuan Iklan</span></button>
+                <div id="partnerAddCarProgress" class="hidden mt-2 p-2 rounded bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold text-center"></div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -2040,68 +2027,106 @@
             }
         };
 
-        window.handlePartnerAddCar = async function() {
-            const name = document.getElementById('addCarName').value; const cat = document.getElementById('addCarCat').value;
-            const price = parseInt(document.getElementById('addCarPrice').value); const seat = parseInt(document.getElementById('addCarSeat').value);
-            const allow24h = !!document.getElementById('addAllow24h')?.checked;
-            const allow12h = !!document.getElementById('addAllow12h')?.checked;
-            const allowHourly = !!document.getElementById('addAllowHourly')?.checked;
-            const imgFiles = window.collectCarPhotoSlots('addCarImg');
-            if(!name || !price || !seat || imgFiles.length < 1) return window.showToast("Lengkapi form & pilih minimal 1 foto!", false);
-            if(!allow24h && !allow12h && !allowHourly) return window.showToast("Aktifkan minimal 1 jenis durasi sewa.", false);
-            if(imgFiles.length > 5) return window.showToast("Maksimal 5 foto per iklan!", false);
-            
-            const myCars = window.carsData.filter(c => c.ownerPhone === window.currentUser.email);
-            window.showToast("Mengunggah foto unit...");
-            let photoUrls;
-            try { photoUrls = await window.uploadCarImages(imgFiles, window.currentUser.email); }
-            catch(e) { console.error(e); return window.showToast("Upload foto gagal diproses. Coba foto yang lebih kecil atau format JPG/PNG.", false); }
-            let carData = { name, category: cat, priceDay: price, seat, allow24h, allow12h, allowHourly, ownerPhone: window.currentUser.email, status: 'pending', timestamp: Date.now(), images: photoUrls, img: photoUrls[0] };
+        window.setPartnerAdProgress = function(text, busy=true) {
+            const box = document.getElementById('partnerAddCarProgress');
+            const btn = document.getElementById('btnPartnerAddCar');
+            const txt = document.getElementById('btnPartnerAddCarText');
+            if(box) { box.classList.remove('hidden'); box.textContent = text; }
+            if(btn) { btn.disabled = !!busy; btn.classList.toggle('opacity-60',!!busy); }
+            if(txt) txt.textContent = busy ? 'Sedang Diproses...' : 'Kirim Pengajuan Iklan';
+        };
 
-            if (myCars.length >= 1) {
-                carData.status = 'pending_payment';
-                document.getElementById('modalContainer').innerHTML = `
-                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center">
-                        <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-warning text-3xl"></i></div>
-                        <h2 class="text-lg font-bold text-gray-800 mb-2">Iklan Berbayar (Rp 11.200)</h2>
-                        <p class="text-sm text-gray-600 mb-4">Kuota 1 iklan gratis Anda telah habis.</p>
-                        <div class="bg-gray-50 p-3 text-xs text-gray-600 rounded border mb-4 text-left">
-                            <p><b>Mitra:</b> ${window.currentUser.name}</p>
-                            <p><b>Unit:</b> ${name}</p>
-                        </div>
-                        <p class="text-xs text-gray-500 mb-4">Untuk menayangkan iklan ini, silakan Transfer Rp 11.200 (Biaya Bulanan) ke:<br><b>Bank: BCA</b><br><b>No. Rek: 6044837263</b><br>A/n: PT KALIMAJA SURYA ALAM</p>
-                        <p class="text-xs text-gray-500 mb-4 italic">Jika sudah transfer, klik 'Ya, Yakin' untuk dikirim ke Admin.</p>
-                        <div class="flex gap-2">
-                            <button onclick="closeAllModals()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded font-bold">Batal</button>
-                            <button onclick="submitPaidCar('${encodeURIComponent(JSON.stringify(carData))}')" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded font-bold">Ya, Yakin</button>
-                        </div>
-                    </div>
-                </div>`;
-            } else {
+        window.handlePartnerAddCar = async function() {
+            if(window.__partnerAdBusy) return;
+            window.__partnerAdBusy = true;
+            try {
+                if(!window.currentUser || window.currentUser.role !== 'mitra') throw new Error('Silakan masuk sebagai Mitra.');
+                if(!isFirebaseActive) throw new Error('Koneksi database Firebase belum aktif.');
+
+                const name = (document.getElementById('addCarName')?.value || '').trim();
+                const cat = document.getElementById('addCarCat')?.value || 'Mobil Keluarga';
+                const price = parseInt(document.getElementById('addCarPrice')?.value || '0');
+                const seat = parseInt(document.getElementById('addCarSeat')?.value || '0');
+                const allow24h = !!document.getElementById('addAllow24h')?.checked;
+                const allow12h = !!document.getElementById('addAllow12h')?.checked;
+                const allowHourly = !!document.getElementById('addAllowHourly')?.checked;
+                const imgFiles = window.collectCarPhotoSlots('addCarImg');
+
+                if(!name || !price || !seat) throw new Error('Nama mobil, harga, dan jumlah kursi wajib diisi.');
+                if(!imgFiles.length) throw new Error('Pilih minimal 1 foto unit.');
+                if(imgFiles.length > 5) throw new Error('Maksimal 5 foto per iklan.');
+                if(!allow24h && !allow12h && !allowHourly) throw new Error('Aktifkan minimal 1 jenis durasi sewa.');
+
+                window.setPartnerAdProgress(`Memproses ${imgFiles.length} foto...`, true);
+                const photoUrls = await window.uploadCarImages(imgFiles, window.currentUser.email);
+
+                const myCars = window.carsData.filter(c => c.ownerPhone === window.currentUser.email && c.status !== 'deleted');
+                const isPaidAd = myCars.length >= 1;
+                const carData = {
+                    name, category:cat, priceDay:price, seat,
+                    allow24h, allow12h, allowHourly,
+                    ownerPhone:window.currentUser.email,
+                    ownerName:window.currentUser.name || '',
+                    status:isPaidAd ? 'pending_payment' : 'pending',
+                    timestamp:Date.now(),
+                    updatedAt:Date.now(),
+                    images:photoUrls,
+                    img:photoUrls[0],
+                    photoCount:photoUrls.length,
+                    adminReviewed:false,
+                    adminNotifUnread:true
+                };
+
+                window.setPartnerAdProgress('Menyimpan iklan ke database...', true);
+                const carRef = await addDoc(collection(db,'cars'), carData);
+                if(!carRef?.id) throw new Error('Database tidak mengembalikan ID iklan.');
+
+                // Update lokal langsung agar Mitra melihat hasil tanpa menunggu snapshot.
+                window.carsData = [{id:carRef.id,...carData}, ...window.carsData.filter(c=>c.id!==carRef.id)];
+
+                // Notifikasi tambahan tidak boleh menggagalkan iklan utama.
                 try {
-                    const newCarId = await window.fsAddDoc('cars', carData);
-                    await window.createAdminActivityNotification('new_car_ad','Iklan Mitra Baru',`${window.currentUser.name || window.currentUser.email} mengirim iklan ${name} untuk diverifikasi.`, newCarId || '', window.currentUser.email);
-                    window.showToast(`Berhasil! ${photoUrls.length} foto tersimpan. Iklan masuk ke antrean Admin.`);
-                    window.loadMitraData();
-                } catch(err) {
-                    console.error('Simpan iklan gagal:',err);
-                    window.showToast('Iklan belum tersimpan. Periksa izin Firestore collection cars.', false);
-                }
+                    await addDoc(collection(db,'messages'), {
+                        senderEmail:window.currentUser.email,
+                        receiverEmail:'admin',
+                        type:'new_car_ad',
+                        title:'Iklan Mitra Baru',
+                        text:`${window.currentUser.name || window.currentUser.email} mengirim iklan ${name} untuk diverifikasi.`,
+                        relatedId:carRef.id,
+                        isRead:false,
+                        timestamp:Date.now()
+                    });
+                } catch(notifErr) { console.warn('Iklan tersimpan; notif message terpisah gagal:',notifErr); }
+
+                window.setPartnerAdProgress(`BERHASIL — iklan ${name} masuk ke Admin.`, false);
+                window.showToast('Iklan berhasil dikirim. Admin mendapat tanda merah di Verifikasi Iklan.');
+                setTimeout(()=>window.loadMitraData(),700);
+            } catch(err) {
+                console.error('PROSES IKLAN MITRA GAGAL:',err);
+                window.setPartnerAdProgress(`GAGAL: ${err?.message || 'Proses tidak dapat diselesaikan.'}`, false);
+                window.showToast(err?.message || 'Pengajuan iklan gagal.', false);
+            } finally {
+                window.__partnerAdBusy = false;
+                const btn=document.getElementById('btnPartnerAddCar');
+                if(btn) btn.disabled=false;
             }
         };
 
+        // Dipertahankan untuk kompatibilitas iklan lama/modal lama.
         window.submitPaidCar = async function(dataStr) {
             try {
                 const data = JSON.parse(decodeURIComponent(dataStr));
-                const newCarId = await window.fsAddDoc('cars', data);
-                await window.createAdminActivityNotification('new_car_ad','Iklan Mitra Baru',`${window.currentUser?.name || window.currentUser?.email || 'Mitra'} mengirim iklan ${data.name || 'mobil'} dan menunggu verifikasi/pembayaran.`, newCarId || '', window.currentUser?.email || '');
+                data.status = 'pending_payment';
+                data.adminNotifUnread = true;
+                data.updatedAt = Date.now();
+                const r = await addDoc(collection(db,'cars'),data);
                 window.closeAllModals();
-                window.showToast("Iklan berhasil dikirim dan Admin sudah mendapat notifikasi.");
+                window.showToast('Iklan berhasil dikirim dan menunggu verifikasi Admin.');
                 window.loadMitraData();
+                return r.id;
             } catch(err) {
-                console.error('Simpan iklan berbayar gagal:',err);
-                window.showToast('Iklan belum tersimpan. Periksa izin Firestore collection cars.', false);
+                console.error(err);
+                window.showToast(`Gagal mengirim iklan: ${err?.message || 'database error'}`,false);
             }
         };
 
@@ -2292,7 +2317,7 @@
                 return items.filter(x => predicate(x) && window.adminItemTime(x) > last).length;
             };
 
-            const pendingCars = window.carsData.filter(c => ['pending','pending_payment'].includes(c.status)).length;
+            const pendingCars = window.carsData.filter(c => ['pending','pending_payment'].includes(c.status) || c.adminNotifUnread === true).length;
             const pendingOrders = window.ordersData.filter(o => o.status === 'pending').length;
             const pendingTopups = window.topupsData.filter(x => x.status === 'pending').length;
             const pendingWithdrawals = window.withdrawalsData.filter(x => x.status === 'pending').length;
