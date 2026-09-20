@@ -177,7 +177,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         // CONFIG FIREBASE MILIK ANDA
@@ -1532,24 +1532,17 @@
             if(file.size > 8 * 1024 * 1024) throw new Error('Ukuran file awal maksimal 8 MB');
             if(!file.type.startsWith('image/')) throw new Error('Dokumen harus berupa gambar JPG/PNG/WebP');
 
-            // Kompres agresif agar jalur cadangan tetap kecil.
-            const compactData = await window.compressPartnerDocument(file, 700, 75);
-
-            // Prioritas 1: Firebase Storage.
-            try {
-                if(!isFirebaseActive || !storage) throw new Error('Firebase Storage belum aktif');
-                const safeOwner = String(window.currentUser?.email || 'mitra').replace(/[^a-z0-9_-]/gi,'_');
-                const path = `partner-documents/${safeOwner}/${fieldName}_${Date.now()}.webp`;
-                const storageRef = ref(storage, path);
-                await uploadString(storageRef, compactData, 'data_url');
-                const url = await getDownloadURL(storageRef);
-                return { url, fallback:'' };
-            } catch(storageErr) {
-                console.warn('Upload Storage dokumen gagal, memakai fallback terkompresi:', storageErr);
-                // Prioritas 2: simpan versi WebP kecil di Firestore user.
-                // Sekitar <=120 KB per dokumen, sehingga 2 dokumen tetap jauh di bawah batas 1 MB dokumen Firestore.
-                return { url:'', fallback:compactData };
+            // Dokumen verifikasi disimpan LANGSUNG pada record users di Firestore.
+            // Ini sengaja tidak bergantung pada Firebase Storage agar Admin membaca sumber data yang sama.
+            // Kompres kecil untuk menjaga ukuran dokumen Firestore tetap aman.
+            const compactData = await window.compressPartnerDocument(file, 620, 55);
+            if(!compactData || !String(compactData).startsWith('data:image/')) {
+                throw new Error('Kompresi dokumen gagal.');
             }
+            if(compactData.length > 110000) {
+                throw new Error('Foto masih terlalu besar setelah kompresi. Gunakan foto yang lebih sederhana.');
+            }
+            return { url:'', fallback:compactData, fieldName };
         };
 
 
@@ -1751,6 +1744,9 @@
                     ktpDocumentUrl: docs.ktpPhoto || docs.ktpPhotoFallback || '',
                     selfieDocumentUrl: docs.selfieKtpPhoto || docs.selfieKtpPhotoFallback || '',
                     partnerDocumentsSaved: !!((docs.ktpPhoto || docs.ktpPhotoFallback) && (docs.selfieKtpPhoto || docs.selfieKtpPhotoFallback)),
+                    partnerDocumentStorage: 'firestore-users',
+                    ktpDocumentSavedAt: (docs.ktpPhoto || docs.ktpPhotoFallback) ? Date.now() : null,
+                    selfieDocumentSavedAt: (docs.selfieKtpPhoto || docs.selfieKtpPhotoFallback) ? Date.now() : null,
                     partnerDocumentVersion: Date.now(),
                     partnerVerificationStatus: submitForVerification ? 'pending' :
                         (user.partnerVerificationStatus === 'verified' ? 'verified' : (user.partnerVerificationStatus || 'incomplete')),
