@@ -1107,9 +1107,9 @@
                         <div class="mb-6 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
                             <h4 class="text-xs font-bold text-blue-800 mb-3 uppercase tracking-wider">Waktu & Durasi Sewa</h4>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-                                <label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="12h" onchange="applyRentalMode()" class="accent-shopee mr-1"> Harian 12 Jam</label>
-                                <label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="24h" checked onchange="applyRentalMode()" class="accent-shopee mr-1"> Harian 24 Jam</label>
-                                <label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="hourly" onchange="applyRentalMode()" class="accent-shopee mr-1"> Per Jam</label>
+                                ${car.allow12h !== false ? `<label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="12h" onchange="applyRentalMode()" class="accent-shopee mr-1"> Harian 12 Jam</label>` : ''}
+                                ${car.allow24h !== false ? `<label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="24h" onchange="applyRentalMode()" class="accent-shopee mr-1"> Harian 24 Jam</label>` : ''}
+                                ${car.allowHourly !== false ? `<label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="hourly" onchange="applyRentalMode()" class="accent-shopee mr-1"> Per Jam</label>` : ''}
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div><label class="block text-[10px] text-gray-500 mb-1">Tanggal Penjemputan</label><input type="date" id="coDateStart" value="${today}" min="${today}" onchange="calculateCheckoutTotal()" class="w-full border rounded p-2 text-sm outline-none"></div>
@@ -1121,7 +1121,7 @@
                                 <span class="text-xs font-semibold text-gray-600">Total Durasi Sewa:</span>
                                 <span class="text-sm font-black text-shopee" id="coDurationText">24 Jam</span>
                             </div>
-                            <p class="text-[10px] text-gray-500 mt-2">Tarif 24 jam memakai harga harian. Tarif 12 jam = 50% harga harian. Sewa per jam dihitung proporsional dari harga 24 jam.</p>
+                            <p class="text-[10px] text-gray-500 mt-2">Tarif 24 jam memakai harga harian. Tarif 12 jam = 60% harga harian. Tarif per jam = harga harian dibagi 15 jam.</p>
                         </div>
 
                         <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -1146,7 +1146,13 @@
                 </div>
             </div>`;
             document.getElementById('modalContainer').innerHTML = html;
-            window.calculateCheckoutTotal();
+            const firstRentalMode = document.querySelector('input[name="coRentalMode"]');
+            if(firstRentalMode) firstRentalMode.checked = true;
+            else {
+                window.closeAllModals();
+                return window.showToast('Mitra belum mengaktifkan jenis durasi sewa untuk unit ini.', false);
+            }
+            window.applyRentalMode();
         };
 
         window.toggleService = function(val) {
@@ -1206,8 +1212,8 @@
             if(mode === '24h') hours = Math.max(24, Math.ceil(hours / 24) * 24);
 
             const basePrice = Number(document.getElementById('coBasePrice').getAttribute('data-price')) || 0;
-            const hourlyRate = Math.ceil(basePrice / 24);
-            const rentalPrice = mode === '12h' ? Math.ceil(basePrice / 2) : mode === '24h' ? Math.ceil(hours / 24) * basePrice : hours * hourlyRate;
+            const hourlyRate = Math.ceil(basePrice / 15);
+            const rentalPrice = mode === '12h' ? Math.ceil(basePrice * 0.60) : mode === '24h' ? Math.ceil(hours / 24) * basePrice : hours * hourlyRate;
 
             const service = document.querySelector('input[name="coService"]:checked')?.value || 'lepas_kunci';
             const billDays = Math.max(1, Math.ceil(hours / 24));
@@ -1920,6 +1926,15 @@
                     <input type="number" id="addCarPrice" placeholder="Harga Sewa / Hari (Rp)" class="border p-2.5 rounded text-sm outline-none focus:border-shopee">
                     <input type="number" id="addCarSeat" placeholder="Jumlah Kursi (Cth: 7)" class="border p-2.5 rounded text-sm outline-none focus:border-shopee">
                 </div>
+                <div class="mt-4 p-4 rounded-xl border bg-orange-50/50">
+                    <p class="text-xs font-black text-gray-800 mb-1">Jenis Durasi Sewa yang Dilayani</p>
+                    <p class="text-[10px] text-gray-500 mb-3">Mitra boleh mengaktifkan 1, 2, atau semua layanan. Minimal satu harus aktif.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllow24h" type="checkbox" checked class="accent-shopee mr-1"> 24 Jam <span class="block text-[9px] text-gray-400 mt-1">100% tarif harian</span></label>
+                        <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllow12h" type="checkbox" checked class="accent-shopee mr-1"> 12 Jam <span class="block text-[9px] text-gray-400 mt-1">60% tarif harian</span></label>
+                        <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllowHourly" type="checkbox" checked class="accent-shopee mr-1"> Per Jam <span class="block text-[9px] text-gray-400 mt-1">Tarif harian ÷ 15</span></label>
+                    </div>
+                </div>
                 <div class="mt-4 p-4 border-2 border-dashed border-gray-300 rounded bg-gray-50 text-center">
                     <p class="text-xs text-gray-700 font-bold mb-1">Upload Foto Kondisi Riil Unit</p>
                     <p class="text-[10px] text-gray-500 mb-2">Pilih 1 sampai 5 foto sekaligus. Foto pertama menjadi cover iklan.</p>
@@ -1950,7 +1965,7 @@
                 if(car.status === 'pending_payment') badge = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Pending Bayar Rp 11.200</span>`;
                 if(car.isBooked) badge += ` <span class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm animate-pulse">Sedang Disewa</span>`;
                 
-                const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><div class="mt-1">${badge}</div></div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
+                const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><p class="text-[10px] text-gray-400 mt-1">Layanan: ${[car.allow24h!==false?'24 Jam':'',car.allow12h!==false?'12 Jam':'',car.allowHourly!==false?'Per Jam':''].filter(Boolean).join(' • ') || 'Tidak aktif'}</p><div class="mt-1">${badge}</div></div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
             });
         };
 
@@ -1985,8 +2000,12 @@
         window.handlePartnerAddCar = async function() {
             const name = document.getElementById('addCarName').value; const cat = document.getElementById('addCarCat').value;
             const price = parseInt(document.getElementById('addCarPrice').value); const seat = parseInt(document.getElementById('addCarSeat').value);
+            const allow24h = !!document.getElementById('addAllow24h')?.checked;
+            const allow12h = !!document.getElementById('addAllow12h')?.checked;
+            const allowHourly = !!document.getElementById('addAllowHourly')?.checked;
             const imgFiles = window.collectCarPhotoSlots('addCarImg');
             if(!name || !price || !seat || imgFiles.length < 1) return window.showToast("Lengkapi form & pilih minimal 1 foto!", false);
+            if(!allow24h && !allow12h && !allowHourly) return window.showToast("Aktifkan minimal 1 jenis durasi sewa.", false);
             if(imgFiles.length > 5) return window.showToast("Maksimal 5 foto per iklan!", false);
             
             const myCars = window.carsData.filter(c => c.ownerPhone === window.currentUser.email);
@@ -1994,7 +2013,7 @@
             let photoUrls;
             try { photoUrls = await window.uploadCarImages(imgFiles, window.currentUser.email); }
             catch(e) { console.error(e); return window.showToast("Upload foto gagal. Periksa Firebase Storage lalu coba lagi.", false); }
-            let carData = { name, category: cat, priceDay: price, seat, ownerPhone: window.currentUser.email, status: 'pending', timestamp: Date.now(), images: photoUrls, img: photoUrls[0] };
+            let carData = { name, category: cat, priceDay: price, seat, allow24h, allow12h, allowHourly, ownerPhone: window.currentUser.email, status: 'pending', timestamp: Date.now(), images: photoUrls, img: photoUrls[0] };
 
             if (myCars.length >= 1) {
                 carData.status = 'pending_payment';
@@ -3067,9 +3086,10 @@
                         <div class="mb-3"><label class="block text-xs font-semibold mb-1">Nama Mobil</label><input type="text" id="ecName" value="${car ? car.name : ''}" class="w-full border p-2 text-sm rounded outline-none focus:border-shopee"></div>
                         <div class="mb-3"><label class="block text-xs font-semibold mb-1">Kategori</label><select id="ecCategory" class="w-full border p-2 text-sm rounded outline-none"><option value="Keluarga" ${car && car.category === 'Keluarga' ? 'selected' : ''}>Keluarga</option><option value="SUV" ${car && car.category === 'SUV' ? 'selected' : ''}>SUV</option></select></div>
                         <div class="flex gap-3 mb-3">
-                            <div class="w-1/2"><label class="block text-xs font-semibold mb-1">Harga (Rp)</label><input type="number" id="ecPrice" value="${car ? car.priceDay : ''}" class="w-full border p-2 text-sm rounded outline-none focus:border-shopee"></div>
+                            <div class="w-1/2"><label class="block text-xs font-semibold mb-1">Harga 24 Jam (Rp)</label><input type="number" id="ecPrice" value="${car ? car.priceDay : ''}" class="w-full border p-2 text-sm rounded outline-none focus:border-shopee"></div>
                             <div class="w-1/2"><label class="block text-xs font-semibold mb-1">Kursi</label><input type="number" id="ecSeat" value="${car ? car.seat : ''}" class="w-full border p-2 text-sm rounded outline-none focus:border-shopee"></div>
                         </div>
+                        <div class="mb-3 p-3 border rounded-xl bg-orange-50/50"><label class="block text-xs font-black mb-2">Layanan Durasi yang Aktif</label><div class="grid grid-cols-3 gap-2 text-[11px]"><label class="bg-white border rounded p-2"><input id="ecAllow24h" type="checkbox" ${!car || car.allow24h!==false?'checked':''} class="accent-shopee mr-1">24 Jam</label><label class="bg-white border rounded p-2"><input id="ecAllow12h" type="checkbox" ${!car || car.allow12h!==false?'checked':''} class="accent-shopee mr-1">12 Jam</label><label class="bg-white border rounded p-2"><input id="ecAllowHourly" type="checkbox" ${!car || car.allowHourly!==false?'checked':''} class="accent-shopee mr-1">Per Jam</label></div><p class="text-[9px] text-gray-500 mt-2">24 jam = harga iklan • 12 jam = 60% • per jam = harga 24 jam ÷ 15. Minimal satu layanan aktif.</p></div>
                         ${car ? `<div class="mb-3"><label class="block text-xs font-semibold mb-2">Galeri Saat Ini</label><div class="grid grid-cols-5 gap-2">${window.getCarImages(car).map((u,i)=>`<div class="relative"><img src="${u}" class="w-full h-14 object-cover rounded border"><span class="absolute top-0 left-0 bg-black/60 text-white text-[9px] px-1 rounded-br">${i+1}</span></div>`).join('')}</div></div>` : ''}
                         <div class="mb-4 p-3 border-2 border-dashed rounded-lg bg-gray-50"><label class="block text-xs font-bold mb-1">${car ? 'Ganti Galeri Foto (opsional)' : 'Foto Mobil (1–5 foto)'}</label><p class="text-[10px] text-gray-500 mb-3">Isi Foto 1 sampai Foto 5 satu per satu. ${car ? 'Jika ada foto baru dipilih, galeri lama akan diganti dengan foto baru yang dipilih.' : 'Foto 1 menjadi cover utama.'}</p>${window.carPhotoSlotsHtml('ecImgInput','ecImgPreview')}</div>
                         <div class="flex gap-2">${car ? `<button onclick="${isAdmin ? `adminDeleteCar('${car.id}')` : `deleteMitraCar('${car.id}')`}; closeAllModals();" class="w-1/3 bg-red-50 text-red-600 border border-red-100 font-bold py-2 rounded shadow-sm"><i class="ph-bold ph-trash"></i> Hapus</button>` : ''}<button onclick="saveCarEdit()" id="btnSaveCarEdit" class="${car ? 'w-2/3' : 'w-full'} bg-shopee text-white font-bold py-2 rounded shadow"><i class="ph-bold ph-floppy-disk"></i> Simpan</button></div>
@@ -3085,12 +3105,17 @@
                 category: document.getElementById('ecCategory')?.value || '',
                 priceDay: parseInt(document.getElementById('ecPrice')?.value || '0') || 0,
                 seat: parseInt(document.getElementById('ecSeat')?.value || '0') || 0,
+                allow24h: !!document.getElementById('ecAllow24h')?.checked,
+                allow12h: !!document.getElementById('ecAllow12h')?.checked,
+                allowHourly: !!document.getElementById('ecAllowHourly')?.checked,
                 ownerPhone: document.getElementById('ecOwner')?.value || 'official'
             };
             const imgFiles = window.collectCarPhotoSlots('ecImgInput');
 
             if(!data.name || !data.priceDay || !data.seat)
                 return window.showToast("Lengkapi nama, harga, dan jumlah kursi.", false);
+            if(!data.allow24h && !data.allow12h && !data.allowHourly)
+                return window.showToast("Aktifkan minimal 1 jenis durasi sewa.", false);
             if(imgFiles.length > 5)
                 return window.showToast("Maksimal 5 foto per iklan!", false);
 
