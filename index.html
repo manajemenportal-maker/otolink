@@ -33,42 +33,7 @@
         
         /* Security Print Hide */
         @media print { body { display: none; } }
-    
-        /* FIX modal Mitra: seluruh form selalu terlihat dan tombol tidak hilang di bawah layar */
-        .otolink-edit-modal-shell{
-            width:min(94vw,760px)!important;
-            max-height:calc(100dvh - 24px)!important;
-            height:auto!important;
-            display:flex!important;
-            flex-direction:column!important;
-            overflow:hidden!important;
-            margin:12px auto!important;
-        }
-        .otolink-edit-modal-head{flex:0 0 auto;position:sticky;top:0;z-index:30}
-        .otolink-edit-modal-body{
-            flex:1 1 auto!important;
-            min-height:0!important;
-            overflow-y:auto!important;
-            overscroll-behavior:contain;
-            padding-bottom:18px!important;
-        }
-        .otolink-edit-modal-foot{
-            flex:0 0 auto!important;
-            position:sticky!important;
-            bottom:0!important;
-            z-index:35!important;
-            background:#fff!important;
-            border-top:1px solid #e5e7eb!important;
-            padding:12px 16px!important;
-            box-shadow:0 -6px 18px rgba(0,0,0,.08);
-        }
-        @media(max-width:640px){
-            .otolink-edit-modal-shell{width:100vw!important;max-height:100dvh!important;height:100dvh!important;margin:0!important;border-radius:0!important}
-            .otolink-edit-modal-body{padding:14px!important}
-            .otolink-edit-modal-foot{padding:10px 12px!important}
-        }
-
-</style>
+    </style>
 </head>
 <body class="text-gray-800 antialiased selection:bg-orange-200 selection:text-shopee relative">
 
@@ -3191,29 +3156,55 @@
         window.openCarModal = function(carId = null) {
             const car = carId ? window.carsData.find(c => c.id === carId) : null;
             if(carId && !car) return window.showToast("Data iklan tidak ditemukan.", false);
-            const isAdmin = window.currentUser && window.currentUser.role === 'admin';
+            const isAdmin = window.currentUser?.role === 'admin';
             const isOwner = car && window.currentUser && car.ownerPhone === window.currentUser.email;
             if(car && !isAdmin && !isOwner) return window.showToast("Anda tidak memiliki akses untuk mengedit iklan ini.", false);
+
             const modalTitle = car ? (isAdmin ? 'Edit Iklan Mobil' : 'Edit Iklan Saya') : 'Tambah Mobil Official';
-            const html = `
-            <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden"><div class="bg-shopee p-4 text-white flex justify-between"><h2 class="font-bold">${modalTitle}</h2><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div>
-                    <div class="p-6">
-                        <input type="hidden" id="ecId" value="${car ? car.id : ''}">
-                        <input type="hidden" id="ecOwner" value="${car ? car.ownerPhone : 'official'}">
-                        <div class="mb-3"><label class="block text-xs font-semibold mb-1">Nama Mobil</label><input type="text" id="ecName" value="${car ? car.name : ''}" class="w-full border p-2 text-sm rounded outline-none focus:border-shopee"></div>
-                        <div class="mb-3"><label class="block text-xs font-semibold mb-1">Kategori</label><select id="ecCategory" class="w-full border p-2 text-sm rounded outline-none"><option value="Keluarga" ${car && car.category === 'Keluarga' ? 'selected' : ''}>Keluarga</option><option value="SUV" ${car && car.category === 'SUV' ? 'selected' : ''}>SUV</option></select></div>
-                        <div class="flex gap-3 mb-3">
-                            <div class="w-1/2"><label class="block text-xs font-semibold mb-1">Harga 24 Jam (Rp)</label><input type="number" id="ecPrice" value="${car ? car.priceDay : ''}" class="w-full border p-2 text-sm rounded outline-none focus:border-shopee"></div>
-                            <div class="w-1/2"><label class="block text-xs font-semibold mb-1">Kursi</label><input type="number" id="ecSeat" value="${car ? car.seat : ''}" class="w-full border p-2 text-sm rounded outline-none focus:border-shopee"></div>
-                        </div>
-                        <div class="mb-3 p-3 border rounded-xl bg-orange-50/50"><label class="block text-xs font-black mb-2">Layanan Durasi yang Aktif</label><div class="grid grid-cols-3 gap-2 text-[11px]"><label class="bg-white border rounded p-2"><input id="ecAllow24h" type="checkbox" ${!car || car.allow24h!==false?'checked':''} class="accent-shopee mr-1">24 Jam</label><label class="bg-white border rounded p-2"><input id="ecAllow12h" type="checkbox" ${!car || car.allow12h!==false?'checked':''} class="accent-shopee mr-1">12 Jam</label><label class="bg-white border rounded p-2"><input id="ecAllowHourly" type="checkbox" ${!car || car.allowHourly!==false?'checked':''} class="accent-shopee mr-1">Per Jam</label></div><p class="text-[9px] text-gray-500 mt-2">24 jam = harga iklan • 12 jam = 60% • per jam = harga 24 jam ÷ 15. Minimal satu layanan aktif.</p></div>
-                        ${car ? `<div class="mb-3"><label class="block text-xs font-semibold mb-2">Galeri Saat Ini</label><div class="grid grid-cols-5 gap-2">${window.getCarImages(car).map((u,i)=>`<div class="relative"><img src="${u}" class="w-full h-14 object-cover rounded border"><span class="absolute top-0 left-0 bg-black/60 text-white text-[9px] px-1 rounded-br">${i+1}</span></div>`).join('')}</div></div>` : ''}
-                        <div class="mb-4 p-3 border-2 border-dashed rounded-lg bg-gray-50"><label class="block text-xs font-bold mb-1">${car ? 'Ganti Galeri Foto (opsional)' : 'Foto Mobil (1–5 foto)'}</label><p class="text-[10px] text-gray-500 mb-3">Isi Foto 1 sampai Foto 5 satu per satu. ${car ? 'Jika ada foto baru dipilih, galeri lama akan diganti dengan foto baru yang dipilih.' : 'Foto 1 menjadi cover utama.'}</p>${window.carPhotoSlotsHtml('ecImgInput','ecImgPreview')}</div>
-                        <div class="flex gap-2">${car ? `<button onclick="${isAdmin ? `adminDeleteCar('${car.id}')` : `deleteMitraCar('${car.id}')`}; closeAllModals();" class="w-1/3 bg-red-50 text-red-600 border border-red-100 font-bold py-2 rounded shadow-sm"><i class="ph-bold ph-trash"></i> Hapus</button>` : ''}<button onclick="saveCarEdit()" id="btnSaveCarEdit" class="${car ? 'w-2/3' : 'w-full'} bg-shopee text-white font-bold py-2 rounded shadow"><i class="ph-bold ph-floppy-disk"></i> Simpan</button></div>
+            document.getElementById('modalContainer').innerHTML = `
+            <div class="fixed inset-0 modal-overlay z-[100] flex items-center justify-center p-2 sm:p-4" onclick="if(event.target===this) closeAllModals()">
+              <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden" style="height:min(760px,calc(100dvh - 16px));max-height:calc(100dvh - 16px)">
+                <div class="bg-shopee p-4 text-white flex justify-between items-center shrink-0">
+                  <div><h2 class="font-bold">${modalTitle}</h2><p class="text-[10px] text-white/80">Semua bagian form dapat digulir. Tombol Simpan selalu tersedia di bawah.</p></div>
+                  <button type="button" onclick="closeAllModals()" class="w-10 h-10 bg-white/15 rounded-lg flex items-center justify-center"><i class="ph-bold ph-x text-xl"></i></button>
+                </div>
+
+                <div class="p-4 sm:p-5 overflow-y-auto flex-1 min-h-0">
+                  <input type="hidden" id="ecId" value="${car ? car.id : ''}">
+                  <input type="hidden" id="ecOwner" value="${car ? car.ownerPhone : 'official'}">
+                  <div class="mb-3"><label class="block text-xs font-semibold mb-1">Nama Mobil</label><input type="text" id="ecName" value="${car ? car.name : ''}" class="w-full border p-2 text-sm rounded"></div>
+                  <div class="mb-3"><label class="block text-xs font-semibold mb-1">Kategori</label><select id="ecCategory" class="w-full border p-2 text-sm rounded"><option value="Keluarga" ${car && car.category === 'Keluarga' ? 'selected' : ''}>Keluarga</option><option value="SUV" ${car && car.category === 'SUV' ? 'selected' : ''}>SUV</option></select></div>
+                  <div class="flex gap-3 mb-3">
+                    <div class="w-1/2"><label class="block text-xs font-semibold mb-1">Harga 24 Jam (Rp)</label><input type="number" id="ecPrice" value="${car ? car.priceDay : ''}" class="w-full border p-2 text-sm rounded"></div>
+                    <div class="w-1/2"><label class="block text-xs font-semibold mb-1">Kursi</label><input type="number" id="ecSeat" value="${car ? car.seat : ''}" class="w-full border p-2 text-sm rounded"></div>
+                  </div>
+                  <div class="mb-3 p-3 border rounded-xl bg-orange-50/50">
+                    <label class="block text-xs font-black mb-2">Layanan Durasi yang Aktif</label>
+                    <div class="grid grid-cols-3 gap-2 text-[11px]">
+                      <label class="bg-white border rounded p-2"><input id="ecAllow24h" type="checkbox" ${!car || car.allow24h!==false?'checked':''} class="accent-shopee mr-1">24 Jam</label>
+                      <label class="bg-white border rounded p-2"><input id="ecAllow12h" type="checkbox" ${!car || car.allow12h!==false?'checked':''} class="accent-shopee mr-1">12 Jam</label>
+                      <label class="bg-white border rounded p-2"><input id="ecAllowHourly" type="checkbox" ${!car || car.allowHourly!==false?'checked':''} class="accent-shopee mr-1">Per Jam</label>
                     </div>
-                </div></div>`;
-            document.getElementById('modalContainer').innerHTML = html;
+                    <p class="text-[9px] text-gray-500 mt-2">24 jam = harga iklan • 12 jam = 60% • per jam = harga 24 jam ÷ 15.</p>
+                  </div>
+                  ${car ? `<div class="mb-3"><label class="block text-xs font-semibold mb-2">Galeri Saat Ini</label><div class="grid grid-cols-5 gap-2">${window.getCarImages(car).map((u,i)=>`<img src="${u}" class="w-full h-14 object-cover rounded border" title="Foto ${i+1}">`).join('')}</div></div>` : ''}
+                  <div class="mb-2 p-3 border-2 border-dashed rounded-lg bg-gray-50">
+                    <label class="block text-xs font-bold mb-1">${car ? 'Ganti Galeri Foto (opsional)' : 'Foto Mobil (1–5 foto)'}</label>
+                    <p class="text-[10px] text-gray-500 mb-3">${car ? 'Jika memilih foto baru, galeri lama diganti.' : 'Foto 1 menjadi cover utama.'}</p>
+                    ${window.carPhotoSlotsHtml('ecImgInput','ecImgPreview')}
+                  </div>
+                </div>
+
+                <div class="shrink-0 bg-white border-t p-3 shadow-[0_-5px_15px_rgba(0,0,0,.10)]">
+                  <div id="editCarStatus" class="hidden mb-2 text-xs font-bold rounded-lg p-2"></div>
+                  <div class="flex gap-2">
+                    <button type="button" onclick="closeAllModals()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-lg"><i class="ph-bold ph-x mr-1"></i>Tutup</button>
+                    ${car ? `<button type="button" onclick="${isAdmin ? `adminDeleteCar('${car.id}')` : `deleteMitraCar('${car.id}')`}; closeAllModals();" class="px-4 bg-red-50 text-red-600 border font-bold rounded-lg"><i class="ph-bold ph-trash"></i></button>` : ''}
+                    <button type="button" onclick="saveCarEdit()" id="btnSaveCarEdit" class="flex-[1.4] bg-shopee text-white font-bold py-3 rounded-lg"><i class="ph-bold ph-floppy-disk mr-1"></i>Simpan</button>
+                  </div>
+                </div>
+              </div>
+            </div>`;
         };
 
         window.saveCarEdit = async function() {
@@ -3244,9 +3235,10 @@
             if(!id && imgFiles.length < 1)
                 return window.showToast("Upload minimal 1 foto mobil!", false);
 
-            window.closeAllModals();
-            window.showToast(imgFiles.length ? `Kompres & upload ${imgFiles.length} foto...` : "Menyimpan perubahan iklan...");
-
+            const saveBtn = document.getElementById('btnSaveCarEdit');
+            const statusBox = document.getElementById('editCarStatus');
+            if(saveBtn){ saveBtn.disabled=true; saveBtn.classList.add('opacity-60'); saveBtn.innerHTML='<i class="ph-bold ph-spinner animate-spin mr-1"></i>Menyimpan...'; }
+            if(statusBox){ statusBox.className='mb-2 text-xs font-bold rounded-lg p-2 bg-blue-50 text-blue-700'; statusBox.textContent=imgFiles.length ? `Memproses ${imgFiles.length} foto...` : 'Menyimpan perubahan...'; }
             try {
                 if(imgFiles.length) {
                     const urls = await window.uploadCarImages(imgFiles, data.ownerPhone || 'official');
@@ -3259,21 +3251,27 @@
                     if(!isAdmin) data.status = 'pending';
                     await window.fsUpdateDoc('cars', id, data);
                     window.showToast(isAdmin ? "Iklan berhasil diperbarui!" : "Perubahan disimpan dan dikirim ulang untuk verifikasi Admin.");
+                    window.closeAllModals();
                 } else {
                     data.status = 'approved';
                     data.timestamp = Date.now();
                     await window.fsAddDoc('cars', data);
                     window.showToast("Mobil official berhasil ditambahkan!");
+                    window.closeAllModals();
                 }
 
                 if(window.currentUser?.role === 'admin') window.loadAdminData();
                 else if(window.currentUser?.role === 'mitra') window.loadMitraData();
             } catch(err) {
                 console.error(err);
-                window.showToast("Gagal menyimpan iklan. Silakan coba lagi.", false);
-                setTimeout(() => window.openCarModal(id || null), 500);
+                const b=document.getElementById('btnSaveCarEdit'), s=document.getElementById('editCarStatus');
+                if(b){ b.disabled=false; b.classList.remove('opacity-60'); b.innerHTML='<i class="ph-bold ph-floppy-disk mr-1"></i>Simpan'; }
+                if(s){ s.className='mb-2 text-xs font-bold rounded-lg p-2 bg-red-50 text-red-700'; s.textContent='Gagal: '+(err?.message || 'data belum tersimpan'); }
+                window.showToast("Gagal menyimpan: "+(err?.message || ''), false);
             }
         };
+
+        document.addEventListener('keydown', e => { if(e.key === 'Escape') window.closeAllModals?.(); });
 
         document.addEventListener('contextmenu', event => {
             event.preventDefault();
@@ -3291,9 +3289,4 @@
 
     </script>
 </body>
-</html
-        if(!window.__otolinkEscModalBound){
-            window.__otolinkEscModalBound=true;
-            document.addEventListener('keydown',e=>{ if(e.key==='Escape') window.closeAllModals?.(); });
-        }
->
+</html>
