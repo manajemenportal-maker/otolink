@@ -243,6 +243,7 @@
         window.activeAdminChatEmail = null; 
         window.configDocId = null; 
         window.bannerInterval = 5000;
+        window.ratingsData = [];
         window.usersData = []; window.carsData = []; window.ordersData = []; window.withdrawalsData = []; window.topupsData = []; window.bannersData = []; window.messagesData = []; window.appSettingsData = [];
         window.currentPage = 1; window.itemsPerPage = 20; 
         window.currentCategory = ""; window.currentSearch = "";
@@ -302,6 +303,7 @@
                 const cnf = window.appSettingsData.find(s => s.type === 'config');
                 if(cnf) { window.configDocId = cnf.id; window.bannerInterval = cnf.bannerInterval || 5000; setupCarouselInterval(); }
             });
+        onSnapshot(collection(db, 'ratings'), (snap) => { window.ratingsData = snap.docs.map(d => ({id:d.id,...d.data()})); if(window.currentUser?.role==='admin') window.renderAdminRatings?.(); refreshUI(); });
             onSnapshot(collection(db, 'messages'), (snap) => { 
                 window.messagesData = snap.docs.map(d => ({id: d.id, ...d.data()})); 
                 window.messagesData.sort((a,b) => a.timestamp - b.timestamp);
@@ -2372,7 +2374,8 @@
             {key:'partners', label:'Data & Verifikasi Mitra', tab:'adPartners'},
             {key:'all_cars', label:'Kelola Semua Iklan', tab:'adAllCars'},
             {key:'banner', label:'Banner / Carousel', tab:'adBanner'},
-            {key:'chat', label:'Chat User & Mitra', tab:'adChat'}
+            {key:'chat', label:'Chat User & Mitra', tab:'adChat'},
+            {key:'ratings', label:'Riwayat Penilaian', tab:'adRatings'}
         ];
         window.isSuperAdmin = () => !!(window.currentUser?.isSuperAdmin || window.currentUser?.email === 'admin');
         window.hasAdminPermission = function(key) {
@@ -2466,6 +2469,69 @@
         window.writeAdminAudit = async function(action, detail={}, category='general') {
             if(window.currentUser?.role!=='admin') return;
             try { await window.fsAddDoc('admin_audit_logs',{action,category,detail,adminEmail:window.currentUser.email,adminName:window.currentUser.name||'',adminTitle:window.currentUser.adminTitle||'Admin Utama',timestamp:Date.now()}); } catch(e){ console.warn('Audit log gagal:',e); }
+        };
+
+
+        window.getCarRatingSummary=function(carId){
+            const rr=(window.ratingsData||[]).filter(r=>r.carId===carId && r.type==='customer_to_unit' && r.unitRating);
+            const avg=rr.length?rr.reduce((s,r)=>s+Number(r.unitRating),0)/rr.length:0;
+            return {avg,count:rr.length};
+        };
+        // ===== SISTEM PENILAIAN SETELAH SEWA SELESAI =====
+        window.ratingLabel = n => ({5:'Puas Sekali',4:'Puas',3:'Cukup',2:'Kurang Puas',1:'Buruk'})[Number(n)] || '-';
+        window.ratingStars = n => `<span class="text-yellow-500 tracking-tight">${'★'.repeat(Math.max(0,Number(n)||0))}</span><span class="text-gray-300">${'★'.repeat(Math.max(0,5-(Number(n)||0)))}</span>`;
+        window.getOrderRatings = orderId => (window.ratingsData||[]).filter(r=>r.orderId===orderId);
+        window.hasRating = (orderId,type,fromEmail) => (window.ratingsData||[]).some(r=>r.orderId===orderId && r.type===type && r.fromEmail===fromEmail);
+
+        window.openCustomerRating = function(orderId) {
+            const o=window.ordersData.find(x=>x.id===orderId || x.orderId===orderId); if(!o)return;
+            if(!['completed','finished'].includes(o.status)) return window.showToast('Penilaian tersedia setelah sewa selesai.',false);
+            if(window.hasRating(o.orderId||o.id,'customer_to_unit',window.currentUser.email)) return window.showToast('Penilaian untuk transaksi ini sudah dikirim.',false);
+            window.openRatingModal(o,'customer');
+        };
+        window.openPartnerRating = function(orderId) {
+            const o=window.ordersData.find(x=>x.id===orderId || x.orderId===orderId); if(!o)return;
+            if(!['completed','finished'].includes(o.status)) return window.showToast('Penilaian tersedia setelah sewa selesai.',false);
+            if(window.hasRating(o.orderId||o.id,'partner_to_customer',window.currentUser.email)) return window.showToast('Penilaian pelanggan sudah dikirim.',false);
+            window.openRatingModal(o,'partner');
+        };
+        window.openRatingModal=function(o,mode){
+            const isCustomer=mode==='customer';
+            const driverPart=isCustomer && String(o.service||'').toLowerCase().includes('supir');
+            document.getElementById('modalContainer').innerHTML=`<div class="fixed inset-0 modal-overlay z-[120] flex items-center justify-center p-3"><div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"><div class="bg-[#101827] text-white p-4 flex justify-between"><div><h2 class="font-black">Penilaian Sewa Selesai</h2><p class="text-xs text-gray-300">${o.carName||'Unit'} • ${o.orderId||o.id}</p></div><button onclick="closeAllModals()"><i class="ph-bold ph-x text-xl"></i></button></div><div class="p-5">
+              ${isCustomer?`<p class="text-sm font-bold mb-2">Nilai kondisi mobil/unit</p>${window.ratingInputHtml('rateUnit')}${driverPart?`<p class="text-sm font-bold mt-5 mb-2">Nilai pelayanan sopir</p>${window.ratingInputHtml('rateDriver')}`:''}`:`<p class="text-sm font-bold mb-2">Nilai pelanggan/penyewa</p>${window.ratingInputHtml('rateCustomer')}`}
+              <label class="block text-xs font-bold mt-5 mb-1">Catatan / komentar</label><textarea id="ratingComment" rows="3" maxlength="500" class="w-full border rounded-lg p-3 text-sm" placeholder="Tuliskan pengalaman singkat..."></textarea>
+              <div class="mt-5 flex gap-2"><button onclick="closeAllModals()" class="flex-1 bg-gray-100 py-3 rounded-lg font-bold">Nanti</button><button onclick="submitRentalRating('${o.id}','${mode}')" class="flex-[1.4] bg-yellow-500 text-white py-3 rounded-lg font-black"><i class="ph-fill ph-star mr-1"></i>Kirim Penilaian</button></div>
+            </div></div></div>`;
+        };
+        window.ratingInputHtml=function(id){
+            return `<div id="${id}" data-value="0" class="flex gap-2">${[1,2,3,4,5].map(n=>`<button type="button" onclick="setRating('${id}',${n})" class="text-3xl text-gray-300" data-star="${n}">★</button>`).join('')}<span class="ml-2 self-center text-xs font-bold text-gray-500" data-label>Pilih 1–5</span></div>`;
+        };
+        window.setRating=function(id,n){
+            const el=document.getElementById(id); if(!el)return; el.dataset.value=n;
+            el.querySelectorAll('[data-star]').forEach(b=>{b.className='text-3xl '+(Number(b.dataset.star)<=n?'text-yellow-500':'text-gray-300');});
+            const lab=el.querySelector('[data-label]'); if(lab) lab.textContent=`${n}/5 • ${window.ratingLabel(n)}`;
+        };
+        window.submitRentalRating=async function(orderDocId,mode){
+            const o=window.ordersData.find(x=>x.id===orderDocId); if(!o)return;
+            const comment=(document.getElementById('ratingComment')?.value||'').trim();
+            if(mode==='customer'){
+                const unit=Number(document.getElementById('rateUnit')?.dataset.value||0);
+                const driverEl=document.getElementById('rateDriver'), driver=Number(driverEl?.dataset.value||0);
+                if(!unit || (driverEl && !driver)) return window.showToast('Pilih nilai bintang terlebih dahulu.',false);
+                await window.fsAddDoc('ratings',{orderId:o.orderId||o.id,orderDocId:o.id,type:'customer_to_unit',fromEmail:window.currentUser.email,fromName:window.currentUser.name||'',toEmail:o.ownerEmail||'',carId:o.carId||'',carName:o.carName||'',unitRating:unit,driverRating:driver||null,comment,timestamp:Date.now()});
+            } else {
+                const customer=Number(document.getElementById('rateCustomer')?.dataset.value||0);
+                if(!customer)return window.showToast('Pilih nilai bintang terlebih dahulu.',false);
+                await window.fsAddDoc('ratings',{orderId:o.orderId||o.id,orderDocId:o.id,type:'partner_to_customer',fromEmail:window.currentUser.email,fromName:window.currentUser.name||'',toEmail:o.customerEmail||'',toName:o.customerName||'',carId:o.carId||'',carName:o.carName||'',customerRating:customer,comment,timestamp:Date.now()});
+            }
+            window.closeAllModals(); window.showToast('Terima kasih. Penilaian berhasil disimpan.');
+        };
+
+        window.renderAdminRatings=function(){
+            const box=document.getElementById('adRatings'); if(!box)return;
+            const rows=[...(window.ratingsData||[])].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+            box.innerHTML=`<div class="flex justify-between border-b pb-4 mb-4"><div><h3 class="text-xl font-black"><i class="ph-fill ph-star text-yellow-500"></i> Riwayat Penilaian</h3><p class="text-xs text-gray-500">Evaluasi mobil, sopir, dan pelanggan setelah transaksi selesai.</p></div><div class="text-right"><p class="text-2xl font-black">${rows.length}</p><p class="text-[10px] text-gray-500">TOTAL PENILAIAN</p></div></div>${rows.length?`<div class="space-y-3">${rows.map(r=>`<div class="border rounded-xl p-4"><div class="flex justify-between gap-3"><div><p class="font-black">${r.type==='partner_to_customer'?'Mitra → Pelanggan':'Pelanggan → Unit/Sopir'}</p><p class="text-xs text-gray-500">${r.carName||'-'} • ${r.orderId||'-'}</p></div><div class="text-right text-sm">${r.type==='partner_to_customer'?window.ratingStars(r.customerRating):window.ratingStars(r.unitRating)}</div></div><div class="mt-2 text-xs">${r.type==='partner_to_customer'?`Pelanggan: <b>${r.toName||r.toEmail||'-'}</b> • ${r.customerRating}/5 ${window.ratingLabel(r.customerRating)}`:`Unit: <b>${r.unitRating}/5 ${window.ratingLabel(r.unitRating)}</b>${r.driverRating?` • Sopir: <b>${r.driverRating}/5 ${window.ratingLabel(r.driverRating)}</b>`:''}`}</div>${r.comment?`<p class="mt-2 bg-gray-50 p-2 rounded text-xs">“${r.comment}”</p>`:''}</div>`).join('')}</div>`:`<div class="p-10 text-center text-gray-400 border border-dashed rounded-xl">Belum ada penilaian.</div>`}`;
         };
         window.loadAdminData = function() {
             const dc = document.getElementById('dashboardContent');
@@ -2612,6 +2678,7 @@
                 <button onclick="switchAdminTab('adAllCars')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adAllCars"><i class="ph-fill ph-cars mr-1"></i> Kelola Semua Iklan ${badge(notif.adAllCars)}</button>
                 <button onclick="switchAdminTab('adBanner')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adBanner"><i class="ph-fill ph-image mr-1"></i> Pengaturan Banner</button>
                 <button onclick="switchAdminTab('adChat')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab relative" id="tab-adChat"><i class="ph-fill ph-chats mr-1"></i> Pesan User & Mitra ${badge(notif.adChat)}</button>
+                <button onclick="switchAdminTab('adRatings')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adRatings"><i class="ph-fill ph-star mr-1 text-yellow-500"></i> Penilaian</button>
                 <button onclick="openAdminManagement()" class="${window.isSuperAdmin()?'':'hidden'} px-4 py-2 text-sm font-bold rounded border shadow-sm bg-[#101827] text-white admin-tab" id="tab-adAdminManagement"><i class="ph-fill ph-users-three mr-1"></i> Admin & Hak Akses</button>
             </div>
 
@@ -2626,11 +2693,13 @@
                 <div id="adAllCars" class="hidden admin-panel"></div>
                 <div id="adBanner" class="hidden admin-panel"></div>
                 <div id="adChat" class="hidden admin-panel"></div>
+                <div id="adRatings" class="hidden admin-panel"></div>
                 <div id="adAdminManagement" class="hidden admin-panel"></div>
             </div>`;
             dc.innerHTML = html;
             window.loadAdminPanels();
             window.renderAdminManagement();
+            window.renderAdminRatings();
             window.applyAdminPermissions();
             if(!window.isSuperAdmin()) setTimeout(()=>window.switchAdminTab(window.getFirstAllowedAdminTab()),0);
         };
