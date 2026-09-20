@@ -33,7 +33,42 @@
         
         /* Security Print Hide */
         @media print { body { display: none; } }
-    </style>
+    
+        /* FIX modal Mitra: seluruh form selalu terlihat dan tombol tidak hilang di bawah layar */
+        .otolink-edit-modal-shell{
+            width:min(94vw,760px)!important;
+            max-height:calc(100dvh - 24px)!important;
+            height:auto!important;
+            display:flex!important;
+            flex-direction:column!important;
+            overflow:hidden!important;
+            margin:12px auto!important;
+        }
+        .otolink-edit-modal-head{flex:0 0 auto;position:sticky;top:0;z-index:30}
+        .otolink-edit-modal-body{
+            flex:1 1 auto!important;
+            min-height:0!important;
+            overflow-y:auto!important;
+            overscroll-behavior:contain;
+            padding-bottom:18px!important;
+        }
+        .otolink-edit-modal-foot{
+            flex:0 0 auto!important;
+            position:sticky!important;
+            bottom:0!important;
+            z-index:35!important;
+            background:#fff!important;
+            border-top:1px solid #e5e7eb!important;
+            padding:12px 16px!important;
+            box-shadow:0 -6px 18px rgba(0,0,0,.08);
+        }
+        @media(max-width:640px){
+            .otolink-edit-modal-shell{width:100vw!important;max-height:100dvh!important;height:100dvh!important;margin:0!important;border-radius:0!important}
+            .otolink-edit-modal-body{padding:14px!important}
+            .otolink-edit-modal-foot{padding:10px 12px!important}
+        }
+
+</style>
 </head>
 <body class="text-gray-800 antialiased selection:bg-orange-200 selection:text-shopee relative">
 
@@ -3256,4 +3291,9 @@
 
     </script>
 </body>
-</html>
+</html
+        if(!window.__otolinkEscModalBound){
+            window.__otolinkEscModalBound=true;
+            document.addEventListener('keydown',e=>{ if(e.key==='Escape') window.closeAllModals?.(); });
+        }
+>
