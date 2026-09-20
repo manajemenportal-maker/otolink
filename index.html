@@ -1103,17 +1103,25 @@
                             </div>
                         </div>
 
-                        <!-- Tanggal & Durasi -->
+                        <!-- Waktu & Durasi -->
                         <div class="mb-6 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-                            <h4 class="text-xs font-bold text-blue-800 mb-3 uppercase tracking-wider">Pilih Tanggal Sewa</h4>
+                            <h4 class="text-xs font-bold text-blue-800 mb-3 uppercase tracking-wider">Waktu & Durasi Sewa</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+                                <label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="12h" onchange="applyRentalMode()" class="accent-shopee mr-1"> Harian 12 Jam</label>
+                                <label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="24h" checked onchange="applyRentalMode()" class="accent-shopee mr-1"> Harian 24 Jam</label>
+                                <label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="hourly" onchange="applyRentalMode()" class="accent-shopee mr-1"> Per Jam</label>
+                            </div>
                             <div class="grid grid-cols-2 gap-3">
-                                <div><label class="block text-[10px] text-gray-500 mb-1">Tanggal Ambil</label><input type="date" id="coDateStart" value="${today}" min="${today}" onchange="calculateCheckoutTotal()" class="w-full border rounded p-2 text-sm outline-none"></div>
-                                <div><label class="block text-[10px] text-gray-500 mb-1">Tanggal Kembali</label><input type="date" id="coDateEnd" value="${nextDay}" min="${today}" onchange="calculateCheckoutTotal()" class="w-full border rounded p-2 text-sm outline-none"></div>
+                                <div><label class="block text-[10px] text-gray-500 mb-1">Tanggal Penjemputan</label><input type="date" id="coDateStart" value="${today}" min="${today}" onchange="calculateCheckoutTotal()" class="w-full border rounded p-2 text-sm outline-none"></div>
+                                <div><label class="block text-[10px] text-gray-500 mb-1">Jam Penjemputan</label><input type="time" id="coTimeStart" value="08:00" onchange="calculateCheckoutTotal()" class="w-full border rounded p-2 text-sm outline-none"></div>
+                                <div><label class="block text-[10px] text-gray-500 mb-1">Tanggal Berakhir</label><input type="date" id="coDateEnd" value="${nextDay}" min="${today}" onchange="calculateCheckoutTotal()" class="w-full border rounded p-2 text-sm outline-none"></div>
+                                <div><label class="block text-[10px] text-gray-500 mb-1">Jam Berakhir</label><input type="time" id="coTimeEnd" value="08:00" onchange="calculateCheckoutTotal()" class="w-full border rounded p-2 text-sm outline-none"></div>
                             </div>
                             <div class="mt-3 flex justify-between items-center bg-white p-2 border rounded shadow-sm">
                                 <span class="text-xs font-semibold text-gray-600">Total Durasi Sewa:</span>
-                                <span class="text-sm font-black text-shopee" id="coDurationText">1 Hari</span>
+                                <span class="text-sm font-black text-shopee" id="coDurationText">24 Jam</span>
                             </div>
+                            <p class="text-[10px] text-gray-500 mt-2">Tarif 24 jam memakai harga harian. Tarif 12 jam = 50% harga harian. Sewa per jam dihitung proporsional dari harga 24 jam.</p>
                         </div>
 
                         <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -1155,26 +1163,66 @@
             window.calculateCheckoutTotal();
         };
 
-        window.calculateCheckoutTotal = function() {
-            const start = new Date(document.getElementById('coDateStart').value);
-            const end = new Date(document.getElementById('coDateEnd').value);
-            if(end < start) { document.getElementById('coDateEnd').value = document.getElementById('coDateStart').value; return window.calculateCheckoutTotal(); }
-            
-            const diffTime = Math.abs(end - start);
-            let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            if(diffDays === 0) diffDays = 1;
+        window.applyRentalMode = function() {
+            const mode = document.querySelector('input[name="coRentalMode"]:checked')?.value || '24h';
+            const ds = document.getElementById('coDateStart');
+            const ts = document.getElementById('coTimeStart');
+            const de = document.getElementById('coDateEnd');
+            const te = document.getElementById('coTimeEnd');
+            if(!ds || !ts || !de || !te) return;
 
-            const basePrice = parseInt(document.getElementById('coBasePrice').getAttribute('data-price'));
-            const service = document.querySelector('input[name="coService"]:checked').value;
-            const supirFee = service === 'dengan_supir_dalam_kota' ? (150000 * diffDays) : service === 'dengan_supir_luar_kota' ? (250000 * diffDays) : service === 'dengan_supir' ? (150000 * diffDays) : 0;
-            
-            const total = (basePrice * diffDays) + supirFee;
-            
-            document.getElementById('coDurationText').innerText = `${diffDays} Hari`;
+            const start = new Date(`${ds.value}T${ts.value || '08:00'}`);
+            if(mode === '12h' || mode === '24h') {
+                const hours = mode === '12h' ? 12 : 24;
+                const end = new Date(start.getTime() + hours * 3600000);
+                de.value = end.toISOString().slice(0,10);
+                te.value = end.toTimeString().slice(0,5);
+            } else {
+                const end = new Date(start.getTime() + 3 * 3600000);
+                de.value = end.toISOString().slice(0,10);
+                te.value = end.toTimeString().slice(0,5);
+            }
+            window.calculateCheckoutTotal();
+        };
+
+        window.calculateCheckoutTotal = function() {
+            const ds = document.getElementById('coDateStart')?.value;
+            const de = document.getElementById('coDateEnd')?.value;
+            const ts = document.getElementById('coTimeStart')?.value || '00:00';
+            const te = document.getElementById('coTimeEnd')?.value || '00:00';
+            if(!ds || !de) return;
+
+            const start = new Date(`${ds}T${ts}`);
+            let end = new Date(`${de}T${te}`);
+            if(end <= start) {
+                end = new Date(start.getTime() + 3600000);
+                document.getElementById('coDateEnd').value = end.toISOString().slice(0,10);
+                document.getElementById('coTimeEnd').value = end.toTimeString().slice(0,5);
+            }
+
+            const mode = document.querySelector('input[name="coRentalMode"]:checked')?.value || '24h';
+            let hours = Math.max(1, Math.ceil((end - start) / 3600000));
+            if(mode === '12h') hours = 12;
+            if(mode === '24h') hours = Math.max(24, Math.ceil(hours / 24) * 24);
+
+            const basePrice = Number(document.getElementById('coBasePrice').getAttribute('data-price')) || 0;
+            const hourlyRate = Math.ceil(basePrice / 24);
+            const rentalPrice = mode === '12h' ? Math.ceil(basePrice / 2) : mode === '24h' ? Math.ceil(hours / 24) * basePrice : hours * hourlyRate;
+
+            const service = document.querySelector('input[name="coService"]:checked')?.value || 'lepas_kunci';
+            const billDays = Math.max(1, Math.ceil(hours / 24));
+            const supirFee = service === 'dengan_supir_dalam_kota' ? 150000 * billDays : service === 'dengan_supir_luar_kota' ? 250000 * billDays : 0;
+            const total = rentalPrice + supirFee;
+
+            const durationText = mode === 'hourly' ? `${hours} Jam` : mode === '12h' ? '12 Jam' : `${Math.ceil(hours/24)} x 24 Jam`;
+            document.getElementById('coDurationText').innerText = durationText;
             document.getElementById('coTotalPriceText').innerText = formatRp(total);
-            document.getElementById('btnPay').setAttribute('data-total', total);
-            document.getElementById('btnPay').setAttribute('data-days', diffDays);
-            document.getElementById('btnPay').setAttribute('data-supir', supirFee);
+            const btn=document.getElementById('btnPay');
+            btn.setAttribute('data-total', total);
+            btn.setAttribute('data-days', Math.max(1,Math.ceil(hours/24)));
+            btn.setAttribute('data-hours', hours);
+            btn.setAttribute('data-rental-mode', mode);
+            btn.setAttribute('data-supir', supirFee);
         };
 
         window.processPayment = async function(carId) {
@@ -1182,7 +1230,13 @@
             const method = document.querySelector('input[name="payMethod"]:checked').value;
             const total = parseInt(btn.getAttribute('data-total'));
             const days = parseInt(btn.getAttribute('data-days'));
+            const hours = parseInt(btn.getAttribute('data-hours') || '24');
+            const rentalMode = btn.getAttribute('data-rental-mode') || '24h';
             const service = document.querySelector('input[name="coService"]:checked').value;
+            const pickupDate = document.getElementById('coDateStart')?.value || '';
+            const pickupTime = document.getElementById('coTimeStart')?.value || '';
+            const endDate = document.getElementById('coDateEnd')?.value || '';
+            const endTime = document.getElementById('coTimeEnd')?.value || '';
             const pickup = document.getElementById('coPickup').value || '-';
             const dest = document.getElementById('coDest').value || '-';
             
@@ -1215,7 +1269,13 @@
                 orderId, carId, carName: car.name, carImg: car.img, 
                 customerEmail: window.currentUser.email, customerName: window.currentUser.name,
                 ownerEmail: car.ownerPhone, 
-                totalAmount: total, days, service, pickup, dest,
+                totalAmount: total, days, hours, rentalMode, service, pickup, dest,
+                pickupDate, pickupTime, endDate, endTime,
+                rentalStartAt: pickupDate && pickupTime ? new Date(`${pickupDate}T${pickupTime}`).getTime() : null,
+                rentalEndAt: endDate && endTime ? new Date(`${endDate}T${endTime}`).getTime() : null,
+                customerCompletionConfirmed: false,
+                driverCompletionConfirmed: service === 'lepas_kunci',
+                completionRequestedAt: null,
                 platformFeeRate: rentalFee.feeRate,
                 platformFee: rentalFee.fee,
                 ownerNetAmount: rentalFee.net,
@@ -1242,6 +1302,22 @@
                 window.showToast("Pembayaran Berhasil!");
                 window.openUserDashboard();
             }
+        };
+
+        window.confirmRentalFinishedByCustomer = async function(orderId) {
+            const o = window.ordersData.find(x => x.id === orderId);
+            if(!o) return window.showToast('Pesanan tidak ditemukan.', false);
+            if(o.status !== 'paid') return window.showToast('Pesanan ini tidak sedang aktif.', false);
+            if(!confirm('Pastikan kendaraan sudah dikembalikan / perjalanan sudah benar-benar berakhir. Nyatakan sewa selesai?')) return;
+
+            await window.fsUpdateDoc('orders', orderId, {
+                status:'completion_requested',
+                customerCompletionConfirmed:true,
+                customerCompletedAt:Date.now(),
+                completionRequestedAt:Date.now()
+            });
+            window.showToast('Konfirmasi selesai dikirim ke Admin.');
+            setTimeout(()=>window.loadUserData(),120);
         };
 
         window.openTopupModal = function() {
@@ -1289,7 +1365,7 @@
             const dc = document.getElementById('dashboardContent');
             const myOrders = window.ordersData.filter(o => o.customerEmail === window.currentUser.email).sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
             const myTopups = window.topupsData.filter(t => t.email === window.currentUser.email).sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
-            const activeOrders = myOrders.filter(o => o.status === 'paid').length;
+            const activeOrders = myOrders.filter(o => ['paid','completion_requested'].includes(o.status)).length;
             const pendingOrders = myOrders.filter(o => o.status === 'pending').length;
             const completedOrders = myOrders.filter(o => o.status === 'completed').length;
             const totalSpent = myOrders.filter(o => o.status === 'paid' || o.status === 'completed').reduce((sum,o) => sum + Number(o.totalAmount||0), 0);
@@ -1300,6 +1376,7 @@
 
             const statusBadge = (status) => {
                 if(status === 'paid') return '<span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-[10px] font-bold">Dibayar / Aktif</span>';
+                if(status === 'completion_requested') return '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-[10px] font-bold">Menunggu Konfirmasi Selesai</span>';
                 if(status === 'completed') return '<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-[10px] font-bold">Selesai</span>';
                 return '<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-[10px] font-bold">Menunggu Pembayaran</span>';
             };
@@ -1316,7 +1393,9 @@
                         <div><span class="block text-[9px] uppercase font-bold text-gray-400">Pembayaran</span>${o.payMethod === 'otopay' ? 'OtoPay' : 'Transfer Bank'}</div>
                         <div><span class="block text-[9px] uppercase font-bold text-gray-400">Total</span><b class="text-shopee">${formatRp(o.totalAmount || 0)}</b></div>
                     </div>
-                    <div class="mt-3 text-xs text-gray-500"><p><b>Jemput:</b> ${o.pickup || '-'}</p><p><b>Tujuan:</b> ${o.dest || '-'}</p></div>
+                    <div class="mt-3 text-xs text-gray-500"><p><b>Jemput:</b> ${o.pickup || '-'}</p><p><b>Tujuan:</b> ${o.dest || '-'}</p><p class="mt-1"><b>Waktu:</b> ${o.pickupDate||'-'} ${o.pickupTime||''} → ${o.endDate||'-'} ${o.endTime||''}</p><p><b>Durasi:</b> ${o.hours ? o.hours+' jam' : (o.days||1)+' hari'} ${o.rentalMode==='hourly'?'(per jam)':o.rentalMode==='12h'?'(paket 12 jam)':o.rentalMode==='24h'?'(paket 24 jam)':''}</p></div>
+                    ${o.status === 'paid' ? `<button onclick="confirmRentalFinishedByCustomer('${o.id}')" class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg text-xs font-black"><i class="ph-fill ph-check-circle mr-1"></i> SEWA SUDAH SELESAI</button><p class="text-[10px] text-gray-400 mt-1 text-center">Klik setelah kendaraan benar-benar dikembalikan / perjalanan berakhir.</p>` : ''}
+                    ${o.status === 'completion_requested' ? `<div class="mt-3 bg-blue-50 border border-blue-100 text-blue-800 text-xs rounded-lg p-3"><b><i class="ph-fill ph-check-circle mr-1"></i>Anda sudah menyatakan sewa selesai.</b><br>Menunggu pencocokan laporan ${o.service==='lepas_kunci'?'pengembalian kendaraan':'sopir'} dan penyelesaian oleh Admin.</div>` : ''}
                     ${o.status === 'pending' ? `<div class="mt-3 bg-yellow-50 border border-yellow-100 text-yellow-800 text-xs rounded-lg p-3"><b>Pembayaran belum diverifikasi.</b> Jika sudah transfer, Anda dapat menghubungi admin melalui menu Chat Admin.</div>` : ''}
                 </div>`;
             });
@@ -2182,7 +2261,7 @@
             // Ringkasan seluruh aktivitas Admin
             const totalOrdersCount = window.ordersData.length;
             const pendingOrdersCount = window.ordersData.filter(o => o.status === 'pending').length;
-            const activeOrdersCount = window.ordersData.filter(o => o.status === 'paid').length;
+            const activeOrdersCount = window.ordersData.filter(o => ['paid','completion_requested'].includes(o.status)).length;
             const completedOrdersCount = window.ordersData.filter(o => o.status === 'completed').length;
             const cancelledOrdersCount = window.ordersData.filter(o => ['cancelled','rejected'].includes(o.status)).length;
 
@@ -2277,7 +2356,7 @@
                         <div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span class="bg-yellow-100 text-yellow-700 rounded px-1 py-1 text-center">Pending ${pendingTopupCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">ACC ${completedTopupCount}</span><span class="bg-red-100 text-red-700 rounded px-1 py-1 text-center">Tolak ${rejectedTopupCount}</span></div>
                     </button>
 
-                    <button onclick="switchAdminTab('adUsers')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-red-50 border-red-100">
+                    <button onclick="switchAdminTab('adPartners')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-red-50 border-red-100">
                         <div class="flex justify-between"><p class="text-[10px] uppercase font-black text-red-600">Verifikasi Mitra</p>${notif.adUsers?`<span class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>`:''}</div>
                         <p class="text-2xl font-black text-red-700 mt-1">${totalPartnerCount}</p>
                         <div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span class="bg-yellow-100 text-yellow-700 rounded px-1 py-1 text-center">Pending ${pendingPartnerCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">Verified ${verifiedPartnerCount}</span><span class="bg-gray-100 text-gray-600 rounded px-1 py-1 text-center">Belum ${incompletePartnerCount}</span></div>
@@ -2289,7 +2368,7 @@
                         <div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span class="bg-yellow-100 text-yellow-700 rounded px-1 py-1 text-center">Pending ${pendingWdCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">Selesai ${completedWdCount}</span><span class="bg-red-100 text-red-700 rounded px-1 py-1 text-center">Tolak ${rejectedWdCount}</span></div>
                     </button>
 
-                    <button onclick="switchAdminTab('adUsers')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-cyan-50 border-cyan-100">
+                    <button onclick="switchAdminTab('adCustomers')" class="text-left p-4 rounded-xl border hover:shadow-md transition bg-cyan-50 border-cyan-100">
                         <p class="text-[10px] uppercase font-black text-cyan-700">Akun Platform</p>
                         <p class="text-2xl font-black text-cyan-800 mt-1">${totalUsersCount}</p>
                         <div class="grid grid-cols-2 gap-1 mt-2 text-[9px]"><span class="bg-blue-100 text-blue-700 rounded px-1 py-1 text-center">User ${totalRegularUsersCount}</span><span class="bg-green-100 text-green-700 rounded px-1 py-1 text-center">Mitra ${totalPartnerCount}</span></div>
@@ -2315,7 +2394,8 @@
                 <button onclick="switchAdminTab('adPesanan')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adPesanan"><i class="ph-fill ph-receipt mr-1"></i> Kelola Pesanan ${badge(notif.adPesanan)}</button>
                 <button onclick="switchAdminTab('adTopup')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adTopup"><i class="ph-fill ph-wallet mr-1"></i> Verifikasi Top Up ${badge(notif.adTopup)}</button>
                 <button onclick="switchAdminTab('adPencairan')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adPencairan"><i class="ph-fill ph-money mr-1"></i> Pencairan Mitra ${badge(notif.adPencairan)}</button>
-                <button onclick="switchAdminTab('adUsers')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adUsers"><i class="ph-fill ph-users mr-1"></i> Pengguna & Mitra ${badge(notif.adUsers)}</button>
+                <button onclick="switchAdminTab('adCustomers')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adCustomers"><i class="ph-fill ph-user mr-1"></i> Pelanggan ${badge(notif.adUsers)}</button>
+                <button onclick="switchAdminTab('adPartners')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adPartners"><i class="ph-fill ph-handshake mr-1"></i> Mitra ${badge(notif.adUsers)}</button>
                 <button onclick="switchAdminTab('adAllCars')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adAllCars"><i class="ph-fill ph-cars mr-1"></i> Kelola Semua Iklan ${badge(notif.adAllCars)}</button>
                 <button onclick="switchAdminTab('adBanner')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adBanner"><i class="ph-fill ph-image mr-1"></i> Pengaturan Banner</button>
                 <button onclick="switchAdminTab('adChat')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab relative" id="tab-adChat"><i class="ph-fill ph-chats mr-1"></i> Pesan User & Mitra ${badge(notif.adChat)}</button>
@@ -2327,7 +2407,8 @@
                 <div id="adPesanan" class="hidden admin-panel"></div>
                 <div id="adTopup" class="hidden admin-panel"></div>
                 <div id="adPencairan" class="hidden admin-panel"></div>
-                <div id="adUsers" class="hidden admin-panel"></div>
+                <div id="adCustomers" class="hidden admin-panel"></div>
+                <div id="adPartners" class="hidden admin-panel"></div>
                 <div id="adAllCars" class="hidden admin-panel"></div>
                 <div id="adBanner" class="hidden admin-panel"></div>
                 <div id="adChat" class="hidden admin-panel"></div>
@@ -2355,7 +2436,7 @@
 
             const badgeMap = {
                 adVerifikasi:n.adVerifikasi, adPesanan:n.adPesanan, adTopup:n.adTopup,
-                adPencairan:n.adPencairan, adUsers:n.adUsers, adAllCars:n.adAllCars, adChat:n.adChat
+                adPencairan:n.adPencairan, adCustomers:n.adUsers, adPartners:n.adUsers, adAllCars:n.adAllCars, adChat:n.adChat
             };
             Object.entries(badgeMap).forEach(([id,count]) => {
                 const btn=document.getElementById('tab-'+id);
@@ -2431,11 +2512,17 @@
                 sortedOrders.forEach(o => {
                     let statBadge='', actionBtn='';
                     if(o.status==='pending'){statBadge='<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-[10px] font-bold">MENUNGGU BAYAR</span>'; actionBtn=`<div class="flex gap-1"><button onclick="updateOrderStatus('${o.id}','paid')" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold">Verif Bayar</button><button onclick="adminCancelOrder('${o.id}','${o.carId||''}')" class="bg-red-50 text-red-600 px-2 py-1.5 rounded text-xs font-bold">Batal</button></div>`;}
-                    else if(o.status==='paid'){statBadge='<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] font-bold">AKTIF</span>'; actionBtn=`<button onclick="updateOrderStatus('${o.id}','completed','${o.carId||''}')" class="bg-gray-800 text-white px-3 py-1.5 rounded text-xs font-bold">Selesaikan</button>`;}
+                    else if(o.status==='paid'){statBadge='<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] font-bold">AKTIF</span>'; actionBtn='<span class="text-[10px] text-gray-500 font-bold">Menunggu konfirmasi pelanggan</span>';}
+                    else if(o.status==='completion_requested'){
+                        const needsDriver = o.service==='dengan_supir_dalam_kota' || o.service==='dengan_supir_luar_kota' || o.service==='dengan_supir';
+                        const driverOk = !needsDriver || o.driverCompletionConfirmed;
+                        statBadge='<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px] font-bold">KONFIRMASI SELESAI</span>';
+                        actionBtn=`<div class="flex flex-col gap-1">${needsDriver && !driverOk?`<button onclick="adminConfirmDriverReport('${o.id}')" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-bold"><i class="ph-bold ph-steering-wheel mr-1"></i>Konfirmasi Laporan Sopir</button>`:''}${driverOk?`<button onclick="adminFinalizeRental('${o.id}','${o.carId||''}')" class="bg-gray-800 text-white px-3 py-1.5 rounded text-xs font-bold"><i class="ph-bold ph-check-circle mr-1"></i>Nyatakan Selesai</button>`:'<span class="text-[10px] text-purple-600 font-bold">Menunggu laporan sopir</span>'}</div>`;
+                    }
                     else if(o.status==='completed'){statBadge='<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-[10px] font-bold">SELESAI</span>'; actionBtn=!o.isWithdrawn?`<button onclick="openAdminDisburse('${o.id}','${o.ownerEmail}',${Number(o.totalAmount)||0})" class="bg-orange-500 text-white px-3 py-1.5 rounded text-xs font-bold">Cairkan Mitra</button>`:'<span class="text-xs text-green-600 font-bold"><i class="ph-bold ph-check"></i> Sudah Cair</span>';}
                     else {statBadge=`<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-[10px] font-bold">${esc(o.status||'-')}</span>`;}
                     const search = `${o.orderId||''} ${o.customerName||''} ${o.customerEmail||''} ${o.carName||''} ${o.ownerEmail||''}`.toLowerCase().replace(/"/g,'');
-                    const detail = `<div class="text-xs text-gray-500"><p class="font-bold text-gray-800 text-sm">${esc(o.carName||'-')}</p><p>${esc(o.days||1)} hari • ${new Date(o.timestamp||Date.now()).toLocaleDateString('id-ID')}</p>${o.service==='dengan_supir_luar_kota'?'<p class="text-purple-600 font-bold text-[10px] uppercase">Dengan Sopir - Luar Kota</p>':(o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir')?'<p class="text-blue-600 font-bold text-[10px] uppercase">Dengan Sopir - Dalam Kota</p>':''}<p class="mt-1"><span class="font-semibold">Jemput:</span> ${esc(o.pickup||'-')}<br><span class="font-semibold">Tujuan:</span> ${esc(o.dest||'-')}</p><p class="text-shopee font-black mt-2 text-sm">${money(o.totalAmount)}</p><div class="mt-1 text-[10px] text-gray-500"><span>Fee OtoLink 5%: <b>${money(o.platformFee ?? window.getRentalFeeBreakdown(o.totalAmount).fee)}</b></span><br><span>Diterima Mitra: <b class="text-green-600">${money(o.ownerNetAmount ?? window.getRentalFeeBreakdown(o.totalAmount).net)}</b></span></div></div>`;
+                    const detail = `<div class="text-xs text-gray-500"><p class="font-bold text-gray-800 text-sm">${esc(o.carName||'-')}</p><p>${o.hours?esc(o.hours)+' jam':esc(o.days||1)+' hari'} • ${new Date(o.timestamp||Date.now()).toLocaleDateString('id-ID')}</p><p class="text-[10px] mt-1"><b>Jadwal:</b> ${esc(o.pickupDate||'-')} ${esc(o.pickupTime||'')} → ${esc(o.endDate||'-')} ${esc(o.endTime||'')}</p><p class="text-[10px] mt-1 ${o.customerCompletionConfirmed?'text-green-600':'text-gray-400'}">Pelanggan: ${o.customerCompletionConfirmed?'✓ menyatakan selesai':'belum konfirmasi selesai'}</p>${(o.service&&o.service!=='lepas_kunci')?`<p class="text-[10px] ${o.driverCompletionConfirmed?'text-green-600':'text-purple-600'}">Laporan sopir: ${o.driverCompletionConfirmed?'✓ cocok / selesai':'menunggu konfirmasi'}</p>`:''}${o.service==='dengan_supir_luar_kota'?'<p class="text-purple-600 font-bold text-[10px] uppercase">Dengan Sopir - Luar Kota</p>':(o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir')?'<p class="text-blue-600 font-bold text-[10px] uppercase">Dengan Sopir - Dalam Kota</p>':''}<p class="mt-1"><span class="font-semibold">Jemput:</span> ${esc(o.pickup||'-')}<br><span class="font-semibold">Tujuan:</span> ${esc(o.dest||'-')}</p><p class="text-shopee font-black mt-2 text-sm">${money(o.totalAmount)}</p><div class="mt-1 text-[10px] text-gray-500"><span>Fee OtoLink 5%: <b>${money(o.platformFee ?? window.getRentalFeeBreakdown(o.totalAmount).fee)}</b></span><br><span>Diterima Mitra: <b class="text-green-600">${money(o.ownerNetAmount ?? window.getRentalFeeBreakdown(o.totalAmount).net)}</b></span></div></div>`;
                     hP += `<tr data-admin-order-row data-status="${esc(o.status||'')}" data-search="${esc(search)}"><td class="p-3 text-xs font-bold">${esc(o.orderId||'-')}</td><td class="p-3 text-xs"><p class="font-semibold">${esc(o.customerName||o.customerEmail||'-')}</p><p class="text-gray-500">Mitra: ${esc(o.ownerEmail||'-')}</p><p class="text-gray-400 mt-1">Bayar: ${esc(o.payMethod||'-')}</p></td><td class="p-3">${detail}</td><td class="p-3">${statBadge}</td><td class="p-3">${actionBtn}</td></tr>`;
                 });
                 c_adP.innerHTML = hP + `</tbody></table></div><p id="adminOrderNoResult" class="hidden text-center text-xs text-gray-400 py-5">Tidak ada pesanan yang cocok dengan filter.</p>`;
@@ -2471,26 +2558,25 @@
                 c_adC.innerHTML = hC;
             }
 
-            // ===== PENGGUNA & MITRA =====
-            const c_adU = document.getElementById('adUsers');
-            if(c_adU) {
-                const users = window.usersData.filter(u=>u.role!=='admin' && !u.isDeleted && u.accountStatus!=='deleted');
-                const uCount = users.filter(u=>u.role==='user').length, mCount=users.filter(u=>u.role==='mitra').length;
-                let hU = `<div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 border-b pb-3"><div><h3 class="font-black text-gray-800"><i class="ph-fill ph-users mr-1"></i> Pengguna & Mitra</h3><p class="text-xs text-gray-500 mt-1">User: ${uCount} • Mitra: ${mCount} • Total akun: ${users.length}</p></div><div class="flex gap-2"><input id="adminUserSearch" oninput="filterAdminUsers()" placeholder="Cari nama / email" class="border rounded-lg px-3 py-2 text-xs w-40 md:w-56"><select id="adminUserRole" onchange="filterAdminUsers()" class="border rounded-lg px-2 py-2 text-xs"><option value="">Semua</option><option value="user">User</option><option value="mitra">Mitra</option></select></div></div>`;
-                hU += helpBox('Tugas admin di menu ini','Kelola akun penyewa dan mitra. Untuk mitra, periksa identitas, rekening, kontak darurat dan dokumen pendukung sebelum mengaktifkan pencairan. Admin juga dapat membuka chat, mengubah jenis akun bila salah daftar, dan melakukan koreksi saldo OtoPay bila diperlukan.',['Cari akun','Verifikasi mitra','Cek rekening & dokumen','Chat langsung','Ubah role','Koreksi saldo']);
-                hU += `<div class="overflow-x-auto border rounded-xl"><table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-gray-50"><tr><th class="p-3">Akun</th><th class="p-3">Role / Verifikasi</th><th class="p-3">Aktivitas</th><th class="p-3">Saldo/Rekening</th><th class="p-3">Aksi</th></tr></thead><tbody class="divide-y">`;
-                if(!users.length) hU += `<tr><td colspan="5" class="p-4">${emptyBox('ph-users','Belum ada akun','User dan mitra yang mendaftar akan tampil di sini.')}</td></tr>`;
+            // ===== PELANGGAN & MITRA DIPISAH =====
+            const renderAccountTable = (targetId, role, title, icon, description) => {
+                const box=document.getElementById(targetId); if(!box) return;
+                const users=window.usersData.filter(u=>u.role===role && !u.deleted);
+                let h=`<div class="flex justify-between items-center gap-3 mb-4 border-b pb-3"><div><h3 class="font-black text-gray-800"><i class="ph-fill ${icon} mr-1"></i> ${title}</h3><p class="text-xs text-gray-500 mt-1">${description} • Total ${users.length}</p></div><input oninput="filterSeparatedAccounts('${targetId}',this.value)" placeholder="Cari nama / email" class="border rounded-lg px-3 py-2 text-xs w-44 md:w-56"></div>`;
+                h += `<div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-gray-50 text-xs"><tr><th class="p-3">Akun</th><th class="p-3">${role==='mitra'?'Verifikasi':'Status'}</th><th class="p-3">Aktivitas</th><th class="p-3">Saldo/Rekening</th><th class="p-3">Aksi</th></tr></thead><tbody>`;
                 users.forEach(u=>{
                     const orders=window.ordersData.filter(o=>o.customerEmail===u.email).length;
                     const cars=window.carsData.filter(c=>c.ownerPhone===u.email).length;
+                    const ps=role==='mitra'?window.getMitraProfileStatus(u):null;
                     const search=`${u.name||''} ${u.email||''}`.toLowerCase().replace(/"/g,'');
-                    const ps = u.role==='mitra' ? window.getMitraProfileStatus(u) : null;
-                    const verifyHtml = u.role==='mitra' ? `<div class="mt-1">${window.partnerVerificationBadge(ps.status)} <span class="text-[9px] text-gray-400">${ps.percent}%</span></div>` : '';
-                    const verifyBtn = u.role==='mitra' ? `<button onclick="openAdminMitraProfile('${u.id}')" class="${ps.status==='pending'?'bg-orange-500 text-white':'bg-green-50 text-green-700'} px-2 py-1.5 rounded text-[10px] font-bold">${ps.status==='pending'?'Periksa & Verifikasi':'Lihat Profil'}</button>` : '';
-                    hU += `<tr data-admin-user-row data-role="${esc(u.role||'user')}" data-search="${esc(search)}"><td class="p-3"><p class="font-bold text-xs">${esc(u.name||'-')}</p><p class="text-[10px] text-gray-500">${esc(u.email||'-')}</p></td><td class="p-3"><span class="${u.role==='mitra'?'bg-green-100 text-green-700':'bg-blue-100 text-blue-700'} px-2 py-1 rounded text-[10px] font-bold uppercase">${esc(u.role||'user')}</span>${verifyHtml}</td><td class="p-3 text-xs"><p>${orders} pesanan</p><p class="text-gray-500">${cars} mobil</p></td><td class="p-3 text-xs"><p class="font-black text-shopee">${money(u.saldo)}</p><p class="text-[10px] text-gray-500">${u.bankName?esc(u.bankName)+' • '+esc(u.bankAccount||'-'):'Rekening belum diatur'}</p>${u.bankHolder?`<p class="text-[10px] text-gray-400">a.n. ${esc(u.bankHolder)}</p>`:''}</td><td class="p-3"><div class="flex flex-wrap gap-1">${verifyBtn}<button onclick="renderAdminChatRoom('${u.email}')" class="bg-blue-50 text-blue-700 px-2 py-1.5 rounded text-[10px] font-bold">Chat</button><button onclick="openAdminSaldoModal('${u.id}')" class="bg-yellow-50 text-yellow-700 px-2 py-1.5 rounded text-[10px] font-bold">Saldo</button><button onclick="adminToggleUserRole('${u.id}')" class="bg-gray-100 text-gray-700 px-2 py-1.5 rounded text-[10px] font-bold">Jadikan ${u.role==='mitra'?'User':'Mitra'}</button><button onclick="adminDeleteAccount('${u.id}')" class="bg-red-50 text-red-600 border border-red-100 px-2 py-1.5 rounded text-[10px] font-bold"><i class="ph-bold ph-trash mr-1"></i>Hapus</button></div></td></tr>`;
+                    const verifyHtml=role==='mitra'?`<div class="mt-1">${window.partnerVerificationBadge(ps.status)} <span class="text-[9px] text-gray-400">${ps.percent}%</span></div>`:'<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold">PELANGGAN</span>';
+                    const profileBtn=role==='mitra'?`<button onclick="openAdminMitraProfile('${u.id}')" class="${ps.status==='pending'?'bg-orange-500 text-white':'bg-green-50 text-green-700'} px-2 py-1.5 rounded text-[10px] font-bold">${ps.status==='pending'?'Periksa & Verifikasi':'Lihat Profil'}</button>`:'';
+                    h += `<tr data-separated-account data-search="${esc(search)}" class="border-t"><td class="p-3"><p class="font-bold text-xs">${esc(u.name||'-')}</p><p class="text-[10px] text-gray-500">${esc(u.email||'-')}</p></td><td class="p-3">${verifyHtml}</td><td class="p-3 text-xs"><p>${orders} pesanan</p>${role==='mitra'?`<p class="text-gray-500">${cars} mobil</p>`:''}</td><td class="p-3 text-xs"><p class="font-black text-shopee">${money(u.saldo)}</p>${role==='mitra'?`<p class="text-[10px] text-gray-500">${u.bankName?esc(u.bankName)+' • '+esc(u.bankAccount||'-'):'Rekening belum diatur'}</p>`:''}</td><td class="p-3"><div class="flex flex-wrap gap-1">${profileBtn}<button onclick="renderAdminChatRoom('${u.email}')" class="bg-blue-50 text-blue-700 px-2 py-1.5 rounded text-[10px] font-bold">Chat</button><button onclick="openAdminSaldoModal('${u.id}')" class="bg-yellow-50 text-yellow-700 px-2 py-1.5 rounded text-[10px] font-bold">Saldo</button><button onclick="adminToggleUserRole('${u.id}')" class="bg-gray-100 text-gray-700 px-2 py-1.5 rounded text-[10px] font-bold">Jadikan ${role==='mitra'?'Pelanggan':'Mitra'}</button><button onclick="adminDeleteAccount('${u.id}')" class="bg-red-50 text-red-600 border border-red-100 px-2 py-1.5 rounded text-[10px] font-bold"><i class="ph-bold ph-trash mr-1"></i>Hapus</button></div></td></tr>`;
                 });
-                c_adU.innerHTML = hU + `</tbody></table></div><p id="adminUserNoResult" class="hidden text-center text-xs text-gray-400 py-5">Tidak ada akun yang cocok dengan filter.</p>`;
-            }
+                box.innerHTML=h+`</tbody></table></div>${users.length?'':'<p class="text-center text-sm text-gray-400 py-10">Belum ada data.</p>'}`;
+            };
+            renderAccountTable('adCustomers','user','Pelanggan','ph-user','Akun penyewa mobil');
+            renderAccountTable('adPartners','mitra','Mitra','ph-handshake','Pemilik/penyedia kendaraan');
 
             // ===== SEMUA IKLAN =====
             const c_adA = document.getElementById('adAllCars');
@@ -2705,6 +2791,14 @@
         };
 
 
+        window.filterSeparatedAccounts = function(targetId, query='') {
+            const box=document.getElementById(targetId); if(!box) return;
+            const q=String(query||'').trim().toLowerCase();
+            box.querySelectorAll('[data-separated-account]').forEach(row=>{
+                row.classList.toggle('hidden', q && !String(row.dataset.search||'').includes(q));
+            });
+        };
+
         window.adminToggleUserRole = async function(id) { const u=window.usersData.find(x=>x.id===id); if(!u)return; const next=u.role==='mitra'?'user':'mitra'; if(!confirm(`Ubah akun ${u.name||u.email} menjadi ${next.toUpperCase()}?`))return; await window.fsUpdateDoc('users',id,{role:next}); window.showToast('Role akun diperbarui'); };
         window.openAdminSaldoModal = function(id) { const u=window.usersData.find(x=>x.id===id); if(!u)return; document.getElementById('modalContainer').innerHTML=`<div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"><div class="bg-yellow-500 text-white p-4 flex justify-between"><h2 class="font-bold">Koreksi Saldo OtoPay</h2><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div><div class="p-5"><p class="text-sm font-bold">${u.name||u.email}</p><p class="text-xs text-gray-500 mb-4">Saldo sekarang: <b>${formatRp(u.saldo||0)}</b></p><label class="text-xs font-bold">Nominal koreksi</label><input id="adminSaldoAmount" type="number" placeholder="Contoh 50000 atau -50000" class="w-full border p-2 rounded-lg mt-1 mb-3"><label class="text-xs font-bold">Catatan</label><input id="adminSaldoNote" type="text" placeholder="Alasan koreksi saldo" class="w-full border p-2 rounded-lg mt-1 mb-4"><button onclick="adminApplySaldo('${u.id}')" class="w-full bg-yellow-500 text-white py-2.5 rounded-lg font-bold">Terapkan Koreksi</button></div></div></div>`; };
         window.adminApplySaldo = async function(id) { const u=window.usersData.find(x=>x.id===id); const amt=Number(document.getElementById('adminSaldoAmount')?.value||0); const note=document.getElementById('adminSaldoNote')?.value.trim()||'Koreksi saldo oleh admin'; if(!u||!amt)return window.showToast('Masukkan nominal koreksi',false); const next=(Number(u.saldo)||0)+amt; if(next<0)return window.showToast('Saldo tidak boleh menjadi minus',false); await window.fsUpdateDoc('users',id,{saldo:next}); await window.fsAddDoc('topups',{name:u.name,email:u.email,amount:amt,status:'completed',type:'admin_adjustment',note,timestamp:Date.now()}); window.closeAllModals(); window.showToast('Saldo berhasil dikoreksi'); };
@@ -2734,7 +2828,7 @@
                 <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-[dropIn_0.3s_ease-out]">
                     <div class="bg-orange-500 p-4 text-white flex justify-between items-center"><h2 class="font-bold flex items-center gap-2"><i class="ph-bold ph-coins"></i> Pencairan Mitra</h2><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div>
                     <div class="p-6">
-                        <p class="text-center text-sm font-semibold text-gray-600 mb-1">Total Hak Mitra (93%)</p>
+                        <p class="text-center text-sm font-semibold text-gray-600 mb-1">Total Hak Mitra (setelah fee 5%)</p>
                         <p class="text-center text-3xl font-black text-orange-500 mb-4 drop-shadow-sm">${formatRp(netAmount)}</p>
                         ${bankInfo}
                         ${deepLinkHtml}
@@ -2781,6 +2875,28 @@
 
             window.closeAllModals();
             window.showToast("Dana Mitra berhasil dicairkan setelah potongan fee 5%.");
+        };
+
+        window.adminConfirmDriverReport = async function(orderId) {
+            const o=window.ordersData.find(x=>x.id===orderId);
+            if(!o) return window.showToast('Pesanan tidak ditemukan.', false);
+            if(!confirm('Konfirmasi bahwa laporan sopir menyatakan perjalanan/sewa telah selesai?')) return;
+            await window.fsUpdateDoc('orders',orderId,{driverCompletionConfirmed:true,driverCompletedAt:Date.now()});
+            window.showToast('Laporan sopir dikonfirmasi.');
+            setTimeout(()=>window.loadAdminData(),100);
+        };
+
+        window.adminFinalizeRental = async function(orderId, carId=null) {
+            const o=window.ordersData.find(x=>x.id===orderId);
+            if(!o) return window.showToast('Pesanan tidak ditemukan.', false);
+            const needsDriver=o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir_luar_kota'||o.service==='dengan_supir';
+            if(!o.customerCompletionConfirmed) return window.showToast('Pelanggan belum menyatakan sewa selesai.', false);
+            if(needsDriver && !o.driverCompletionConfirmed) return window.showToast('Laporan sopir belum dikonfirmasi.', false);
+            if(!confirm('Data pelanggan dan laporan operasional sudah cocok. Nyatakan transaksi selesai dan buka pencairan Mitra?')) return;
+            await window.fsUpdateDoc('orders',orderId,{status:'completed',adminCompletedAt:Date.now(),completionApprovedBy:'admin'});
+            if(carId) await window.fsUpdateDoc('cars',carId,{isBooked:false,timestamp:Date.now()});
+            window.showToast('Transaksi selesai. Pencairan dana Mitra sekarang dapat dilakukan.');
+            setTimeout(()=>window.loadAdminData(),100);
         };
 
         window.updateOrderStatus = async function(id, st, carId=null) { 
