@@ -639,7 +639,7 @@
             const adminUser = window.usersData.find(u => u.email === 'admin') || {
                 name: 'Admin', email: 'admin', role: 'admin', saldo: 0
             };
-            window.currentUser = {...adminUser, role:'admin', email:'admin', name: adminUser.name || 'Admin'};
+            window.currentUser = {...adminUser, role:'admin', email:'admin', name: adminUser.name || 'Admin', isSuperAdmin:true, adminActive:true};
             // Jangan simpan sesi admin ke localStorage.
             window.clearLoginSession();
             window.closeAllModals();
@@ -869,7 +869,11 @@
 
             const user = window.usersData.find(u => u.email === email && !u.isDeleted && u.accountStatus !== 'deleted');
             if(!user) return window.showToast("Akun belum terdaftar atau sudah dinonaktifkan.", false);
-            if(user.password !== pass) return window.showToast("Password Salah!", false);
+            if(user.role === 'admin') {
+                if(user.adminActive === false) return window.showToast("Akun admin ini sedang dinonaktifkan oleh Admin Utama.", false);
+                const ok = user.passwordHash ? ((await window.hashSubAdminPassword(pass)) === user.passwordHash) : (user.password === pass);
+                if(!ok) return window.showToast("Password Salah!", false);
+            } else if(user.password !== pass) return window.showToast("Password Salah!", false);
 
             window.currentUser = user;
             window.saveLoginSession(user);
@@ -2356,6 +2360,113 @@
             }
         };
 
+
+        // ===== ADMIN BERTINGKAT / ROLE-BASED ACCESS CONTROL =====
+        window.ADMIN_PERMISSION_DEFS = [
+            {key:'overview', label:'Beranda / Ringkasan', tab:'adOverview'},
+            {key:'ads', label:'Verifikasi & Kelola Iklan', tab:'adVerifikasi'},
+            {key:'orders', label:'Kelola Pesanan', tab:'adPesanan'},
+            {key:'finance_topup', label:'OtoPay / Top Up / Bukti Transfer', tab:'adTopup'},
+            {key:'finance_withdrawal', label:'Pencairan Dana Mitra', tab:'adPencairan'},
+            {key:'customers', label:'Data Pelanggan', tab:'adCustomers'},
+            {key:'partners', label:'Data & Verifikasi Mitra', tab:'adPartners'},
+            {key:'all_cars', label:'Kelola Semua Iklan', tab:'adAllCars'},
+            {key:'banner', label:'Banner / Carousel', tab:'adBanner'},
+            {key:'chat', label:'Chat User & Mitra', tab:'adChat'}
+        ];
+        window.isSuperAdmin = () => !!(window.currentUser?.isSuperAdmin || window.currentUser?.email === 'admin');
+        window.hasAdminPermission = function(key) {
+            if(!window.currentUser || window.currentUser.role !== 'admin') return false;
+            if(window.isSuperAdmin()) return true;
+            return window.currentUser.adminActive !== false && !!window.currentUser.adminPermissions?.[key];
+        };
+        window.requireAdminPermission = function(key) {
+            if(window.hasAdminPermission(key)) return true;
+            window.showToast('Akses ditolak. Menu ini tidak diberikan oleh Admin Utama.', false);
+            return false;
+        };
+        window.hashSubAdminPassword = async function(value) {
+            const bytes = new TextEncoder().encode(String(value||''));
+            const digest = await crypto.subtle.digest('SHA-256', bytes);
+            return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        };
+        window.getFirstAllowedAdminTab = function() {
+            const d=window.ADMIN_PERMISSION_DEFS.find(x=>window.hasAdminPermission(x.key));
+            return d?.tab || 'adOverview';
+        };
+        window.applyAdminPermissions = function() {
+            if(window.currentUser?.role !== 'admin') return;
+            const map = Object.fromEntries(window.ADMIN_PERMISSION_DEFS.map(x=>[x.tab,x.key]));
+            document.querySelectorAll('.admin-tab').forEach(btn=>{
+                const tab=(btn.id||'').replace('tab-','');
+                const key=map[tab];
+                if(key && !window.hasAdminPermission(key)) btn.classList.add('hidden');
+            });
+            document.querySelectorAll('.admin-panel').forEach(panel=>{
+                const key=map[panel.id];
+                if(key && !window.hasAdminPermission(key)) panel.classList.add('hidden');
+            });
+            document.querySelectorAll('[onclick*="switchAdminTab"]').forEach(el=>{
+                const m=(el.getAttribute('onclick')||'').match(/switchAdminTab\('([^']+)'\)/);
+                if(m && map[m[1]] && !window.hasAdminPermission(map[m[1]])) el.classList.add('hidden');
+            });
+            const manageBtn=document.getElementById('tab-adAdminManagement');
+            if(manageBtn) manageBtn.classList.toggle('hidden', !window.isSuperAdmin());
+        };
+
+        window.openAdminManagement = function() {
+            if(!window.isSuperAdmin()) return window.showToast('Hanya Admin Utama yang dapat mengelola admin.',false);
+            window.switchAdminTab('adAdminManagement');
+        };
+
+        window.renderAdminManagement = function() {
+            const box=document.getElementById('adAdminManagement'); if(!box || !window.isSuperAdmin()) return;
+            const admins=window.usersData.filter(u=>u.role==='admin' && u.email!=='admin' && !u.isDeleted);
+            const permChecks=window.ADMIN_PERMISSION_DEFS.map(p=>`<label class="border rounded-lg p-2 text-xs font-bold bg-white"><input type="checkbox" class="admin-perm-check accent-blue-600 mr-1" value="${p.key}"> ${p.label}</label>`).join('');
+            const rows=admins.length?admins.map(a=>{
+                const granted=window.ADMIN_PERMISSION_DEFS.filter(p=>a.adminPermissions?.[p.key]).map(p=>p.label).join(', ') || 'Tidak ada akses';
+                return `<div class="border rounded-xl p-4 bg-white">
+                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                      <div><p class="font-black text-gray-800">${a.name||'-'}</p><p class="text-xs text-gray-500">${a.email||'-'} • ${a.adminTitle||'Admin'}</p><p class="text-[10px] mt-2 ${a.adminActive===false?'text-red-600':'text-green-600'} font-bold">${a.adminActive===false?'NONAKTIF':'AKTIF'}</p><p class="text-[10px] text-gray-500 mt-1 max-w-xl">${granted}</p></div>
+                      <div class="flex flex-wrap gap-2"><button onclick="editSubAdmin('${a.id}')" class="bg-blue-50 text-blue-700 px-3 py-2 rounded text-xs font-bold">Hak Akses</button><button onclick="toggleSubAdmin('${a.id}')" class="${a.adminActive===false?'bg-green-50 text-green-700':'bg-yellow-50 text-yellow-700'} px-3 py-2 rounded text-xs font-bold">${a.adminActive===false?'Aktifkan':'Nonaktifkan'}</button><button onclick="deleteSubAdmin('${a.id}')" class="bg-red-50 text-red-600 px-3 py-2 rounded text-xs font-bold">Hapus</button></div>
+                    </div></div>`;
+            }).join(''):`<div class="border border-dashed rounded-xl p-8 text-center text-gray-400">Belum ada admin bawahan.</div>`;
+            box.innerHTML=`<div class="flex flex-col md:flex-row justify-between gap-3 border-b pb-4 mb-5"><div><h3 class="text-xl font-black"><i class="ph-fill ph-users-three mr-1 text-blue-600"></i> Manajemen Admin & Hak Akses</h3><p class="text-xs text-gray-500 mt-1">Hanya Admin Utama yang dapat membuat admin, menentukan bagian kerja, dan membuka/menutup akses menu.</p></div><button onclick="openCreateSubAdmin()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm"><i class="ph-bold ph-plus mr-1"></i>Buat Admin</button></div>
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-5 text-xs text-blue-800"><b>Prinsip akses:</b> admin bawahan hanya melihat menu yang dicentang. Finance dapat dibatasi ke OtoPay dan pencairan; CS hanya Chat/Pelanggan; Verifikasi hanya Mitra/Iklan.</div>
+            <div class="space-y-3">${rows}</div>`;
+        };
+
+        window.openCreateSubAdmin = function(existing=null) {
+            if(!window.isSuperAdmin()) return;
+            const a=existing||{};
+            const checks=window.ADMIN_PERMISSION_DEFS.map(p=>`<label class="border rounded-lg p-2 text-xs font-bold bg-white"><input type="checkbox" class="admin-perm-check accent-blue-600 mr-1" value="${p.key}" ${a.adminPermissions?.[p.key]?'checked':''}> ${p.label}</label>`).join('');
+            document.getElementById('modalContainer').innerHTML=`<div class="fixed inset-0 modal-overlay z-[100] flex items-center justify-center p-3"><div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[94vh] flex flex-col"><div class="bg-[#101827] text-white p-4 flex justify-between"><div><h2 class="font-black">${a.id?'Edit Admin':'Buat Admin Baru'}</h2><p class="text-xs text-gray-300">Admin Utama menentukan bagian yang boleh dilihat dan diproses.</p></div><button onclick="closeAllModals()"><i class="ph-bold ph-x text-xl"></i></button></div><div class="p-5 overflow-y-auto"><input type="hidden" id="subAdminId" value="${a.id||''}"><div class="grid md:grid-cols-2 gap-3"><div><label class="text-xs font-bold">Nama</label><input id="subAdminName" value="${a.name||''}" class="w-full border p-2.5 rounded-lg mt-1"></div><div><label class="text-xs font-bold">Jabatan / Bagian</label><input id="subAdminTitle" value="${a.adminTitle||''}" placeholder="Contoh: Finance" class="w-full border p-2.5 rounded-lg mt-1"></div><div><label class="text-xs font-bold">Email / Username</label><input id="subAdminEmail" value="${a.email||''}" ${a.id?'readonly':''} class="w-full border p-2.5 rounded-lg mt-1 ${a.id?'bg-gray-100':''}"></div><div><label class="text-xs font-bold">${a.id?'Password Baru (opsional)':'Password Awal'}</label><input id="subAdminPassword" type="password" class="w-full border p-2.5 rounded-lg mt-1" placeholder="${a.id?'Kosongkan jika tidak diganti':'Minimal 6 karakter'}"></div></div><h3 class="font-black mt-5 mb-2">Hak Akses Menu</h3><div class="grid sm:grid-cols-2 gap-2">${checks}</div><div class="mt-5 flex gap-2"><button onclick="closeAllModals()" class="flex-1 bg-gray-100 py-3 rounded-lg font-bold">Batal</button><button onclick="saveSubAdmin()" class="flex-[1.4] bg-blue-600 text-white py-3 rounded-lg font-bold">Simpan Admin</button></div></div></div></div>`;
+        };
+        window.editSubAdmin=function(id){ const a=window.usersData.find(u=>u.id===id); if(a) window.openCreateSubAdmin(a); };
+        window.saveSubAdmin=async function(){
+            if(!window.isSuperAdmin()) return;
+            const id=document.getElementById('subAdminId')?.value||'';
+            const name=document.getElementById('subAdminName')?.value.trim();
+            const email=document.getElementById('subAdminEmail')?.value.trim().toLowerCase();
+            const title=document.getElementById('subAdminTitle')?.value.trim();
+            const pass=document.getElementById('subAdminPassword')?.value||'';
+            if(!name||!email||(!id&&pass.length<6)) return window.showToast('Lengkapi nama, email, dan password minimal 6 karakter.',false);
+            if(!id && window.usersData.some(u=>String(u.email).toLowerCase()===email && !u.isDeleted)) return window.showToast('Email/username sudah dipakai.',false);
+            const perms={}; document.querySelectorAll('.admin-perm-check').forEach(x=>perms[x.value]=x.checked);
+            if(!Object.values(perms).some(Boolean)) return window.showToast('Pilih minimal satu hak akses.',false);
+            const payload={name,email,role:'admin',adminTitle:title||'Admin',adminPermissions:perms,adminActive:true,updatedAt:Date.now()};
+            if(pass) payload.passwordHash=await window.hashSubAdminPassword(pass);
+            if(id) await window.fsUpdateDoc('users',id,payload); else {payload.timestamp=Date.now(); await window.fsAddDoc('users',payload);}
+            window.closeAllModals(); window.showToast('Admin dan hak akses berhasil disimpan.'); setTimeout(()=>window.renderAdminManagement(),250);
+        };
+        window.toggleSubAdmin=async function(id){ if(!window.isSuperAdmin())return; const a=window.usersData.find(u=>u.id===id); if(!a)return; await window.fsUpdateDoc('users',id,{adminActive:a.adminActive===false,updatedAt:Date.now()}); window.showToast('Status admin diperbarui.'); };
+        window.deleteSubAdmin=async function(id){ if(!window.isSuperAdmin()||!confirm('Hapus admin ini?'))return; await window.fsUpdateDoc('users',id,{isDeleted:true,accountStatus:'deleted',adminActive:false,deletedAt:Date.now()}); window.showToast('Admin dihapus.'); };
+
+
+        window.writeAdminAudit = async function(action, detail={}, category='general') {
+            if(window.currentUser?.role!=='admin') return;
+            try { await window.fsAddDoc('admin_audit_logs',{action,category,detail,adminEmail:window.currentUser.email,adminName:window.currentUser.name||'',adminTitle:window.currentUser.adminTitle||'Admin Utama',timestamp:Date.now()}); } catch(e){ console.warn('Audit log gagal:',e); }
+        };
         window.loadAdminData = function() {
             const dc = document.getElementById('dashboardContent');
             const notif = window.getAdminNotificationCounts();
@@ -2418,7 +2529,7 @@
             <div class="bg-[#101827] rounded-t-xl p-6 text-white shadow-md relative overflow-hidden">
                 <div class="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ph-fill ph-shield-check text-9xl"></i></div>
                 <div class="flex justify-between items-center relative z-10">
-                    <div><h2 class="text-2xl font-black flex items-center gap-2 relative"><i class="ph-fill ph-shield-star text-blue-400"></i> Dashboard Admin <span id="adminGlobalNotifBadge" class="${notif.total?'':'hidden'} inline-flex min-w-[22px] h-5 px-1.5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black">${notif.total > 99 ? '99+' : (notif.total || '')}</span></h2><p class="text-sm text-gray-300">Total aktivitas ${totalAdminActivities} • berjalan ${openAdminActivities} • sudah ditindak ${finishedAdminActivities}</p></div>
+                    <div><h2 class="text-2xl font-black flex items-center gap-2 relative"><i class="ph-fill ph-shield-star text-blue-400"></i> ${window.isSuperAdmin()?'Dashboard Admin Utama':('Dashboard '+(window.currentUser.adminTitle||'Admin'))} <span id="adminGlobalNotifBadge" class="${notif.total?'':'hidden'} inline-flex min-w-[22px] h-5 px-1.5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-black">${notif.total > 99 ? '99+' : (notif.total || '')}</span></h2><p class="text-sm text-gray-300">Total aktivitas ${totalAdminActivities} • berjalan ${openAdminActivities} • sudah ditindak ${finishedAdminActivities}</p></div>
                     <div class="flex gap-2">
                         <button onclick="closeDashboard()" class="bg-white/10 hover:bg-white/20 px-3 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2"><i class="ph-bold ph-x"></i> Tutup Dashboard</button>
                         <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2"><i class="ph-bold ph-sign-out"></i> Keluar Admin</button>
@@ -2501,6 +2612,7 @@
                 <button onclick="switchAdminTab('adAllCars')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adAllCars"><i class="ph-fill ph-cars mr-1"></i> Kelola Semua Iklan ${badge(notif.adAllCars)}</button>
                 <button onclick="switchAdminTab('adBanner')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adBanner"><i class="ph-fill ph-image mr-1"></i> Pengaturan Banner</button>
                 <button onclick="switchAdminTab('adChat')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab relative" id="tab-adChat"><i class="ph-fill ph-chats mr-1"></i> Pesan User & Mitra ${badge(notif.adChat)}</button>
+                <button onclick="openAdminManagement()" class="${window.isSuperAdmin()?'':'hidden'} px-4 py-2 text-sm font-bold rounded border shadow-sm bg-[#101827] text-white admin-tab" id="tab-adAdminManagement"><i class="ph-fill ph-users-three mr-1"></i> Admin & Hak Akses</button>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border p-4 md:p-6 min-h-[500px]">
@@ -2514,12 +2626,19 @@
                 <div id="adAllCars" class="hidden admin-panel"></div>
                 <div id="adBanner" class="hidden admin-panel"></div>
                 <div id="adChat" class="hidden admin-panel"></div>
+                <div id="adAdminManagement" class="hidden admin-panel"></div>
             </div>`;
             dc.innerHTML = html;
             window.loadAdminPanels();
+            window.renderAdminManagement();
+            window.applyAdminPermissions();
+            if(!window.isSuperAdmin()) setTimeout(()=>window.switchAdminTab(window.getFirstAllowedAdminTab()),0);
         };
 
         window.switchAdminTab = function(tabId) {
+            const def=window.ADMIN_PERMISSION_DEFS.find(x=>x.tab===tabId);
+            if(def && !window.hasAdminPermission(def.key)) return window.showToast('Menu ini tidak diberikan kepada akun Admin Anda.',false);
+            if(tabId==='adAdminManagement' && !window.isSuperAdmin()) return window.showToast('Hanya Admin Utama yang dapat membuka pengaturan Admin.',false);
             // Membuka menu berarti notifikasi "baru" pada menu itu sudah dilihat.
             // Item pending tetap akan muncul sebagai badge sampai diproses.
             window.markAdminTabSeen(tabId);
@@ -2772,14 +2891,14 @@
             const c=window.carsData.find(x=>x.id===carId); if(!c)return;
             document.getElementById('modalContainer').innerHTML=`<div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4" onclick="closeAllModals()"><div class="bg-white rounded-xl shadow-xl max-w-3xl w-full p-3" onclick="event.stopPropagation()"><div class="flex justify-between items-center mb-2"><p class="font-bold">${c.name||'Foto Mobil'}</p><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div><img src="${c.img}" class="w-full max-h-[75vh] object-contain rounded-lg bg-gray-100"></div></div>`;
         };
-        window.adminRejectCar = async function(id) { if(!confirm('Tolak dan hapus pengajuan iklan ini?'))return; await window.fsDeleteDoc('cars',id); window.showToast('Pengajuan iklan ditolak'); };
+        window.adminRejectCar = async function(id) { if(!window.requireAdminPermission('ads')) return; if(!confirm('Tolak dan hapus pengajuan iklan ini?'))return; await window.fsDeleteDoc('cars',id); window.showToast('Pengajuan iklan ditolak'); };
         window.adminDeleteCar = async function(id) { const c=window.carsData.find(x=>x.id===id); if(!confirm(`Hapus iklan ${c?.name||'ini'} secara permanen?`))return; await window.fsDeleteDoc('cars',id); window.showToast('Iklan dihapus'); };
         window.adminToggleCarStatus = async function(id) { const c=window.carsData.find(x=>x.id===id); if(!c)return; const st=c.status==='approved'?'pending':'approved'; await window.fsUpdateDoc('cars',id,{status:st}); window.showToast(st==='approved'?'Iklan diaktifkan':'Iklan dinonaktifkan'); };
         window.adminDeleteBanner = async function(id) { if(!confirm('Hapus banner ini dari halaman utama?'))return; await window.fsDeleteDoc('banners',id); window.showToast('Banner dihapus'); };
         window.adminRejectTopup = async function(id) { if(!confirm('Tolak pengajuan top up ini? Saldo tidak akan ditambahkan.'))return; await window.fsUpdateDoc('topups',id,{status:'rejected',processedAt:Date.now()}); window.showToast('Top up ditolak'); };
-        window.adminRejectWithdraw = async function(id) { if(!confirm('Tolak pengajuan pencairan ini?'))return; await window.fsUpdateDoc('withdrawals',id,{status:'rejected',processedAt:Date.now()}); window.showToast('Pencairan ditolak'); };
+        window.adminRejectWithdraw = async function(id) { if(!window.requireAdminPermission('finance_withdrawal')) return; if(!confirm('Tolak pengajuan pencairan ini?'))return; await window.fsUpdateDoc('withdrawals',id,{status:'rejected',processedAt:Date.now()}); window.showToast('Pencairan ditolak'); };
         window.adminCancelOrder = async function(id,carId) { if(!confirm('Batalkan pesanan ini? Mobil akan dibuat tersedia kembali.'))return; await window.fsUpdateDoc('orders',id,{status:'cancelled'}); if(carId)await window.fsUpdateDoc('cars',carId,{isBooked:false,timestamp:Date.now()}); window.showToast('Pesanan dibatalkan'); };
-        window.adminDeleteAccount = function(userId) {
+        window.adminDeleteAccount = function(userId) { if(!window.requireAdminPermission('customers') && !window.requireAdminPermission('partners')) return;
             const u = window.usersData.find(x => x.id === userId);
             if(!u) return window.showToast('Akun tidak ditemukan.', false);
             if(u.role === 'admin') return window.showToast('Akun Admin tidak dapat dihapus.', false);
@@ -2903,7 +3022,7 @@
 
         window.adminToggleUserRole = async function(id) { const u=window.usersData.find(x=>x.id===id); if(!u)return; const next=u.role==='mitra'?'user':'mitra'; if(!confirm(`Ubah akun ${u.name||u.email} menjadi ${next.toUpperCase()}?`))return; await window.fsUpdateDoc('users',id,{role:next}); window.showToast('Role akun diperbarui'); };
         window.openAdminSaldoModal = function(id) { const u=window.usersData.find(x=>x.id===id); if(!u)return; document.getElementById('modalContainer').innerHTML=`<div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4"><div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"><div class="bg-yellow-500 text-white p-4 flex justify-between"><h2 class="font-bold">Koreksi Saldo OtoPay</h2><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div><div class="p-5"><p class="text-sm font-bold">${u.name||u.email}</p><p class="text-xs text-gray-500 mb-4">Saldo sekarang: <b>${formatRp(u.saldo||0)}</b></p><label class="text-xs font-bold">Nominal koreksi</label><input id="adminSaldoAmount" type="number" placeholder="Contoh 50000 atau -50000" class="w-full border p-2 rounded-lg mt-1 mb-3"><label class="text-xs font-bold">Catatan</label><input id="adminSaldoNote" type="text" placeholder="Alasan koreksi saldo" class="w-full border p-2 rounded-lg mt-1 mb-4"><button onclick="adminApplySaldo('${u.id}')" class="w-full bg-yellow-500 text-white py-2.5 rounded-lg font-bold">Terapkan Koreksi</button></div></div></div>`; };
-        window.adminApplySaldo = async function(id) { const u=window.usersData.find(x=>x.id===id); const amt=Number(document.getElementById('adminSaldoAmount')?.value||0); const note=document.getElementById('adminSaldoNote')?.value.trim()||'Koreksi saldo oleh admin'; if(!u||!amt)return window.showToast('Masukkan nominal koreksi',false); const next=(Number(u.saldo)||0)+amt; if(next<0)return window.showToast('Saldo tidak boleh menjadi minus',false); await window.fsUpdateDoc('users',id,{saldo:next}); await window.fsAddDoc('topups',{name:u.name,email:u.email,amount:amt,status:'completed',type:'admin_adjustment',note,timestamp:Date.now()}); window.closeAllModals(); window.showToast('Saldo berhasil dikoreksi'); };
+        window.adminApplySaldo = async function(id) { if(!window.requireAdminPermission('finance_topup')) return; const u=window.usersData.find(x=>x.id===id); const amt=Number(document.getElementById('adminSaldoAmount')?.value||0); const note=document.getElementById('adminSaldoNote')?.value.trim()||'Koreksi saldo oleh admin'; if(!u||!amt)return window.showToast('Masukkan nominal koreksi',false); const next=(Number(u.saldo)||0)+amt; if(next<0)return window.showToast('Saldo tidak boleh menjadi minus',false); await window.fsUpdateDoc('users',id,{saldo:next}); await window.fsAddDoc('topups',{name:u.name,email:u.email,amount:amt,status:'completed',type:'admin_adjustment',note,timestamp:Date.now()}); window.closeAllModals(); window.showToast('Saldo berhasil dikoreksi'); };
 
         window.openAdminDisburse = function(orderId, mitraEmail, totalAmount) {
             const feeInfo = window.getRentalFeeBreakdown(totalAmount);
@@ -3009,7 +3128,7 @@
             }
             window.showToast("Status Pesanan Diperbarui"); 
         };
-        window.approveTopup = async function(id, email, amt) {
+        window.approveTopup = async function(id, email, amt) { if(!window.requireAdminPermission('finance_topup')) return;
             const key = String(email || '').trim().toLowerCase();
             const topup = window.topupsData.find(t => t.id === id);
             if(topup && (topup.status === 'completed' || topup.status === 'approved')) return window.showToast("Top Up ini sudah pernah di-ACC", false);
@@ -3022,14 +3141,14 @@
                 await window.fsUpdateDoc('users', user.id, { saldo: after });
             }
             if(window.currentUser && String(window.currentUser.email||'').trim().toLowerCase() === key) window.currentUser.saldo = after;
-            window.showToast("Top Up Diacc! Saldo OtoPay diperbarui.");
+            await window.writeAdminAudit("approve_topup",{topupId:id,email,amount:Number(amt||0)},"finance"); window.showToast("Top Up Diacc! Saldo OtoPay diperbarui.");
             refreshUI();
         };
-        window.approveWithdraw = async function(id) { 
+        window.approveWithdraw = async function(id) { if(!window.requireAdminPermission('finance_withdrawal')) return; 
             await window.fsUpdateDoc('withdrawals', id, { status: 'completed' }); 
-            window.showToast("Penarikan Ditandai Selesai"); 
+            await window.writeAdminAudit("complete_withdrawal",{withdrawalId:id},"finance"); window.showToast("Penarikan Ditandai Selesai"); 
         };
-        window.updateCarStatus = async function(id, st) { 
+        window.updateCarStatus = async function(id, st) { if(!window.requireAdminPermission('ads')) return; 
             await window.fsUpdateDoc('cars', id, { status: st }); 
             window.showToast("Status Iklan Diperbarui"); 
         };
