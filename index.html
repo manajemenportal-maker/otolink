@@ -3125,77 +3125,103 @@
         window.adminApplySaldo = async function(id) { if(!window.requireAdminPermission('finance_topup')) return; const u=window.usersData.find(x=>x.id===id); const amt=Number(document.getElementById('adminSaldoAmount')?.value||0); const note=document.getElementById('adminSaldoNote')?.value.trim()||'Koreksi saldo oleh admin'; if(!u||!amt)return window.showToast('Masukkan nominal koreksi',false); const next=(Number(u.saldo)||0)+amt; if(next<0)return window.showToast('Saldo tidak boleh menjadi minus',false); await window.fsUpdateDoc('users',id,{saldo:next}); await window.fsAddDoc('topups',{name:u.name,email:u.email,amount:amt,status:'completed',type:'admin_adjustment',note,timestamp:Date.now()}); window.closeAllModals(); window.showToast('Saldo berhasil dikoreksi'); };
 
         window.openAdminDisburse = function(orderId, mitraEmail, totalAmount) {
-            const feeInfo = window.getRentalFeeBreakdown(totalAmount);
-            const fee = feeInfo.fee; // 5% fee marketing + jasa aplikasi
-            const netAmount = feeInfo.net;
-            const u = window.usersData.find(x => x.email === mitraEmail);
-            
-            let bankInfo = `<div class="text-sm text-red-500 mb-4 font-semibold text-center bg-red-50 p-2 rounded border border-red-200">Mitra belum mengatur Rekening Bank!</div>`;
-            let deepLinkHtml = '';
+            if(!window.requireAdminPermission('finance_withdrawal')) return;
+            const order=window.ordersData.find(o=>o.id===orderId || o.orderId===orderId);
+            if(!order) return window.showToast('Data transaksi tidak ditemukan.',false);
+            if(order.status!=='completed') return window.showToast('Pencairan hanya dapat dilakukan setelah transaksi selesai.',false);
+            if(order.isWithdrawn) return window.showToast('Transaksi ini sudah pernah dicairkan.',false);
 
-            if (u && u.bankName && u.bankAccount) {
-                bankInfo = `<div class="bg-gray-50 p-3 rounded border text-sm text-gray-700 mb-4 font-mono text-center shadow-inner"><p class="text-xs text-gray-500 mb-1">Info Rekening Mitra:</p><p class="font-bold text-blue-800 text-base">${u.bankName}</p><p class="font-black text-lg tracking-widest">${u.bankAccount}</p></div>`;
-                
-                const bName = u.bankName.toLowerCase();
-                if(bName.includes('gopay') || bName.includes('go-pay')) {
-                    deepLinkHtml = `<a href="gojek://gopay/transfer" class="w-full bg-[#00AED6] text-white font-bold py-2.5 rounded shadow flex justify-center items-center gap-2 mb-2"><i class="ph-fill ph-arrow-square-out text-lg"></i> Buka GoPay & Transfer</a>`;
-                } else if(bName.includes('ovo')) {
-                    deepLinkHtml = `<a href="ovo://transfer" class="w-full bg-[#4C3494] text-white font-bold py-2.5 rounded shadow flex justify-center items-center gap-2 mb-2"><i class="ph-fill ph-arrow-square-out text-lg"></i> Buka OVO & Transfer</a>`;
-                }
-            }
+            const gross=Number(order.totalAmount||totalAmount||0);
+            const feeInfo=window.getRentalFeeBreakdown(gross);
+            const fee=Number(order.platformFee ?? feeInfo.fee);
+            const netAmount=Number(order.ownerNetAmount ?? feeInfo.net);
+            const u=window.usersData.find(x=>String(x.email||'').toLowerCase()===String(mitraEmail||'').toLowerCase());
+            const bankName=u?.bankName||u?.bank||'-';
+            const bankAccount=u?.bankAccount||u?.accountNumber||'-';
+            const bankHolder=u?.bankAccountName||u?.accountName||u?.name||'-';
+            const hasBank=bankName!=='-' && bankAccount!=='-';
 
-            document.getElementById('modalContainer').innerHTML = `
-            <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-[dropIn_0.3s_ease-out]">
-                    <div class="bg-orange-500 p-4 text-white flex justify-between items-center"><h2 class="font-bold flex items-center gap-2"><i class="ph-bold ph-coins"></i> Pencairan Mitra</h2><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div>
-                    <div class="p-6">
-                        <p class="text-center text-sm font-semibold text-gray-600 mb-1">Total Hak Mitra (setelah fee 5%)</p>
-                        <p class="text-center text-3xl font-black text-orange-500 mb-4 drop-shadow-sm">${formatRp(netAmount)}</p>
-                        ${bankInfo}
-                        ${deepLinkHtml}
-                        <button onclick="executeDisburse('${orderId}', '${mitraEmail}', ${netAmount}, 'bank')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded shadow mb-2 transition flex items-center justify-center gap-2"><i class="ph-bold ph-check"></i> Tandai Sudah Transfer Bank</button>
-                        <div class="relative flex py-2 items-center"><div class="flex-grow border-t border-gray-300"></div><span class="flex-shrink-0 mx-4 text-gray-400 text-xs">ATAU</span><div class="flex-grow border-t border-gray-300"></div></div>
-                        <button onclick="executeDisburse('${orderId}', '${mitraEmail}', ${netAmount}, 'otopay')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2.5 rounded shadow transition flex items-center justify-center gap-2 mt-2"><i class="ph-fill ph-wallet"></i> Masukkan ke Saldo OtoPay</button>
-                    </div>
+            document.getElementById('modalContainer').innerHTML=`
+            <div class="fixed inset-0 modal-overlay z-[120] flex items-center justify-center p-3">
+              <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+                <div class="bg-orange-500 text-white p-4 flex justify-between items-center"><div><h2 class="font-black"><i class="ph-bold ph-coins mr-1"></i>Pencairan Mitra</h2><p class="text-[10px] text-white/80">${order.orderId||order.id}</p></div><button onclick="closeAllModals()"><i class="ph-bold ph-x text-xl"></i></button></div>
+                <div class="p-5">
+                  <div class="grid grid-cols-3 gap-2 text-center mb-4"><div class="bg-gray-50 rounded-lg p-2"><p class="text-[9px] text-gray-500">TRANSAKSI</p><p class="font-black text-xs">${formatRp(gross)}</p></div><div class="bg-red-50 rounded-lg p-2"><p class="text-[9px] text-red-500">FEE OTOLINK 5%</p><p class="font-black text-xs text-red-600">-${formatRp(fee)}</p></div><div class="bg-green-50 rounded-lg p-2"><p class="text-[9px] text-green-600">HAK MITRA</p><p class="font-black text-xs text-green-700">${formatRp(netAmount)}</p></div></div>
+                  <div class="${hasBank?'bg-blue-50 border-blue-100':'bg-red-50 border-red-200'} border rounded-xl p-3 mb-4 text-sm"><p class="text-[10px] font-bold text-gray-500">REKENING MITRA</p><p class="font-black">${bankName}</p><p class="text-lg font-black tracking-wide">${bankAccount}</p><p class="text-xs">${bankHolder}</p>${!hasBank?'<p class="text-xs text-red-600 font-bold mt-2">Data rekening Mitra belum lengkap. Gunakan OtoPay atau minta Mitra melengkapi rekening.</p>':''}</div>
+                  <label class="text-xs font-bold">Bukti transfer (untuk pencairan Bank)</label><input id="disburseProof" type="file" accept="image/*" class="w-full border rounded-lg p-2 mt-1 mb-3 text-xs">
+                  <label class="text-xs font-bold">Catatan Finance</label><input id="disburseNote" class="w-full border rounded-lg p-2 mt-1 mb-3 text-sm" placeholder="Opsional">
+                  <div id="disburseStatus" class="hidden mb-3 p-2 rounded-lg text-xs font-bold"></div>
+                  <button id="btnDisburseBank" onclick="executeDisburse('${order.id}','${mitraEmail}',${netAmount},'bank')" class="w-full bg-green-600 text-white font-black py-3 rounded-lg mb-2 ${hasBank?'':'opacity-50'}" ${hasBank?'':'disabled'}><i class="ph-bold ph-bank mr-1"></i>Konfirmasi Transfer Bank</button>
+                  <button id="btnDisburseOtopay" onclick="executeDisburse('${order.id}','${mitraEmail}',${netAmount},'otopay')" class="w-full bg-yellow-500 text-white font-black py-3 rounded-lg"><i class="ph-fill ph-wallet mr-1"></i>Masukkan ke Saldo OtoPay Mitra</button>
                 </div>
+              </div>
             </div>`;
         };
 
         window.executeDisburse = async function(orderId, mitraEmail, amount, method) {
-            const order = window.ordersData.find(o => o.id === orderId || o.orderId === orderId);
-            const gross = Number(order?.totalAmount || 0);
-            const feeInfo = window.getRentalFeeBreakdown(gross || (Number(amount)||0) / 0.95);
-            const netAmount = Number(amount) || feeInfo.net;
-            const platformFee = gross ? (Number(order?.platformFee ?? feeInfo.fee)) : Math.max(0, feeInfo.gross - netAmount);
+            if(!window.requireAdminPermission('finance_withdrawal')) return;
+            if(window.__disburseBusy) return;
+            const order=window.ordersData.find(o=>o.id===orderId);
+            if(!order) return window.showToast('Transaksi tidak ditemukan.',false);
+            if(order.status!=='completed') return window.showToast('Transaksi belum selesai.',false);
+            if(order.isWithdrawn) return window.showToast('Pencairan ini sudah diproses sebelumnya.',false);
 
-            await window.fsUpdateDoc('orders', orderId, {
-                isWithdrawn: true,
-                platformFeeRate: window.RENTAL_PLATFORM_FEE_RATE,
-                platformFee,
-                ownerNetAmount: netAmount,
-                disbursedAt: Date.now()
-            });
+            const proofFile=document.getElementById('disburseProof')?.files?.[0]||null;
+            const note=(document.getElementById('disburseNote')?.value||'').trim();
+            if(method==='bank' && !proofFile) return window.showToast('Upload bukti transfer Bank terlebih dahulu.',false);
 
-            if(method === 'otopay') {
-                const u = window.usersData.find(x => x.email === mitraEmail);
-                if(u) await window.fsUpdateDoc('users', u.id, { saldo: (Number(u.saldo)||0) + netAmount });
-            }
+            window.__disburseBusy=true;
+            const b1=document.getElementById('btnDisburseBank'), b2=document.getElementById('btnDisburseOtopay'), st=document.getElementById('disburseStatus');
+            [b1,b2].forEach(b=>{if(b){b.disabled=true;b.classList.add('opacity-60')}});
+            if(st){st.className='mb-3 p-2 rounded-lg text-xs font-bold bg-blue-50 text-blue-700';st.textContent='Memproses pencairan...';}
 
-            await window.fsAddDoc('withdrawals', {
-                email: mitraEmail,
-                name: 'Sistem Admin',
-                grossAmount: gross || feeInfo.gross,
-                amount: gross || feeInfo.gross,
-                feeRate: window.RENTAL_PLATFORM_FEE_RATE,
-                fee: platformFee,
-                netAmount,
-                status: 'completed',
-                timestamp: Date.now(),
-                note: 'Pencairan Pesanan ' + (order?.orderId || orderId) + ' • Fee OtoLink 5%'
-            });
+            try {
+                const gross=Number(order.totalAmount||0);
+                const feeInfo=window.getRentalFeeBreakdown(gross);
+                const fee=Number(order.platformFee ?? feeInfo.fee);
+                const net=Number(order.ownerNetAmount ?? amount ?? feeInfo.net);
+                let proofData='';
+                if(proofFile) proofData=await compressImage(proofFile,900,0.68);
 
-            window.closeAllModals();
-            window.showToast("Dana Mitra berhasil dicairkan setelah potongan fee 5%.");
+                const u=window.usersData.find(x=>String(x.email||'').toLowerCase()===String(mitraEmail||'').toLowerCase());
+                if(!u) throw new Error('Akun Mitra tidak ditemukan.');
+
+                // Untuk OtoPay, saldo dihitung dari saldo terbaru di memori lalu disimpan.
+                if(method==='otopay'){
+                    const before=window.getOtoPayBalance(mitraEmail);
+                    const after=before+net;
+                    await window.fsUpdateDoc('users',u.id,{saldo:after,updatedAt:Date.now()});
+                    u.saldo=after;
+                }
+
+                // Catat pencairan dahulu, lalu tandai order sudah cair.
+                const wdId=await window.fsAddDoc('withdrawals',{
+                    orderId:order.orderId||order.id, orderDocId:order.id,
+                    email:mitraEmail, name:u.name||'Mitra',
+                    bankName:u.bankName||u.bank||'', bankAccount:u.bankAccount||u.accountNumber||'',
+                    grossAmount:gross, amount:gross, feeRate:window.RENTAL_PLATFORM_FEE_RATE,
+                    fee, netAmount:net, method,
+                    transferProof:proofData, note,
+                    status:'completed', processedBy:window.currentUser.email,
+                    processedByName:window.currentUser.name||'', processedAt:Date.now(), timestamp:Date.now()
+                });
+                await window.fsUpdateDoc('orders',order.id,{
+                    isWithdrawn:true, withdrawalId:wdId||'', disbursementMethod:method,
+                    platformFeeRate:window.RENTAL_PLATFORM_FEE_RATE, platformFee:fee,
+                    ownerNetAmount:net, disbursedAt:Date.now(), disbursedBy:window.currentUser.email
+                });
+                Object.assign(order,{isWithdrawn:true,withdrawalId:wdId||'',disbursementMethod:method,disbursedAt:Date.now()});
+                await window.writeAdminAudit('rental_disbursement',{orderId:order.orderId||order.id,mitraEmail,gross,fee,netAmount:net,method,withdrawalId:wdId||''},'finance');
+
+                window.closeAllModals();
+                window.showToast(method==='otopay'?'Dana berhasil masuk ke OtoPay Mitra.':'Transfer Bank berhasil dicatat dan bukti transfer tersimpan.');
+                setTimeout(()=>window.loadAdminData(),150);
+            } catch(err) {
+                console.error('Pencairan Mitra gagal:',err);
+                if(st){st.className='mb-3 p-2 rounded-lg text-xs font-bold bg-red-50 text-red-700';st.textContent='GAGAL: '+(err?.message||'proses pencairan gagal');}
+                [b1,b2].forEach(b=>{if(b){b.disabled=false;b.classList.remove('opacity-60')}});
+                window.showToast('Pencairan gagal: '+(err?.message||''),false);
+            } finally { window.__disburseBusy=false; }
         };
 
         window.adminConfirmDriverReport = async function(orderId) {
