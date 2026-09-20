@@ -1457,8 +1457,8 @@
                 fullName: user.fullName || user.name || '',
                 phone: user.phone || user.whatsapp || user.noHp || '',
                 bankHolder: user.bankHolder || user.accountHolder || user.fullName || user.name || '',
-                ktpPhoto: user.ktpPhoto || user.ktpPhotoFallback || user.ktpUrl || '',
-                selfieKtpPhoto: user.selfieKtpPhoto || user.selfieKtpPhotoFallback || user.selfieKtpUrl || ''
+                ktpPhoto: user.ktpPhoto || user.ktpPhotoFallback || user.ktpDocumentUrl || user.ktpUrl || '',
+                selfieKtpPhoto: user.selfieKtpPhoto || user.selfieKtpPhotoFallback || user.selfieDocumentUrl || user.selfieKtpUrl || ''
             };
 
             const required = [
@@ -1533,7 +1533,7 @@
             if(!file.type.startsWith('image/')) throw new Error('Dokumen harus berupa gambar JPG/PNG/WebP');
 
             // Kompres agresif agar jalur cadangan tetap kecil.
-            const compactData = await window.compressPartnerDocument(file, 850, 120);
+            const compactData = await window.compressPartnerDocument(file, 700, 75);
 
             // Prioritas 1: Firebase Storage.
             try {
@@ -1741,8 +1741,16 @@
                     throw new Error('Foto KTP dan selfie KTP wajib tersimpan sebelum dikirim.');
                 }
 
+                // Simpan referensi dokumen secara eksplisit pada dokumen USERS.
+                // Admin membaca field yang sama ini, sehingga upload sukses harus selalu terlihat di dashboard Admin.
                 const finalData = {
-                    ...docs,
+                    ktpPhoto: docs.ktpPhoto || '',
+                    ktpPhotoFallback: docs.ktpPhotoFallback || '',
+                    selfieKtpPhoto: docs.selfieKtpPhoto || '',
+                    selfieKtpPhotoFallback: docs.selfieKtpPhotoFallback || '',
+                    ktpDocumentUrl: docs.ktpPhoto || docs.ktpPhotoFallback || '',
+                    selfieDocumentUrl: docs.selfieKtpPhoto || docs.selfieKtpPhotoFallback || '',
+                    partnerDocumentsSaved: !!((docs.ktpPhoto || docs.ktpPhotoFallback) && (docs.selfieKtpPhoto || docs.selfieKtpPhotoFallback)),
                     partnerDocumentVersion: Date.now(),
                     partnerVerificationStatus: submitForVerification ? 'pending' :
                         (user.partnerVerificationStatus === 'verified' ? 'verified' : (user.partnerVerificationStatus || 'incomplete')),
@@ -1754,6 +1762,16 @@
                 }
 
                 await window.fsUpdateDoc('users', user.id, finalData);
+
+                // Verifikasi ulang langsung dari Firestore, bukan hanya preview/local state.
+                if(isFirebaseActive) {
+                    const savedSnap = await getDoc(doc(db,'users',user.id));
+                    const saved = savedSnap.exists() ? savedSnap.data() : {};
+                    const savedKtp = saved.ktpPhoto || saved.ktpPhotoFallback || saved.ktpDocumentUrl || '';
+                    const savedSelfie = saved.selfieKtpPhoto || saved.selfieKtpPhotoFallback || saved.selfieDocumentUrl || '';
+                    if(!savedKtp || !savedSelfie) throw new Error('Referensi foto belum tersimpan pada database user.');
+                    Object.assign(finalData, saved);
+                }
                 window.currentUser={...user,...textData,...finalData};
                 const local = window.usersData.find(x=>x.id===user.id);
                 if(local) Object.assign(local,textData,finalData);
@@ -1761,7 +1779,7 @@
 
                 if(!submitForVerification) window.closeAllModals();
                 window.loadMitraData();
-                window.showToast(submitForVerification ? 'Data sudah masuk ke Admin dan menunggu verifikasi.' : 'Profil berhasil disimpan.');
+                window.showToast(submitForVerification ? 'Foto KTP & selfie tersimpan di database dan sudah masuk ke Admin untuk verifikasi.' : 'Profil berhasil disimpan.');
             } catch(err) {
                 console.error('Simpan profil mitra gagal:',err);
                 // Text fields sudah disimpan sebelum dokumen; tandai agar Admin tahu perlu dokumen ulang.
@@ -1789,8 +1807,8 @@
         window.openAdminMitraProfile = function(userId) {
             const u = window.usersData.find(x=>x.id===userId);
             if(!u) return;
-            const ktpSource = u.ktpPhoto || u.ktpPhotoFallback || '';
-            const selfieSource = u.selfieKtpPhoto || u.selfieKtpPhotoFallback || '';
+            const ktpSource = u.ktpPhoto || u.ktpPhotoFallback || u.ktpDocumentUrl || '';
+            const selfieSource = u.selfieKtpPhoto || u.selfieKtpPhotoFallback || u.selfieDocumentUrl || '';
             const ktpUrl = window.partnerDocUrl(ktpSource, u.partnerDocumentVersion || u.partnerProfileUpdatedAt);
             const selfieUrl = window.partnerDocUrl(selfieSource, u.partnerDocumentVersion || u.partnerProfileUpdatedAt);
             const ps = window.getMitraProfileStatus(u);
