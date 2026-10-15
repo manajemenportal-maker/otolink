@@ -51,7 +51,7 @@
                     <i class="ph-fill ph-car-profile text-white text-2xl md:text-3xl"></i> OtoLink
                 </a>
                 <div class="flex-grow max-w-2xl relative hidden md:block">
-                    <input type="text" id="searchInput" onkeyup="if(event.key === 'Enter') filterCars('')" placeholder="Cari mobil impianmu... (Cth: Avanza, Brio)" class="w-full py-2.5 pl-4 pr-10 rounded-sm text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 shadow-inner">
+                    <input type="text" id="searchInput" oninput="syncAndSearchCars(this)" onkeyup="if(event.key === 'Enter') syncAndSearchCars(this)" placeholder="Cari mobil impianmu... (Cth: Avanza, Brio)" class="w-full py-2.5 pl-4 pr-10 rounded-sm text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 shadow-inner">
                     <button onclick="filterCars('')" class="absolute right-0 top-0 bottom-0 bg-orange-500 hover:bg-orange-600 px-4 rounded-r-sm transition"><i class="ph text-lg ph-magnifying-glass"></i></button>
                 </div>
                 <div id="walletBox" class="hidden flex-shrink-0 bg-white/10 px-3 py-1.5 rounded flex items-center gap-2 cursor-pointer hover:bg-white/20 transition" onclick="openUserDashboard()">
@@ -63,8 +63,8 @@
                 </div>
             </div>
             <div class="md:hidden pb-3 relative">
-                <input type="text" id="searchInputMobile" onkeyup="if(event.key === 'Enter') { document.getElementById('searchInput').value = this.value; filterCars(''); }" placeholder="Cari mobil impianmu..." class="w-full py-2 pl-3 pr-10 rounded-sm text-gray-800 text-sm focus:outline-none shadow-inner">
-                <button onclick="document.getElementById('searchInput').value = document.getElementById('searchInputMobile').value; filterCars('');" class="absolute right-0 top-0 bottom-3 bg-orange-500 px-3 rounded-r-sm transition"><i class="ph ph-magnifying-glass"></i></button>
+                <input type="text" id="searchInputMobile" oninput="syncAndSearchCars(this)" onkeyup="if(event.key === 'Enter') syncAndSearchCars(this)" placeholder="Cari mobil impianmu..." class="w-full py-2 pl-3 pr-10 rounded-sm text-gray-800 text-sm focus:outline-none shadow-inner">
+                <button onclick="syncAndSearchCars(document.getElementById('searchInputMobile'))" class="absolute right-0 top-0 bottom-3 bg-orange-500 px-3 rounded-r-sm transition"><i class="ph ph-magnifying-glass"></i></button>
             </div>
         </div>
     </header>
@@ -985,7 +985,14 @@
                 if (car.status !== 'approved') return false;
                 if (car.isBooked) return false; 
                 if (window.currentCategory && window.currentCategory !== 'Terlaris' && (car.category || "").toLowerCase() !== window.currentCategory.toLowerCase()) return false; 
-                if (window.currentSearch && !car.name.toLowerCase().includes(window.currentSearch)) return false;
+                if (window.currentSearch) {
+                    const searchable = window.normalizeCarSearchText([
+                        car.name, car.category, car.location, car.address, car.city, car.province,
+                        car.description, car.transmission, car.fuel, car.seat, car.brand, car.model,
+                        car.ownerName, car.service, ...(Array.isArray(car.features)?car.features:[])
+                    ].filter(Boolean).join(' '));
+                    if (!searchable.includes(window.currentSearch)) return false;
+                }
                 return true; 
             });
 
@@ -1042,23 +1049,57 @@
             document.getElementById('mainCarSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
 
-        window.filterCars = function(cat) { 
+        window.normalizeCarSearchText = function(value) {
+            return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+        };
+        window.syncAndSearchCars = function(source) {
+            const value = source ? source.value : '';
+            const desktop = document.getElementById('searchInput');
+            const mobile = document.getElementById('searchInputMobile');
+            if(desktop && source !== desktop) desktop.value=value;
+            if(mobile && source !== mobile) mobile.value=value;
+            window.currentSearch = window.normalizeCarSearchText(value);
+            window.currentCategory = '';
+            window.currentPage = 1;
+            document.querySelectorAll('.cat-btn').forEach(b=>{
+                const icon=b.querySelector('.cat-icon'), label=b.querySelector('.cat-text');
+                if(icon) icon.className="w-14 h-14 rounded-2xl bg-gray-50 text-gray-600 flex items-center justify-center text-3xl hover-trigger transition shadow-sm border border-gray-100 cat-icon";
+                if(label) label.className="text-xs font-medium text-gray-500 cat-text";
+            });
+            const all=document.getElementById('cat-Semua Mobil');
+            if(all){const icon=all.querySelector('.cat-icon'),label=all.querySelector('.cat-text');if(icon)icon.className="w-14 h-14 rounded-2xl bg-orange-100 text-shopee flex items-center justify-center text-3xl group-hover:bg-shopee group-hover:text-white transition shadow-sm border border-transparent group-hover:border-shopee/20 cat-icon";if(label)label.className="text-xs font-bold text-gray-700 cat-text";}
+            window.renderCars();
+        };
+        window.filterCars = function(cat) {
             window.currentPage = 1;
             const validCategories = ['', 'Terlaris', 'Promo', 'SUV', 'Keluarga'];
-            
-            if (validCategories.includes(cat)) {
+            if(validCategories.includes(cat)) {
                 window.currentCategory = cat;
-                document.getElementById('searchInput').value = "";
-                window.currentSearch = "";
+                if(cat !== '') {
+                    const desktop=document.getElementById('searchInput'),mobile=document.getElementById('searchInputMobile');
+                    if(desktop)desktop.value='';
+                    if(mobile)mobile.value='';
+                    window.currentSearch='';
+                } else {
+                    const desktop=document.getElementById('searchInput'),mobile=document.getElementById('searchInputMobile');
+                    const val=desktop?.value || mobile?.value || '';
+                    window.currentSearch=window.normalizeCarSearchText(val);
+                    if(desktop)desktop.value=val;if(mobile)mobile.value=val;
+                }
             } else {
-                window.currentSearch = document.getElementById('searchInput').value.toLowerCase();
-                window.currentCategory = ''; 
+                const desktop=document.getElementById('searchInput'),mobile=document.getElementById('searchInputMobile');
+                const val=desktop?.value || mobile?.value || '';
+                window.currentSearch=window.normalizeCarSearchText(val);
+                if(desktop)desktop.value=val;if(mobile)mobile.value=val;
+                window.currentCategory='';
             }
-
-            document.querySelectorAll('.cat-btn').forEach(b => { b.querySelector('.cat-icon').className = "w-14 h-14 rounded-2xl bg-gray-50 text-gray-600 flex items-center justify-center text-3xl hover-trigger transition shadow-sm border border-gray-100 cat-icon"; b.querySelector('.cat-text').className = "text-xs font-medium text-gray-500 cat-text"; });
-            let ab = document.getElementById(window.currentCategory === '' ? 'cat-Semua Mobil' : 'cat-' + window.currentCategory);
-            if(ab) { ab.querySelector('.cat-icon').className = "w-14 h-14 rounded-2xl bg-orange-100 text-shopee flex items-center justify-center text-3xl group-hover:bg-shopee group-hover:text-white transition shadow-sm border border-transparent group-hover:border-shopee/20 cat-icon"; ab.querySelector('.cat-text').className = "text-xs font-bold text-gray-700 cat-text"; }
-            
+            document.querySelectorAll('.cat-btn').forEach(b => {
+                const icon=b.querySelector('.cat-icon'),label=b.querySelector('.cat-text');
+                if(icon)icon.className="w-14 h-14 rounded-2xl bg-gray-50 text-gray-600 flex items-center justify-center text-3xl hover-trigger transition shadow-sm border border-gray-100 cat-icon";
+                if(label)label.className="text-xs font-medium text-gray-500 cat-text";
+            });
+            const ab=document.getElementById(window.currentCategory===''?'cat-Semua Mobil':'cat-'+window.currentCategory);
+            if(ab){const icon=ab.querySelector('.cat-icon'),label=ab.querySelector('.cat-text');if(icon)icon.className="w-14 h-14 rounded-2xl bg-orange-100 text-shopee flex items-center justify-center text-3xl group-hover:bg-shopee group-hover:text-white transition shadow-sm border border-transparent group-hover:border-shopee/20 cat-icon";if(label)label.className="text-xs font-bold text-gray-700 cat-text";}
             window.renderCars();
         };
 
