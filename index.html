@@ -485,6 +485,7 @@
         window.carGalleryState = { carId: null, index: 0 };
         window.openCarDetail = function(carId) {
             const car = window.carsData.find(c => c.id === carId); if(!car) return;
+            if(car.customerClickLocked === true) { window.showToast('Iklan ini sedang dikunci oleh Admin dan tidak dapat dipilih.', false); return; }
             const imgs = window.getCarImages(car);
             window.carGalleryState = { carId, index: 0 };
             const thumbHtml = imgs.map((u,i)=>`<button onclick="setCarGalleryPhoto(${i})" class="rounded overflow-hidden border-2 ${i===0?'border-shopee':'border-transparent'} car-gallery-thumb" data-idx="${i}"><img src="${u}" class="w-full h-16 object-cover"></button>`).join('');
@@ -941,7 +942,8 @@
 
             wrap.innerHTML = ''; ind.innerHTML = '';
             window.bannersData.forEach((b, i) => {
-                wrap.innerHTML += `<div class="w-full h-full flex-shrink-0 relative bg-gray-900 overflow-hidden">
+                const bannerCanClick = b.clickEnabled !== false && /^https?:\/\//i.test(String(b.clickUrl || '').trim());
+                wrap.innerHTML += `<div ${bannerCanClick ? `role="link" tabindex="0" aria-label="Buka iklan ${String(b.title||'OtoLink').replace(/"/g,'&quot;')}" onclick="window.openBannerLink('${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.openBannerLink('${b.id}')}"` : ''} class="w-full h-full flex-shrink-0 relative bg-gray-900 overflow-hidden ${bannerCanClick ? 'cursor-pointer' : 'cursor-default'}">
                     <img src="${b.img}" alt="${b.title || 'Banner OtoLink'}" class="relative z-[1] w-full h-full object-cover object-center">
                     <div class="absolute z-[2] inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
                     <div class="absolute z-[3] bottom-3 md:bottom-4 left-3 right-3 text-center">
@@ -1027,7 +1029,9 @@
             currentCars.forEach(car => {
                 const bm = car.ownerPhone !== 'official' ? `<div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold shadow-md z-10"><i class="ph-fill ph-handshake mr-1"></i>Mitra</div>` : '';
                 const carImgs = window.getCarImages(car); const cover = carImgs[0] || car.img || '';
-                c.innerHTML += `<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition flex flex-col group"><button onclick="openCarDetail('${car.id}')" class="h-32 md:h-40 overflow-hidden relative bg-gray-200 text-left"><img src="${cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">${bm}<div class="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white shadow-sm backdrop-blur-sm"><i class="ph-fill ph-camera mr-1"></i>${carImgs.length || 1} Foto</div><div class="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white shadow-sm backdrop-blur-sm">${car.seat} Kursi</div></button><div class="p-3 flex flex-col flex-grow"><button onclick="openCarDetail('${car.id}')" class="text-left"><h3 class="font-bold text-gray-800 text-sm md:text-base mb-1 truncate hover:text-shopee">${car.name}</h3></button><p class="text-[10px] text-gray-500 mb-2 uppercase font-semibold">${car.category || 'Mobil'}</p><div class="mt-auto pt-2 border-t border-gray-100"><p class="text-sm md:text-lg font-black text-shopee">${formatRp(car.priceDay)}<span class="text-[10px] md:text-xs font-normal text-gray-500"> / hari</span></p><div class="grid grid-cols-2 gap-2 mt-2"><button onclick="openCarDetail('${car.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 md:py-2 rounded text-xs font-bold transition"><i class="ph-bold ph-images mr-1"></i>Detail</button><button onclick="openCheckoutModal('${car.id}')" class="bg-orange-100 hover:bg-shopee hover:text-white text-shopee py-1.5 md:py-2 rounded text-xs font-bold transition">Pesan</button></div></div></div></div>`;
+                const locked = car.customerClickLocked === true;
+                // Status kunci hanya untuk logika internal; tidak ditampilkan kepada pelanggan.
+                c.innerHTML += `<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition flex flex-col group"><button ${locked?'disabled aria-disabled="true"':`onclick="openCarDetail('${car.id}')"`} class="h-32 md:h-40 overflow-hidden relative bg-gray-200 text-left"><img src="${cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">${bm}<div class="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white shadow-md"><i class="ph-fill ph-camera mr-1"></i>${carImgs.length || 1} Foto</div><div class="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white shadow-md">${car.seat} Kursi</div></button><div class="p-3 flex flex-col flex-grow"><button ${locked?'disabled aria-disabled="true"':`onclick="openCarDetail('${car.id}')"`} class="text-left"><h3 class="font-bold text-gray-800 text-sm md:text-base mb-1 truncate hover:text-shopee">${car.name}</h3></button><p class="text-[10px] text-gray-500 mb-2 uppercase font-semibold">${car.category || 'Mobil'}</p><div class="mt-auto pt-2 border-t border-gray-100"><p class="text-sm md:text-lg font-black text-shopee">${formatRp(car.priceDay)}<span class="text-[10px] md:text-xs font-normal text-gray-500"> / hari</span></p><div class="grid grid-cols-2 gap-2 mt-2"><button ${locked?'disabled aria-disabled="true"':`onclick="openCarDetail('${car.id}')"`} class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 md:py-2 rounded text-xs font-bold transition"><i class="ph-bold ph-images mr-1"></i>Detail</button><button ${locked?'disabled aria-disabled="true"':`onclick="openCheckoutModal('${car.id}')"`} class="bg-orange-100 hover:bg-shopee hover:text-white text-shopee py-1.5 md:py-2 rounded text-xs font-bold transition">Pesan</button></div></div></div></div>`;
             });
 
             if (totalPages > 1 && pc) {
@@ -1104,6 +1108,8 @@
         };
 
         window.openCheckoutModal = function(carId) {
+            const lockedCar = window.carsData.find(c => c.id === carId);
+            if(lockedCar && lockedCar.customerClickLocked === true) { window.showToast('Iklan ini sedang dikunci oleh Admin dan tidak dapat dipesan.', false); return; }
             if(!window.currentUser) { window.showToast("Harap login dulu!", false); return window.openLoginModal(); }
             const car = window.carsData.find(c => c.id === carId); if(!car) return;
             
@@ -2948,7 +2954,7 @@
                 hA += helpBox('Tugas admin di menu ini','Kelola seluruh mobil yang tampil atau pernah diajukan. Admin dapat menambah mobil official, mengedit data, menonaktifkan/mengaktifkan iklan, dan menghapus iklan.',['Tambah official','Edit data','Aktif/nonaktif','Hapus iklan']);
                 hA += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="adminCarsGrid">`;
                 if(!allCars.length) hA += emptyBox('ph-car','Belum ada iklan mobil','Tambahkan mobil official atau tunggu pengajuan dari mitra.',`<button onclick="openCarModal()" class="mt-3 bg-shopee text-white px-4 py-2 rounded-lg text-xs font-bold">Tambah Mobil Official</button>`);
-                allCars.forEach(c=>{const search=`${c.name||''} ${c.ownerPhone||''}`.toLowerCase().replace(/"/g,''); const filterStatus=c.isBooked?'booked':(c.status||'pending'); const statusLabel=c.isBooked?'DISEWA':c.status==='approved'?'AKTIF':c.status==='pending_payment'?'PENDING BAYAR':'PENDING'; const statusClass=c.isBooked?'bg-red-500 text-white':c.status==='approved'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'; hA += `<div data-admin-car-card data-status="${esc(filterStatus)}" data-search="${esc(search)}" class="border rounded-xl overflow-hidden bg-white shadow-sm"><div class="h-32 bg-gray-100 relative"><img src="${window.getCarImages(c)[0] || c.img}" class="w-full h-full object-cover"><span class="absolute top-2 left-2 ${statusClass} px-2 py-1 rounded text-[9px] font-black">${statusLabel}</span><span class="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-[9px] font-bold"><i class="ph-fill ph-camera mr-1"></i>${window.getCarImages(c).length || 1}</span></div><div class="p-3"><p class="font-black text-sm truncate">${esc(c.name||'-')}</p><p class="text-[10px] text-gray-500 truncate">${esc(c.ownerPhone||'official')}</p><div class="flex justify-between items-end mt-2"><div><p class="text-shopee font-black">${money(c.priceDay)}</p><p class="text-[10px] text-gray-400">${esc(c.seat||'-')} kursi • ${esc(c.category||'Mobil')}</p></div></div><div class="grid grid-cols-3 gap-1 mt-3 pt-2 border-t"><button onclick="openCarModal('${c.id}')" class="bg-gray-100 py-1.5 rounded text-[10px] font-bold">Edit</button><button onclick="adminToggleCarStatus('${c.id}')" class="${c.status==='approved'?'bg-yellow-50 text-yellow-700':'bg-green-50 text-green-700'} py-1.5 rounded text-[10px] font-bold">${c.status==='approved'?'Nonaktifkan':'Aktifkan'}</button><button onclick="adminDeleteCar('${c.id}')" class="bg-red-50 text-red-600 py-1.5 rounded text-[10px] font-bold">Hapus</button></div></div></div>`;});
+                allCars.forEach(c=>{const search=`${c.name||''} ${c.ownerPhone||''}`.toLowerCase().replace(/"/g,''); const filterStatus=c.isBooked?'booked':(c.status||'pending'); const statusLabel=c.isBooked?'DISEWA':c.status==='approved'?'AKTIF':c.status==='pending_payment'?'PENDING BAYAR':'PENDING'; const statusClass=c.isBooked?'bg-red-500 text-white':c.status==='approved'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'; hA += `<div data-admin-car-card data-status="${esc(filterStatus)}" data-search="${esc(search)}" class="border rounded-xl overflow-hidden bg-white shadow-sm"><div class="h-32 bg-gray-100 relative"><img src="${window.getCarImages(c)[0] || c.img}" class="w-full h-full object-cover"><span class="absolute top-2 left-2 ${statusClass} px-2 py-1 rounded text-[9px] font-black">${statusLabel}</span><span class="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-[9px] font-bold"><i class="ph-fill ph-camera mr-1"></i>${window.getCarImages(c).length || 1}</span></div><div class="p-3"><p class="font-black text-sm truncate">${esc(c.name||'-')}</p><p class="text-[10px] text-gray-500 truncate">${esc(c.ownerPhone||'official')}</p><div class="flex justify-between items-end mt-2"><div><p class="text-shopee font-black">${money(c.priceDay)}</p><p class="text-[10px] text-gray-400">${esc(c.seat||'-')} kursi • ${esc(c.category||'Mobil')}</p></div></div><div class="grid grid-cols-2 gap-1 mt-3 pt-2 border-t"><button onclick="openCarModal('${c.id}')" class="bg-gray-100 py-1.5 rounded text-[10px] font-bold">Edit</button><button onclick="adminToggleCarClickLock('${c.id}')" class="${c.customerClickLocked===true?'bg-green-50 text-green-700':'bg-amber-50 text-amber-700'} py-1.5 rounded text-[10px] font-bold"><i class="ph-fill ${c.customerClickLocked===true?'ph-lock-key-open':'ph-lock-key'} mr-1"></i>${c.customerClickLocked===true?'Buka Kunci':'Kunci Klik'}</button><button onclick="adminToggleCarStatus('${c.id}')" class="${c.status==='approved'?'bg-yellow-50 text-yellow-700':'bg-green-50 text-green-700'} py-1.5 rounded text-[10px] font-bold">${c.status==='approved'?'Nonaktifkan':'Aktifkan'}</button><button onclick="adminDeleteCar('${c.id}')" class="bg-red-50 text-red-600 py-1.5 rounded text-[10px] font-bold">Hapus</button></div></div></div>`;});
                 c_adA.innerHTML = hA + `</div><p id="adminCarNoResult" class="hidden text-center text-xs text-gray-400 py-5">Tidak ada mobil yang cocok dengan filter.</p>`;
             }
 
@@ -2974,6 +2980,11 @@
                             <label class="block text-xs font-bold text-gray-700 mb-1">Teks / Keterangan Iklan</label>
                             <input type="text" id="bnDescription" maxlength="120" placeholder="Contoh: Diskon khusus pemesanan minggu ini" class="w-full text-sm border p-2.5 rounded-lg bg-white">
                         </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Tautan tujuan saat banner diklik (opsional)</label>
+                            <input type="url" id="bnClickUrl" placeholder="https://contoh.com/promo atau halaman mobil" class="w-full text-sm border p-2.5 rounded-lg bg-white">
+                            <label class="flex items-center gap-2 mt-2 text-xs font-bold text-gray-700"><input id="bnClickEnabled" type="checkbox" checked class="rounded"> Izinkan banner diklik (banner tetap tampil jika tidak dicentang)</label>
+                        </div>
                     </div>
                     <button onclick="saveBanner()" class="mt-3 w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold"><i class="ph-bold ph-upload-simple mr-1"></i> Upload Banner</button>
                 </div>`;
@@ -2986,7 +2997,9 @@
                         <div class="p-3">
                             <p class="text-sm font-black">${esc(b.title||'Tanpa Judul')}</p>
                             <p class="text-xs text-gray-500 mt-1 min-h-[18px]">${esc(b.description||'Tidak ada keterangan')}</p>
-                            <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t">
+                            <p class="text-[10px] mt-2 ${(b.clickEnabled===false||!b.clickUrl)?'text-amber-700':'text-green-700'} font-bold">${!b.clickUrl?'BELUM ADA TAUTAN':b.clickEnabled===false?'TIDAK BISA DIKLIK':'BISA DIKLIK'}${b.clickUrl?' • Tautan diatur':''}</p>
+                            <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t">
+                                <button onclick="${!b.clickUrl?`openBannerEdit('${b.id}')`:`toggleBannerClick('${b.id}')`}" class="${!b.clickUrl?'bg-blue-50 text-blue-700':b.clickEnabled===false?'bg-green-50 text-green-700':'bg-amber-50 text-amber-700'} py-2 rounded-lg text-[10px] font-bold">${!b.clickUrl?'Atur Tautan':b.clickEnabled===false?'Aktifkan Klik':'Matikan Klik'}</button>
                                 <button onclick="openBannerEdit('${b.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 rounded-lg text-xs font-bold"><i class="ph-bold ph-pencil-simple mr-1"></i> Edit</button>
                                 <button onclick="adminDeleteBanner('${b.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg text-xs font-bold"><i class="ph-bold ph-trash mr-1"></i> Hapus</button>
                             </div>
@@ -3034,6 +3047,18 @@
         };
         window.adminRejectCar = async function(id) { if(!window.requireAdminPermission('ads')) return; if(!confirm('Tolak dan hapus pengajuan iklan ini?'))return; await window.fsDeleteDoc('cars',id); window.showToast('Pengajuan iklan ditolak'); };
         window.adminDeleteCar = async function(id) { const c=window.carsData.find(x=>x.id===id); if(!confirm(`Hapus iklan ${c?.name||'ini'} secara permanen?`))return; await window.fsDeleteDoc('cars',id); window.showToast('Iklan dihapus'); };
+        window.adminToggleCarClickLock = async function(carId) {
+            if(!window.isSuperAdmin && !(window.currentAdminPermissions||[]).includes('all_cars')) { window.showToast('Anda tidak memiliki izin mengelola iklan.', false); return; }
+            const car = window.carsData.find(x=>x.id===carId); if(!car) return;
+            const nextLocked = car.customerClickLocked !== true;
+            try {
+                await window.fsUpdateDoc('cars', carId, {customerClickLocked: nextLocked, customerClickLockedAt: Date.now(), customerClickLockedBy: (window.currentUser && (window.currentUser.email||window.currentUser.name)) || 'admin'});
+                car.customerClickLocked = nextLocked;
+                window.showToast(nextLocked ? 'Iklan dikunci: tetap tampil, tetapi tidak bisa dipilih pelanggan.' : 'Kunci iklan dibuka. Pelanggan dapat memilih kembali.', true);
+                window.renderCars();
+                if(typeof window.loadAdminPanels === 'function') window.loadAdminPanels();
+            } catch(e) { console.error(e); window.showToast('Gagal menyimpan kontrol kunci iklan. Periksa koneksi/database.', false); }
+        };
         window.adminToggleCarStatus = async function(id) { const c=window.carsData.find(x=>x.id===id); if(!c)return; const st=c.status==='approved'?'pending':'approved'; await window.fsUpdateDoc('cars',id,{status:st}); window.showToast(st==='approved'?'Iklan diaktifkan':'Iklan dinonaktifkan'); };
         window.adminDeleteBanner = async function(id) { if(!confirm('Hapus banner ini dari halaman utama?'))return; await window.fsDeleteDoc('banners',id); window.showToast('Banner dihapus'); };
         window.adminRejectTopup = async function(id) { if(!confirm('Tolak pengajuan top up ini? Saldo tidak akan ditambahkan.'))return; await window.fsUpdateDoc('topups',id,{status:'rejected',processedAt:Date.now()}); window.showToast('Top up ditolak'); };
@@ -3324,6 +3349,9 @@
             const file = document.getElementById('bnImgInput')?.files?.[0];
             const title = (document.getElementById('bnTitle')?.value || '').trim();
             const description = (document.getElementById('bnDescription')?.value || '').trim();
+            const clickUrl = (document.getElementById('bnClickUrl')?.value || '').trim();
+            const clickEnabled = document.getElementById('bnClickEnabled')?.checked !== false;
+            if(clickUrl && !/^https?:\/\//i.test(clickUrl)) return window.showToast('Tautan harus diawali http:// atau https://', false);
 
             if(!file) return window.showToast("Pilih gambar banner!", false);
             if(window.bannersData.length >= 5) return window.showToast("Maksimal 5 banner aktif.", false);
@@ -3335,6 +3363,8 @@
                     img: imgData,
                     title,
                     description,
+                    clickUrl,
+                    clickEnabled,
                     timestamp: Date.now(),
                     updatedAt: Date.now()
                 });
@@ -3385,10 +3415,15 @@
                             <input type="text" id="editBannerTitle" maxlength="60" value="${escAttr(b.title)}" placeholder="Judul yang tampil pada banner" class="w-full border rounded-lg p-2.5 text-sm">
                         </div>
 
-                        <div class="mb-5">
+                        <div class="mb-4">
                             <label class="block text-xs font-bold text-gray-600 mb-1">Teks / Keterangan Iklan</label>
                             <textarea id="editBannerDescription" rows="3" maxlength="120" placeholder="Tambahkan keterangan singkat iklan..." class="w-full border rounded-lg p-2.5 text-sm resize-none">${escAttr(b.description)}</textarea>
                             <p class="text-[10px] text-gray-400 mt-1">Maksimal 120 karakter agar tetap enak dilihat di carousel.</p>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-gray-600 mb-1">Tautan tujuan saat diklik (opsional)</label>
+                            <input type="url" id="editBannerClickUrl" value="${escAttr(b.clickUrl||'')}" placeholder="https://contoh.com/promo" class="w-full border rounded-lg p-2.5 text-sm">
+                            <label class="flex items-center gap-2 mt-2 text-xs font-bold text-gray-700"><input id="editBannerClickEnabled" type="checkbox" ${b.clickEnabled===false?'':'checked'} class="rounded"> Izinkan banner diklik (hapus centang agar tetap tampil tapi tidak bisa diklik)</label>
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
@@ -3404,11 +3439,14 @@
             const id = document.getElementById('editBannerId')?.value;
             const title = (document.getElementById('editBannerTitle')?.value || '').trim();
             const description = (document.getElementById('editBannerDescription')?.value || '').trim();
+            const clickUrl = (document.getElementById('editBannerClickUrl')?.value || '').trim();
+            const clickEnabled = document.getElementById('editBannerClickEnabled')?.checked === true;
             const imageFile = document.getElementById('editBannerImage')?.files?.[0] || null;
 
             if(!id) return window.showToast("ID banner tidak ditemukan.", false);
+            if(clickUrl && !/^https?:\/\//i.test(clickUrl)) return window.showToast('Tautan harus diawali http:// atau https://', false);
 
-            const data = { title, description, updatedAt: Date.now() };
+            const data = { title, description, clickUrl, clickEnabled, updatedAt: Date.now() };
 
             // Setelah input sudah terbaca, form langsung ditutup lalu proses berjalan.
             window.closeAllModals();
@@ -3423,6 +3461,28 @@
                 console.error(err);
                 window.showToast("Gagal memperbarui banner.", false);
                 setTimeout(() => window.openBannerEdit(id), 500);
+            }
+        };
+
+        window.openBannerLink = function(bannerId) {
+            const b = window.bannersData.find(x => x.id === bannerId);
+            const url = String(b?.clickUrl || '').trim();
+            if(!b || b.clickEnabled === false || !/^https?:\/\//i.test(url)) return;
+            window.open(url, '_blank', 'noopener,noreferrer');
+        };
+        window.toggleBannerClick = async function(bannerId) {
+            if(!window.requireAdminPermission('banner')) return;
+            const b = window.bannersData.find(x => x.id === bannerId);
+            if(!b) return window.showToast('Banner tidak ditemukan.', false);
+            const next = b.clickEnabled === false;
+            if(next && !/^https?:\/\//i.test(String(b.clickUrl||'').trim())) return window.showToast('Atur tautan iklan terlebih dahulu melalui tombol Edit.', false);
+            try {
+                await window.fsUpdateDoc('banners', bannerId, { clickEnabled: next, updatedAt: Date.now() });
+                window.showToast(next ? 'Banner sekarang bisa diklik.' : 'Banner tetap tampil, tetapi klik dimatikan.');
+                if(window.currentUser?.role === 'admin') window.loadAdminData();
+            } catch(err) {
+                console.error(err);
+                window.showToast('Gagal mengubah kontrol klik banner.', false);
             }
         };
 
