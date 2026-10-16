@@ -42,7 +42,7 @@
             <div class="flex justify-between items-center py-2 text-[10px] md:text-xs opacity-90 border-b border-white/20">
                 <span>Mulai Sewakan Mobil</span>
                 <div class="flex gap-4">
-                    <button class="hover:text-white transition flex items-center gap-1"><i class="ph ph-bell"></i> Notifikasi</button>
+                    <button onclick="openNotificationSettings()" class="hover:text-white transition flex items-center gap-1" title="Pengaturan bunyi notifikasi"><i class="ph ph-bell-ringing"></i> <span id="notificationHeaderLabel">Notifikasi: ON</span></button>
                     <div id="authMenuTop" class="font-medium cursor-pointer hover:underline" onclick="openLoginModal()">Masuk | Daftar</div>
                 </div>
             </div>
@@ -283,6 +283,22 @@
         window.fsUpdateDoc = async (colName, docId, data) => { if(isFirebaseActive) await updateDoc(doc(db, colName, docId), data); };
         window.fsDeleteDoc = async (colName, docId) => { if(isFirebaseActive) await deleteDoc(doc(db, colName, docId)); };
 
+        // Bunyi notifikasi transaksi per perangkat/browser.
+        window.otoNotifEnabled = localStorage.getItem('otolinkNotifSoundEnabled') !== 'false';
+        window.otoNotifPrimed = localStorage.getItem('otolinkNotifSoundPrimed') === 'true';
+        window.otoNotifInitialSnapshots = {orders:false,topups:false,withdrawals:false,messages:false};
+        window.updateNotifHeader = function(){ const el=document.getElementById('notificationHeaderLabel'); if(el) el.textContent='Notifikasi: '+(window.otoNotifEnabled?'ON':'OFF'); };
+        window.playOtoNotifSound = function(){
+          if(!window.otoNotifEnabled || !window.otoNotifPrimed) return;
+          try { const C=window.AudioContext||window.webkitAudioContext; if(!C)return; const c=new C(),t=c.currentTime; [880,1174].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,t+i*.13);g.gain.exponentialRampToValueAtTime(.1,t+i*.13+.025);g.gain.exponentialRampToValueAtTime(.0001,t+i*.13+.17);o.connect(g);g.connect(c.destination);o.start(t+i*.13);o.stop(t+i*.13+.18);});setTimeout(()=>c.close().catch(()=>{}),600); }catch(e){}
+        };
+        window.notifyOtoTransaction = function(kind,detail){ if(!window.otoNotifEnabled||!window.otoNotifPrimed)return; window.playOtoNotifSound(); if(document.hidden&&'Notification'in window&&Notification.permission==='granted'){try{new Notification('OtoLink • '+kind,{body:detail});}catch(e){}} };
+        window.openNotificationSettings = function(){ const en=window.otoNotifEnabled; document.getElementById('modalContainer').innerHTML=`<div class="modal-overlay fixed inset-0 z-[100] flex items-center justify-center p-4"><div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden"><div class="bg-shopee text-white p-4 flex justify-between items-center"><h3 class="font-black"><i class="ph ph-bell-ringing mr-1"></i> Bunyi Notifikasi</h3><button onclick="closeAllModals()"><i class="ph ph-x text-xl"></i></button></div><div class="p-5"><p class="text-sm text-gray-600 mb-4">Bunyi untuk pesanan, transaksi OtoPay, pencairan mitra, dan chat masuk. Pengaturan tersimpan di perangkat/browser ini.</p><div class="border rounded-xl p-3 mb-4 flex justify-between"><div><b class="text-sm">Status bunyi</b><p class="text-xs ${en?'text-green-600':'text-gray-500'}">${en?'AKTIF':'NONAKTIF'}</p></div><span class="text-2xl">${en?'🔔':'🔕'}</span></div><button onclick="enableOtoNotifications()" class="w-full bg-green-600 text-white font-bold rounded-lg py-3 mb-2">Aktifkan & Tes Bunyi</button><button onclick="disableOtoNotifications()" class="w-full bg-gray-100 text-gray-700 font-bold rounded-lg py-3">Matikan Bunyi</button><p class="text-[11px] text-gray-500 mt-3">Browser/HP harus mengizinkan suara. Notifikasi saat halaman benar-benar tertutup memerlukan layanan push terpisah.</p></div></div></div>`; };
+        window.enableOtoNotifications = async function(){ window.otoNotifEnabled=true;window.otoNotifPrimed=true;localStorage.setItem('otolinkNotifSoundEnabled','true');localStorage.setItem('otolinkNotifSoundPrimed','true');if('Notification'in window&&Notification.permission==='default'){try{await Notification.requestPermission();}catch(e){}}window.updateNotifHeader();window.playOtoNotifSound();window.showToast('Bunyi notifikasi aktif pada perangkat ini');window.openNotificationSettings(); };
+        window.disableOtoNotifications = function(){window.otoNotifEnabled=false;localStorage.setItem('otolinkNotifSoundEnabled','false');window.updateNotifHeader();window.showToast('Bunyi notifikasi dimatikan');window.openNotificationSettings();};
+        window.updateNotifHeader();
+        document.addEventListener('pointerdown',function primeOtoAudio(){if(window.otoNotifEnabled&&!window.otoNotifPrimed){window.otoNotifPrimed=true;localStorage.setItem('otolinkNotifSoundPrimed','true');}},{once:true});
+
         if (isFirebaseActive) {
             onSnapshot(collection(db, 'users'), (snap) => {
                 window.usersData = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(u => !u.isDeleted && u.accountStatus !== 'deleted');
@@ -293,9 +309,9 @@
                 }
             });
             onSnapshot(collection(db, 'cars'), (snap) => { window.carsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); if(window.currentUser?.role==='admin') window.renderAdminGlobalNotif?.(); });
-            onSnapshot(collection(db, 'orders'), (snap) => { window.ordersData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
-            onSnapshot(collection(db, 'withdrawals'), (snap) => { window.withdrawalsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
-            onSnapshot(collection(db, 'topups'), (snap) => { window.topupsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(collection(db, 'orders'), (snap) => { const a=snap.docChanges().filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})); if(window.otoNotifInitialSnapshots.orders) a.forEach(o=>{const e=window.currentUser?.email||'';if(window.currentUser?.role==='admin'||o.email===e||o.customerEmail===e||o.ownerEmail===e||o.mitraEmail===e)window.notifyOtoTransaction('Pesanan','Ada aktivitas pesanan mobil '+(o.carName||o.car||''));});window.otoNotifInitialSnapshots.orders=true;window.ordersData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(collection(db, 'withdrawals'), (snap) => {const a=snap.docChanges().filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()}));if(window.otoNotifInitialSnapshots.withdrawals)a.forEach(w=>{const e=window.currentUser?.email||'';if(window.currentUser?.role==='admin'||w.email===e||w.mitraEmail===e)window.notifyOtoTransaction('Pencairan Mitra','Ada aktivitas pencairan mitra.');});window.otoNotifInitialSnapshots.withdrawals=true;window.withdrawalsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(collection(db, 'topups'), (snap) => {const a=snap.docChanges().filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()}));if(window.otoNotifInitialSnapshots.topups)a.forEach(t=>{const e=window.currentUser?.email||'';if(window.currentUser?.role==='admin'||t.email===e)window.notifyOtoTransaction('OtoPay','Ada aktivitas OtoPay '+(t.status||'baru')+'.');});window.otoNotifInitialSnapshots.topups=true;window.topupsData = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
             onSnapshot(collection(db, 'banners'), (snap) => { window.bannersData = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCarousel(); });
             onSnapshot(collection(db, 'settings'), (snap) => { 
                 window.appSettingsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -303,7 +319,7 @@
                 if(cnf) { window.configDocId = cnf.id; window.bannerInterval = cnf.bannerInterval || 5000; setupCarouselInterval(); }
             });
             onSnapshot(collection(db, 'messages'), (snap) => { 
-                window.messagesData = snap.docs.map(d => ({id: d.id, ...d.data()})); 
+                const am=snap.docChanges().filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()}));if(window.otoNotifInitialSnapshots.messages)am.forEach(m=>{const u=window.currentUser;if(!u||m.senderEmail===u.email)return;const addressed=u.role==='admin'?(m.receiverEmail==='admin'||m.receiverEmail===u.email||(!m.receiverEmail&&m.senderEmail!=='admin')):m.receiverEmail===u.email;if(addressed)window.notifyOtoTransaction('Chat Masuk','Pesan baru dari '+(m.senderName||m.senderEmail||'pengguna OtoLink'));});window.otoNotifInitialSnapshots.messages=true;window.messagesData = snap.docs.map(d => ({id: d.id, ...d.data()})); 
                 window.messagesData.sort((a,b) => a.timestamp - b.timestamp);
                 
                 // Read Receipt Engine
