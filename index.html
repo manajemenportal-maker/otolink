@@ -1962,7 +1962,10 @@
             const mine=(window.withdrawalsData||[]).filter(w=>String(w.email||w.mitraEmail||'').trim().toLowerCase()===key && !w.orderId);
             const pending=mine.filter(w=>w.status==='pending').reduce((sum,w)=>sum+Number(w.amount||w.netAmount||0),0);
             const paid=mine.filter(w=>['completed','approved'].includes(w.status)).reduce((sum,w)=>sum+Number(w.amount||w.netAmount||0),0);
-            const balance=Number(window.currentUser?.saldo||0);
+            const user=(window.usersData||[]).find(u=>String(u.email||'').trim().toLowerCase()===key);
+            // Pisahkan saldo pendapatan mitra dari saldo OtoPay. Setelah admin memproses pencairan,
+            // field mitraBalance menjadi sumber utama agar saldo tidak kembali ke nilai lama.
+            const balance=Number(user?.mitraBalance ?? user?.saldo ?? window.currentUser?.mitraBalance ?? window.currentUser?.saldo ?? 0);
             return {balance,pending,paid,available:Math.max(0,balance-pending),history:mine.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0))};
         };
 
@@ -3397,15 +3400,17 @@
             const u=(window.usersData||[]).find(x=>String(x.email||'').trim().toLowerCase()===String(email||'').trim().toLowerCase());
             if(!u) return window.showToast('Akun mitra tidak ditemukan.',false);
             const amount=Number(wd.amount||wd.netAmount||0);
-            const current=Number(u.saldo||0);
+            const current=Number(u.mitraBalance ?? u.saldo ?? 0);
             if(amount>current) return window.showToast('Saldo buku mitra tidak cukup untuk menyelesaikan pencairan ini.',false);
             try {
-                await window.fsUpdateDoc('users',u.id,{saldo:current-amount,updatedAt:Date.now()});
-                await window.fsUpdateDoc('withdrawals',id,{status:'completed',processedAt:Date.now(),processedBy:window.currentUser?.email||'admin'});
-                u.saldo=current-amount;
-                if(window.currentUser && String(window.currentUser.email||'').toLowerCase()===String(email||'').toLowerCase()) window.currentUser.saldo=current-amount;
-                await window.writeAdminAudit('complete_withdrawal',{withdrawalId:id,email,amount,previousBalance:current,newBalance:current-amount},'finance');
-                window.showToast('Transfer selesai. Saldo mitra sudah dikurangi sebesar '+formatRp(amount)+'.');
+                const newBalance=current-amount;
+                // Simpan saldo khusus mitra agar tidak tertimpa sinkronisasi saldo OtoPay.
+                await window.fsUpdateDoc('users',u.id,{mitraBalance:newBalance,updatedAt:Date.now()});
+                await window.fsUpdateDoc('withdrawals',id,{status:'completed',processedAt:Date.now(),processedBy:window.currentUser?.email||'admin',balanceDeducted:true,amountDeducted:amount});
+                u.mitraBalance=newBalance;
+                if(window.currentUser && String(window.currentUser.email||'').trim().toLowerCase()===String(email||'').trim().toLowerCase()) window.currentUser.mitraBalance=newBalance;
+                await window.writeAdminAudit('complete_withdrawal',{withdrawalId:id,email,amount,previousBalance:current,newBalance},'finance');
+                window.showToast('Transfer selesai. Saldo tersedia mitra sudah dikurangi sebesar '+formatRp(amount)+'.');
                 window.loadAdminData();
             } catch(err) { console.error(err); window.showToast('Gagal memproses pencairan: '+(err.message||''),false); }
         };
