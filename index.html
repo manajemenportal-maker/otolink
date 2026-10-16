@@ -1954,11 +1954,21 @@
             }
         };
 
+        window.getMitraWithdrawalSummary = function(email){
+            const key=String(email||'').trim().toLowerCase();
+            const mine=(window.withdrawalsData||[]).filter(w=>String(w.email||w.mitraEmail||'').trim().toLowerCase()===key && !w.orderId);
+            const pending=mine.filter(w=>w.status==='pending').reduce((sum,w)=>sum+Number(w.amount||w.netAmount||0),0);
+            const paid=mine.filter(w=>['completed','approved'].includes(w.status)).reduce((sum,w)=>sum+Number(w.amount||w.netAmount||0),0);
+            const balance=Number(window.currentUser?.saldo||0);
+            return {balance,pending,paid,available:Math.max(0,balance-pending),history:mine.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0))};
+        };
+
         window.loadMitraData = function() {
             const dc = document.getElementById('dashboardContent');
             let myCars = window.carsData.filter(c => c.ownerPhone === window.currentUser.email);
             let myOrders = window.ordersData.filter(o => o.ownerEmail === window.currentUser.email);
             let myCustOrders = window.ordersData.filter(o => o.customerEmail === window.currentUser.email);
+            const wdSummary = window.getMitraWithdrawalSummary(window.currentUser.email);
             
             const badge = document.getElementById('mobileChatBadge');
             const hasUnreadAdmin = window.messagesData.some(m => m.receiverEmail === window.currentUser.email && !m.isRead);
@@ -1973,7 +1983,7 @@
                 </div>
             </div>
             <div class="bg-white p-4 md:p-6 rounded-b-xl shadow-md border-x border-b mb-6 flex flex-wrap gap-4 items-center justify-between">
-                <div class="flex items-center gap-3 bg-green-50 px-4 py-2 rounded-lg border border-green-100"><i class="ph-fill ph-wallet text-3xl text-yellow-500 drop-shadow-sm"></i><div><p class="text-[10px] uppercase font-bold text-green-800">Saldo Pendapatan</p><p class="text-xl font-black text-green-700">${formatRp(window.currentUser.saldo || 0)}</p></div></div>
+                <div class="flex items-center gap-3 bg-green-50 px-4 py-2 rounded-lg border border-green-100"><i class="ph-fill ph-wallet text-3xl text-yellow-500 drop-shadow-sm"></i><div><p class="text-[10px] uppercase font-bold text-green-800">Saldo Tersedia</p><p class="text-xl font-black text-green-700">${formatRp(wdSummary.available)}</p><p class="text-[10px] text-yellow-700">Menunggu proses: ${formatRp(wdSummary.pending)}</p><p class="text-[10px] text-gray-500">Saldo buku: ${formatRp(wdSummary.balance)}</p></div></div>
                 <div class="flex flex-wrap gap-2">
                     <button onclick="openMitraProfile()" class="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded font-bold shadow-sm text-sm flex items-center gap-1"><i class="ph-fill ph-identification-card"></i> Profil & Verifikasi</button>
                     <button onclick="openRekeningSetting()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded font-bold shadow-sm text-sm border flex items-center gap-1"><i class="ph-fill ph-bank"></i> Rekening</button>
@@ -2223,7 +2233,7 @@
                 <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
                     <div class="bg-shopee p-4 text-white flex justify-between"><h2 class="font-bold flex items-center gap-2"><i class="ph-fill ph-money"></i> Tarik Dana</h2><button onclick="closeAllModals()"><i class="ph-bold ph-x"></i></button></div>
                     <div class="p-6">
-                        <div class="bg-gray-50 p-3 rounded border text-center mb-3"><p class="text-xs text-gray-500">Saldo Tersedia</p><p class="text-xl font-black text-shopee">${formatRp(window.currentUser.saldo)}</p></div>
+                        <div class="bg-gray-50 p-3 rounded border text-center mb-3"><p class="text-xs text-gray-500">Saldo Tersedia</p><p class="text-xl font-black text-shopee">${formatRp(window.getMitraWithdrawalSummary(window.currentUser.email).available)}</p><p class="text-[11px] text-yellow-700 mt-1">Pengajuan menunggu: ${formatRp(window.getMitraWithdrawalSummary(window.currentUser.email).pending)}</p></div>
                         <div class="bg-green-50 border border-green-100 p-3 rounded-lg text-xs mb-3"><p class="font-bold text-green-800">${window.currentUser.bankName} • ${window.currentUser.bankAccount}</p><p class="text-green-700">a.n. ${window.currentUser.bankHolder}</p></div>
                         <p class="text-xs text-green-600 mb-4 text-center">*Tidak ada potongan pencairan. Fee 5% sudah dipotong pada transaksi sewa.</p>
                         <div class="mb-6"><label class="block text-xs font-semibold text-gray-600 mb-1">Jumlah Tarik (Rp)</label><input type="number" id="wdAmount" placeholder="Minimal 50000" class="w-full border p-2 text-sm rounded outline-none focus:border-shopee"></div>
@@ -2235,7 +2245,8 @@
         window.processWithdraw = async function() {
             const am = parseInt(document.getElementById('wdAmount')?.value || '0');
             if(!am || am < 50000) return window.showToast("Minimal tarik Rp 50.000", false);
-            if(am > Number(window.currentUser.saldo || 0)) return window.showToast("Saldo tidak cukup!", false);
+            const wdSummary = window.getMitraWithdrawalSummary(window.currentUser.email);
+            if(am > wdSummary.available) return window.showToast("Saldo tersedia tidak cukup (termasuk pengajuan yang masih menunggu).", false);
 
             const beforeSaldo = Number(window.currentUser.saldo || 0);
             const fee = 0;
@@ -2257,11 +2268,9 @@
             window.closeAllModals();
             window.showToast("Memproses pengajuan pencairan...");
             try {
-                const newSaldo = beforeSaldo - am;
-                await window.fsUpdateDoc('users', window.currentUser.id, { saldo: newSaldo });
                 await window.fsAddDoc('withdrawals', wdData);
-                window.currentUser.saldo = newSaldo;
-                window.showToast("Pengajuan pencairan berhasil dikirim!");
+                // Saldo buku tidak dikurangi saat pengajuan; saldo tersedia otomatis menahan pengajuan pending.
+                window.showToast("Pengajuan pencairan berhasil dikirim. Saldo akan dikurangi setelah Admin menyelesaikan transfer.");
                 window.loadMitraData();
             } catch(err) {
                 console.error(err);
@@ -3352,9 +3361,27 @@
             await window.writeAdminAudit("approve_topup",{topupId:id,email,amount:Number(amt||0)},"finance"); window.showToast("Top Up Diacc! Saldo OtoPay diperbarui.");
             refreshUI();
         };
-        window.approveWithdraw = async function(id) { if(!window.requireAdminPermission('finance_withdrawal')) return; 
-            await window.fsUpdateDoc('withdrawals', id, { status: 'completed' }); 
-            await window.writeAdminAudit("complete_withdrawal",{withdrawalId:id},"finance"); window.showToast("Penarikan Ditandai Selesai"); 
+        window.approveWithdraw = async function(id) {
+            if(!window.requireAdminPermission('finance_withdrawal')) return;
+            const wd=(window.withdrawalsData||[]).find(x=>x.id===id);
+            if(!wd) return window.showToast('Pengajuan pencairan tidak ditemukan.',false);
+            if(['completed','approved'].includes(wd.status)) return window.showToast('Pengajuan ini sudah diproses sebelumnya.',false);
+            if(wd.status!=='pending') return window.showToast('Hanya pengajuan pending yang dapat diproses.',false);
+            const email=wd.email||wd.mitraEmail;
+            const u=(window.usersData||[]).find(x=>String(x.email||'').trim().toLowerCase()===String(email||'').trim().toLowerCase());
+            if(!u) return window.showToast('Akun mitra tidak ditemukan.',false);
+            const amount=Number(wd.amount||wd.netAmount||0);
+            const current=Number(u.saldo||0);
+            if(amount>current) return window.showToast('Saldo buku mitra tidak cukup untuk menyelesaikan pencairan ini.',false);
+            try {
+                await window.fsUpdateDoc('users',u.id,{saldo:current-amount,updatedAt:Date.now()});
+                await window.fsUpdateDoc('withdrawals',id,{status:'completed',processedAt:Date.now(),processedBy:window.currentUser?.email||'admin'});
+                u.saldo=current-amount;
+                if(window.currentUser && String(window.currentUser.email||'').toLowerCase()===String(email||'').toLowerCase()) window.currentUser.saldo=current-amount;
+                await window.writeAdminAudit('complete_withdrawal',{withdrawalId:id,email,amount,previousBalance:current,newBalance:current-amount},'finance');
+                window.showToast('Transfer selesai. Saldo mitra sudah dikurangi sebesar '+formatRp(amount)+'.');
+                window.loadAdminData();
+            } catch(err) { console.error(err); window.showToast('Gagal memproses pencairan: '+(err.message||''),false); }
         };
         window.updateCarStatus = async function(id, st) { if(!window.requireAdminPermission('ads')) return; 
             await window.fsUpdateDoc('cars', id, { status: st }); 
