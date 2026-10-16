@@ -1146,20 +1146,20 @@
                         <div class="mb-5 bg-gray-50 p-3 rounded-lg border border-gray-100">
                             <h4 class="text-xs font-bold text-blue-800 mb-3 uppercase tracking-wider">Pilih Tipe Layanan</h4>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                                <label class="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-blue-50 transition border-blue-200 bg-blue-50" id="lblLepasKunci" onclick="toggleService('lepas_kunci')">
-                                    <input type="radio" name="coService" value="lepas_kunci" checked class="hidden">
+                                <label class="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-blue-50 transition border-blue-200 bg-blue-50 ${car.allowSelfDrive===false?'hidden':''}" id="lblLepasKunci" onclick="toggleService('lepas_kunci')">
+                                    <input type="radio" name="coService" value="lepas_kunci" ${car.allowSelfDrive===false?'':'checked'} class="hidden">
                                     <i class="ph-fill ph-steering-wheel text-xl text-blue-500" id="icnLepasKunci"></i>
                                     <span class="text-sm font-semibold">Lepas Kunci</span>
                                 </label>
-                                <label class="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-blue-50 transition border-gray-200" id="lblSupirDalam" onclick="toggleService('dengan_supir_dalam_kota')">
-                                    <input type="radio" name="coService" value="dengan_supir_dalam_kota" class="hidden">
+                                <label class="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-blue-50 transition border-gray-200 ${car.allowDriverCity===false?'hidden':''}" id="lblSupirDalam" onclick="toggleService('dengan_supir_dalam_kota')">
+                                    <input type="radio" name="coService" value="dengan_supir_dalam_kota" ${car.allowSelfDrive===false && car.allowDriverCity!==false?'checked':''} class="hidden">
                                     <i class="ph-fill ph-user-circle text-xl text-gray-400" id="icnSupirDalam"></i>
-                                    <span class="text-sm font-semibold">Dgn Sopir<br><span class="text-[10px] text-blue-600">Dalam Kota</span><br><span class="text-[10px] text-shopee">+Rp150.000/hari</span></span>
+                                    <span class="text-sm font-semibold">Dgn Sopir<br><span class="text-[10px] text-blue-600">Dalam Kota</span><br><span class="text-[10px] text-shopee">+${formatRp(car.driverCityPrice ?? 150000)}/hari</span></span>
                                 </label>
-                                <label class="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-blue-50 transition border-gray-200" id="lblSupirLuar" onclick="toggleService('dengan_supir_luar_kota')">
-                                    <input type="radio" name="coService" value="dengan_supir_luar_kota" class="hidden">
+                                <label class="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-blue-50 transition border-gray-200 ${car.allowDriverOutside===false?'hidden':''}" id="lblSupirLuar" onclick="toggleService('dengan_supir_luar_kota')">
+                                    <input type="radio" name="coService" value="dengan_supir_luar_kota" ${car.allowSelfDrive===false && car.allowDriverCity===false?'checked':''} class="hidden">
                                     <i class="ph-fill ph-map-pin-line text-xl text-gray-400" id="icnSupirLuar"></i>
-                                    <span class="text-sm font-semibold">Dgn Sopir<br><span class="text-[10px] text-purple-600">Luar Kota</span><br><span class="text-[10px] text-shopee">+Rp250.000/hari</span></span>
+                                    <span class="text-sm font-semibold">Dgn Sopir<br><span class="text-[10px] text-purple-600">Luar Kota</span><br><span class="text-[10px] text-shopee">+${formatRp(car.driverOutsidePrice ?? 250000)}/hari</span></span>
                                 </label>
                             </div>
                             <div class="space-y-3">
@@ -1280,9 +1280,12 @@
             const hourlyRate = Math.ceil(basePrice / 15);
             const rentalPrice = mode === '12h' ? Math.ceil(basePrice * 0.60) : mode === '24h' ? Math.ceil(hours / 24) * basePrice : hours * hourlyRate;
 
-            const service = document.querySelector('input[name="coService"]:checked')?.value || 'lepas_kunci';
+            let service = document.querySelector('input[name="coService"]:checked')?.value || 'lepas_kunci';
             const billDays = Math.max(1, Math.ceil(hours / 24));
-            const supirFee = service === 'dengan_supir_dalam_kota' ? 150000 * billDays : service === 'dengan_supir_luar_kota' ? 250000 * billDays : 0;
+            const selectedCar = window.carsData.find(c => c.id === window.currentCheckoutCarId) || window.currentCheckoutCar || null;
+            const cityDriverRate = Number(selectedCar?.driverCityPrice ?? 150000);
+            const outsideDriverRate = Number(selectedCar?.driverOutsidePrice ?? 250000);
+            const supirFee = service === 'dengan_supir_dalam_kota' ? cityDriverRate * billDays : service === 'dengan_supir_luar_kota' ? outsideDriverRate * billDays : 0;
             const total = rentalPrice + supirFee;
 
             const durationText = mode === 'hourly' ? `${hours} Jam` : mode === '12h' ? '12 Jam' : `${Math.ceil(hours/24)} x 24 Jam`;
@@ -2016,6 +2019,19 @@
                     <input type="number" id="addCarPrice" placeholder="Harga Sewa / Hari (Rp)" class="border p-2.5 rounded text-sm outline-none focus:border-shopee">
                     <input type="number" id="addCarSeat" placeholder="Jumlah Kursi (Cth: 7)" class="border p-2.5 rounded text-sm outline-none focus:border-shopee">
                 </div>
+                <div class="mt-4 p-4 rounded-xl border bg-blue-50/60">
+                    <p class="text-xs font-black text-gray-800 mb-1">Pilihan Layanan untuk Pelanggan</p>
+                    <p class="text-[10px] text-gray-500 mb-3">Mitra menentukan apakah mobil bisa disewa lepas kunci, dengan sopir, atau keduanya. Harga jasa sopir diatur sendiri untuk dalam dan luar kota.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+                        <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllowSelfDrive" type="checkbox" checked class="accent-shopee mr-1"> Lepas Kunci <span class="block text-[9px] text-gray-400 mt-1">Pelanggan menyetir sendiri</span></label>
+                        <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllowDriverCity" type="checkbox" checked class="accent-shopee mr-1"> Dengan Sopir — Dalam Kota</label>
+                        <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllowDriverOutside" type="checkbox" checked class="accent-shopee mr-1"> Dengan Sopir — Luar Kota</label>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div><label class="block text-[11px] font-bold text-gray-600 mb-1">Jasa Sopir Dalam Kota (Rp/hari)</label><input type="number" min="0" id="addDriverCityPrice" value="150000" class="w-full border p-2.5 rounded text-sm outline-none focus:border-shopee" placeholder="Contoh: 150000"></div>
+                        <div><label class="block text-[11px] font-bold text-gray-600 mb-1">Jasa Sopir Luar Kota (Rp/hari)</label><input type="number" min="0" id="addDriverOutsidePrice" value="250000" class="w-full border p-2.5 rounded text-sm outline-none focus:border-shopee" placeholder="Contoh: 250000"></div>
+                    </div>
+                </div>
                 <div class="mt-4 p-4 rounded-xl border bg-orange-50/50">
                     <p class="text-xs font-black text-gray-800 mb-1">Jenis Durasi Sewa yang Dilayani</p>
                     <p class="text-[10px] text-gray-500 mb-3">Mitra boleh mengaktifkan 1, 2, atau semua layanan. Minimal satu harus aktif.</p>
@@ -2056,7 +2072,7 @@
                 if(car.status === 'pending_payment') badge = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Pending Bayar Rp 11.200</span>`;
                 if(car.isBooked) badge += ` <span class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm animate-pulse">Sedang Disewa</span>`;
                 
-                const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><p class="text-[10px] text-gray-400 mt-1">Layanan: ${[car.allow24h!==false?'24 Jam':'',car.allow12h!==false?'12 Jam':'',car.allowHourly!==false?'Per Jam':''].filter(Boolean).join(' • ') || 'Tidak aktif'}</p><div class="mt-1">${badge}</div></div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
+                const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><p class="text-[10px] text-gray-400 mt-1">Layanan durasi: ${[car.allow24h!==false?'24 Jam':'',car.allow12h!==false?'12 Jam':'',car.allowHourly!==false?'Per Jam':''].filter(Boolean).join(' • ') || 'Tidak aktif'}</p><p class="text-[10px] text-blue-700 mt-1">Mode: ${[car.allowSelfDrive!==false?'Lepas kunci':'',car.allowDriverCity!==false?'Sopir dalam kota ('+formatRp(car.driverCityPrice??150000)+')':'',car.allowDriverOutside!==false?'Sopir luar kota ('+formatRp(car.driverOutsidePrice??250000)+')':''].filter(Boolean).join(' • ') || 'Belum diatur'}</p><div class="mt-1">${badge}</div></div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
             });
         };
 
@@ -2129,12 +2145,20 @@
                 const allow24h = !!document.getElementById('addAllow24h')?.checked;
                 const allow12h = !!document.getElementById('addAllow12h')?.checked;
                 const allowHourly = !!document.getElementById('addAllowHourly')?.checked;
+                const allowSelfDrive = !!document.getElementById('addAllowSelfDrive')?.checked;
+                const allowDriverCity = !!document.getElementById('addAllowDriverCity')?.checked;
+                const allowDriverOutside = !!document.getElementById('addAllowDriverOutside')?.checked;
+                const driverCityPrice = Math.max(0, parseInt(document.getElementById('addDriverCityPrice')?.value || '0'));
+                const driverOutsidePrice = Math.max(0, parseInt(document.getElementById('addDriverOutsidePrice')?.value || '0'));
                 const imgFiles = window.collectCarPhotoSlots('addCarImg');
 
                 if(!name || !price || !seat) throw new Error('Nama mobil, harga, dan jumlah kursi wajib diisi.');
                 if(!imgFiles.length) throw new Error('Pilih minimal 1 foto unit.');
                 if(imgFiles.length > 5) throw new Error('Maksimal 5 foto per iklan.');
                 if(!allow24h && !allow12h && !allowHourly) throw new Error('Aktifkan minimal 1 jenis durasi sewa.');
+                if(!allowSelfDrive && !allowDriverCity && !allowDriverOutside) throw new Error('Pilih minimal satu layanan: lepas kunci atau dengan sopir.');
+                if(allowDriverCity && !(driverCityPrice > 0)) throw new Error('Isi jasa sopir dalam kota dengan nilai lebih dari Rp0.');
+                if(allowDriverOutside && !(driverOutsidePrice > 0)) throw new Error('Isi jasa sopir luar kota dengan nilai lebih dari Rp0.');
 
                 window.setPartnerAdProgress(`Memproses ${imgFiles.length} foto...`, true);
                 const photoUrls = await window.uploadCarImages(imgFiles, window.currentUser.email);
@@ -2144,6 +2168,8 @@
                 const carData = {
                     name, category:cat, priceDay:price, seat,
                     allow24h, allow12h, allowHourly,
+                    allowSelfDrive, allowDriverCity, allowDriverOutside,
+                    driverCityPrice, driverOutsidePrice,
                     ownerPhone:window.currentUser.email,
                     ownerName:window.currentUser.name || '',
                     status:isPaidAd ? 'pending_payment' : 'pending',
