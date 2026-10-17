@@ -1175,6 +1175,7 @@
                                 ${car.allow12h !== false ? `<label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="12h" onchange="applyRentalMode()" class="accent-shopee mr-1"> Harian 12 Jam</label>` : ''}
                                 ${car.allow24h !== false ? `<label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="24h" onchange="applyRentalMode()" class="accent-shopee mr-1"> Harian 24 Jam</label>` : ''}
                                 ${car.allowHourly !== false ? `<label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="hourly" onchange="applyRentalMode()" class="accent-shopee mr-1"> Per Jam</label>` : ''}
+                                ${car.allowMonthly === true ? `<label class="bg-white border rounded-lg p-2 cursor-pointer text-xs font-bold"><input type="radio" name="coRentalMode" value="monthly" onchange="applyRentalMode()" class="accent-shopee mr-1"> Bulanan (30 Hari)</label>` : ''}
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div><label class="block text-[10px] text-gray-500 mb-1">Tanggal Penjemputan</label><input type="date" id="coDateStart" value="${today}" min="${today}" onchange="calculateCheckoutTotal()" class="w-full border rounded p-2 text-sm outline-none"></div>
@@ -1243,7 +1244,11 @@
             if(!ds || !ts || !de || !te) return;
 
             const start = new Date(`${ds.value}T${ts.value || '08:00'}`);
-            if(mode === '12h' || mode === '24h') {
+            if(mode === 'monthly') {
+                const end = new Date(start.getTime() + 30 * 24 * 3600000);
+                de.value = end.toISOString().slice(0,10);
+                te.value = end.toTimeString().slice(0,5);
+            } else if(mode === '12h' || mode === '24h') {
                 const hours = mode === '12h' ? 12 : 24;
                 const end = new Date(start.getTime() + hours * 3600000);
                 de.value = end.toISOString().slice(0,10);
@@ -1275,13 +1280,17 @@
             let hours = Math.max(1, Math.ceil((end - start) / 3600000));
             if(mode === '12h') hours = 12;
             if(mode === '24h') hours = Math.max(24, Math.ceil(hours / 24) * 24);
+            if(mode === 'monthly') hours = 30 * 24;
 
             const basePrice = Number(document.getElementById('coBasePrice').getAttribute('data-price')) || 0;
             const hourlyRate = Math.ceil(basePrice / 15);
-            const rentalPrice = mode === '12h' ? Math.ceil(basePrice * 0.60) : mode === '24h' ? Math.ceil(hours / 24) * basePrice : hours * hourlyRate;
+            const selectedCarForPrice = window.carsData.find(c => c.id === window.currentCheckoutCarId) || window.currentCheckoutCar || null;
+            const calculatedMonthlyPrice = Math.ceil(basePrice * 30 * 0.9);
+            const monthlyRate = Number(selectedCarForPrice?.monthlyPrice) > 0 ? Number(selectedCarForPrice.monthlyPrice) : calculatedMonthlyPrice;
+            const rentalPrice = mode === 'monthly' ? monthlyRate : mode === '12h' ? Math.ceil(basePrice * 0.60) : mode === '24h' ? Math.ceil(hours / 24) * basePrice : hours * hourlyRate;
 
             let service = document.querySelector('input[name="coService"]:checked')?.value || 'lepas_kunci';
-            const billDays = Math.max(1, Math.ceil(hours / 24));
+            const billDays = mode === 'monthly' ? 30 : Math.max(1, Math.ceil(hours / 24));
             const selectedCar = window.carsData.find(c => c.id === window.currentCheckoutCarId) || window.currentCheckoutCar || null;
             const cityDriverRate = Number(selectedCar?.driverCityPrice ?? 150000);
             const outsideDriverRate = Number(selectedCar?.driverOutsidePrice ?? 250000);
@@ -2042,6 +2051,8 @@
                         <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllow24h" type="checkbox" checked class="accent-shopee mr-1"> 24 Jam <span class="block text-[9px] text-gray-400 mt-1">100% tarif harian</span></label>
                         <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllow12h" type="checkbox" checked class="accent-shopee mr-1"> 12 Jam <span class="block text-[9px] text-gray-400 mt-1">60% tarif harian</span></label>
                         <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllowHourly" type="checkbox" checked class="accent-shopee mr-1"> Per Jam <span class="block text-[9px] text-gray-400 mt-1">Tarif harian ÷ 15</span></label>
+                        <label class="bg-white border rounded-lg p-3 text-xs font-bold cursor-pointer"><input id="addAllowMonthly" type="checkbox" class="accent-shopee mr-1"> Bulanan (30 Hari) <span class="block text-[9px] text-gray-400 mt-1">Harga khusus atau diskon 10%</span></label>
+                        <div class="bg-white border rounded-lg p-3"><label class="block text-[10px] font-bold text-gray-600 mb-1">Harga Sewa Bulanan (Rp, opsional)</label><input id="addMonthlyPrice" type="number" min="0" class="w-full border rounded p-2 text-xs" placeholder="Kosong = harian × 30 − 10%"></div>
                     </div>
                 </div>
                 <div class="mt-4 p-4 border-2 border-dashed border-gray-300 rounded bg-gray-50 text-center">
@@ -2075,7 +2086,7 @@
                 if(car.status === 'pending_payment') badge = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Pending Bayar Rp 11.200</span>`;
                 if(car.isBooked) badge += ` <span class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm animate-pulse">Sedang Disewa</span>`;
                 
-                const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><p class="text-[10px] text-gray-400 mt-1">Layanan durasi: ${[car.allow24h!==false?'24 Jam':'',car.allow12h!==false?'12 Jam':'',car.allowHourly!==false?'Per Jam':''].filter(Boolean).join(' • ') || 'Tidak aktif'}</p><p class="text-[10px] text-blue-700 mt-1">Mode: ${[car.allowSelfDrive!==false?'Lepas kunci':'',car.allowDriverCity!==false?'Sopir dalam kota ('+formatRp(car.driverCityPrice??150000)+')':'',car.allowDriverOutside!==false?'Sopir luar kota ('+formatRp(car.driverOutsidePrice??250000)+')':''].filter(Boolean).join(' • ') || 'Belum diatur'}</p><div class="mt-1">${badge}</div></div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
+                const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><p class="text-[10px] text-gray-400 mt-1">Layanan durasi: ${[car.allow24h!==false?'24 Jam':'',car.allow12h!==false?'12 Jam':'',car.allowHourly!==false?'Per Jam':'',car.allowMonthly===true?'Bulanan':''].filter(Boolean).join(' • ') || 'Tidak aktif'}</p><p class="text-[10px] text-blue-700 mt-1">Mode: ${[car.allowSelfDrive!==false?'Lepas kunci':'',car.allowDriverCity!==false?'Sopir dalam kota ('+formatRp(car.driverCityPrice??150000)+')':'',car.allowDriverOutside!==false?'Sopir luar kota ('+formatRp(car.driverOutsidePrice??250000)+')':''].filter(Boolean).join(' • ') || 'Belum diatur'}</p><div class="mt-1">${badge}</div></div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
             });
         };
 
@@ -2148,6 +2159,9 @@
                 const allow24h = !!document.getElementById('addAllow24h')?.checked;
                 const allow12h = !!document.getElementById('addAllow12h')?.checked;
                 const allowHourly = !!document.getElementById('addAllowHourly')?.checked;
+                const allowMonthly = !!document.getElementById('addAllowMonthly')?.checked;
+                const monthlyPriceInput = parseInt(document.getElementById('addMonthlyPrice')?.value || '0') || 0;
+                const monthlyPrice = monthlyPriceInput > 0 ? monthlyPriceInput : Math.ceil((parseInt(document.getElementById('addCarPrice')?.value || '0') || 0) * 30 * 0.9);
                 const allowSelfDrive = !!document.getElementById('addAllowSelfDrive')?.checked;
                 const allowDriverCity = !!document.getElementById('addAllowDriverCity')?.checked;
                 const allowDriverOutside = !!document.getElementById('addAllowDriverOutside')?.checked;
@@ -2158,7 +2172,7 @@
                 if(!name || !price || !seat) throw new Error('Nama mobil, harga, dan jumlah kursi wajib diisi.');
                 if(!imgFiles.length) throw new Error('Pilih minimal 1 foto unit.');
                 if(imgFiles.length > 5) throw new Error('Maksimal 5 foto per iklan.');
-                if(!allow24h && !allow12h && !allowHourly) throw new Error('Aktifkan minimal 1 jenis durasi sewa.');
+                if(!allow24h && !allow12h && !allowHourly && !allowMonthly) throw new Error('Aktifkan minimal 1 jenis durasi sewa.');
                 if(!allowSelfDrive && !allowDriverCity && !allowDriverOutside) throw new Error('Pilih minimal satu layanan: lepas kunci atau dengan sopir.');
                 if(allowDriverCity && !(driverCityPrice > 0)) throw new Error('Isi jasa sopir dalam kota dengan nilai lebih dari Rp0.');
                 if(allowDriverOutside && !(driverOutsidePrice > 0)) throw new Error('Isi jasa sopir luar kota dengan nilai lebih dari Rp0.');
@@ -2170,7 +2184,7 @@
                 const isPaidAd = myCars.length >= 1;
                 const carData = {
                     name, category:cat, priceDay:price, seat,
-                    allow24h, allow12h, allowHourly,
+                    allow24h, allow12h, allowHourly, allowMonthly, monthlyPrice,
                     allowSelfDrive, allowDriverCity, allowDriverOutside,
                     driverCityPrice, driverOutsidePrice,
                     ownerPhone:window.currentUser.email,
@@ -3599,8 +3613,10 @@
                       <label class="bg-white border rounded p-2"><input id="ecAllow24h" type="checkbox" ${!car || car.allow24h!==false?'checked':''} class="accent-shopee mr-1">24 Jam</label>
                       <label class="bg-white border rounded p-2"><input id="ecAllow12h" type="checkbox" ${!car || car.allow12h!==false?'checked':''} class="accent-shopee mr-1">12 Jam</label>
                       <label class="bg-white border rounded p-2"><input id="ecAllowHourly" type="checkbox" ${!car || car.allowHourly!==false?'checked':''} class="accent-shopee mr-1">Per Jam</label>
+                      <label class="bg-white border rounded p-2"><input id="ecAllowMonthly" type="checkbox" ${car && car.allowMonthly===true?'checked':''} class="accent-shopee mr-1">Bulanan (30 Hari)</label>
                     </div>
                     <p class="text-[9px] text-gray-500 mt-2">24 jam = harga iklan • 12 jam = 60% • per jam = harga 24 jam ÷ 15.</p>
+                    <div class="mt-3"><label class="block text-[10px] font-bold text-gray-600 mb-1">Harga Sewa Bulanan (Rp, opsional)</label><input type="number" min="0" id="ecMonthlyPrice" value="${car && car.monthlyPrice ? car.monthlyPrice : ''}" placeholder="Kosong = harga 24 jam × 30 dikurangi 10%" class="w-full border p-2 text-sm rounded"><p class="text-[9px] text-gray-500 mt-1">Jika diisi, harga ini digunakan. Jika kosong, sistem menghitung harga harian × 30 − 10%.</p></div>
                   </div>
                   ${car ? `<div class="mb-3"><label class="block text-xs font-semibold mb-2">Galeri Saat Ini</label><div class="grid grid-cols-5 gap-2">${window.getCarImages(car).map((u,i)=>`<img src="${u}" class="w-full h-14 object-cover rounded border" title="Foto ${i+1}">`).join('')}</div></div>` : ''}
                   <div class="mb-2 p-3 border-2 border-dashed rounded-lg bg-gray-50">
@@ -3632,13 +3648,15 @@
                 allow24h: !!document.getElementById('ecAllow24h')?.checked,
                 allow12h: !!document.getElementById('ecAllow12h')?.checked,
                 allowHourly: !!document.getElementById('ecAllowHourly')?.checked,
+                allowMonthly: !!document.getElementById('ecAllowMonthly')?.checked,
+                monthlyPrice: (parseInt(document.getElementById('ecMonthlyPrice')?.value || '0') || Math.ceil((parseInt(document.getElementById('ecPrice')?.value || '0') || 0) * 30 * 0.9)),
                 ownerPhone: document.getElementById('ecOwner')?.value || 'official'
             };
             const imgFiles = window.collectCarPhotoSlots('ecImgInput');
 
             if(!data.name || !data.priceDay || !data.seat)
                 return window.showToast("Lengkapi nama, harga, dan jumlah kursi.", false);
-            if(!data.allow24h && !data.allow12h && !data.allowHourly)
+            if(!data.allow24h && !data.allow12h && !data.allowHourly && !data.allowMonthly)
                 return window.showToast("Aktifkan minimal 1 jenis durasi sewa.", false);
             if(imgFiles.length > 5)
                 return window.showToast("Maksimal 5 foto per iklan!", false);
