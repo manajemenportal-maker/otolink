@@ -2418,33 +2418,28 @@
         };
 
         window.getAdminNotificationCounts = function() {
-            const seen = window.getAdminNotifSeen();
-            const unseen = (items, tabId, predicate=()=>true) => {
-                const last = Number(seen[tabId] || 0);
-                return items.filter(x => predicate(x) && window.adminItemTime(x) > last).length;
-            };
-
-            const pendingCars = window.carsData.filter(c => ['pending','pending_payment'].includes(c.status) || c.adminNotifUnread === true).length;
-            const pendingOrders = window.ordersData.filter(o => o.status === 'pending').length;
-            const pendingTopups = window.topupsData.filter(x => x.status === 'pending').length;
-            const pendingWithdrawals = window.withdrawalsData.filter(x => x.status === 'pending').length;
-            const unreadChat = window.messagesData.filter(m => m.receiverEmail === 'admin' && !m.isRead).length;
-            const pendingPartners = window.usersData.filter(u => u.role === 'mitra' && ['pending','uploading'].includes(u.partnerVerificationStatus)).length;
-
+            // Badge hanya menghitung hal yang masih membutuhkan tindakan admin.
+            // Item yang sudah selesai tidak dihitung lagi hanya karena pernah baru.
+            const pendingCars = window.carsData.filter(c => ['pending','pending_payment'].includes(String(c.status||'').toLowerCase())).length;
+            const pendingOrders = window.ordersData.filter(o => ['pending','pending_payment','awaiting_payment','paid_pending_confirmation','completion_requested'].includes(String(o.status||'').toLowerCase())).length;
+            const pendingTopups = window.topupsData.filter(x => ['pending','submitted','waiting','waiting_verification'].includes(String(x.status||'').toLowerCase())).length;
+            const pendingWithdrawals = window.withdrawalsData.filter(x => ['pending','submitted','processing','waiting','waiting_verification'].includes(String(x.status||'').toLowerCase())).length;
+            const unreadChat = window.messagesData.filter(m => {
+                if(m.isRead) return false;
+                const receiver=String(m.receiverEmail||'').toLowerCase();
+                return receiver==='admin' || (window.currentUser?.email && receiver===String(window.currentUser.email).toLowerCase());
+            }).length;
+            const pendingPartners = window.usersData.filter(u => u.role === 'mitra' && ['pending','uploading','submitted','waiting_verification'].includes(String(u.partnerVerificationStatus||'').toLowerCase())).length;
             const counts = {
-                adVerifikasi: Math.max(pendingCars, unseen(window.carsData, 'adVerifikasi', c => ['pending','pending_payment'].includes(c.status))),
-                adPesanan: Math.max(pendingOrders, unseen(window.ordersData, 'adPesanan')),
-                adTopup: Math.max(pendingTopups, unseen(window.topupsData, 'adTopup')),
-                adPencairan: Math.max(pendingWithdrawals, unseen(window.withdrawalsData, 'adPencairan')),
-                adUsers: Math.max(
-                    pendingPartners,
-                    unseen(window.usersData, 'adUsers', u => u.role !== 'admin')
-                ),
-                adAllCars: unseen(window.carsData, 'adAllCars'),
+                adVerifikasi: pendingCars,
+                adPesanan: pendingOrders,
+                adTopup: pendingTopups,
+                adPencairan: pendingWithdrawals,
+                adUsers: pendingPartners,
+                adAllCars: pendingCars,
                 adChat: unreadChat
             };
-
-            counts.total = Object.keys(counts).reduce((s,k) => k === 'total' ? s : s + Number(counts[k]||0), 0);
+            counts.total = Object.values(counts).reduce((sum,n)=>sum+Number(n||0),0);
             return counts;
         };
 
