@@ -1588,6 +1588,47 @@
                 </div>`;
             });
 
+            // Menu khusus pelanggan untuk memantau dan mengajukan pengembalian jaminan lepas kunci.
+            const myDepositOrders = myOrders.filter(o => o.service === 'lepas_kunci' && Number(o.securityDepositAmount || 0) > 0);
+            let customerDepositHtml = myDepositOrders.length ? '' : `<div class="text-center py-6 text-gray-400"><i class="ph-fill ph-shield-check text-3xl block mb-2"></i><p class="text-sm">Belum ada jaminan sewa lepas kunci.</p></div>`;
+            myDepositOrders.forEach(o => {
+                const depAmount = Number(o.securityDepositAmount || 2000000);
+                const bank = o.depositBankName || '-';
+                const bankAccount = o.depositBankAccount || '-';
+                const bankHolder = o.depositBankHolder || '-';
+                let depositStatusText = 'Jaminan ditahan sampai sewa selesai dan kondisi kendaraan diperiksa.';
+                let depositStatusClass = 'bg-amber-50 border-amber-200 text-amber-800';
+                if (o.depositStatus === 'return_eligible') {
+                    depositStatusText = 'Sewa telah selesai dan jaminan dapat diajukan untuk dikembalikan.';
+                    depositStatusClass = 'bg-green-50 border-green-200 text-green-800';
+                } else if (o.depositWithdrawalStatus === 'requested' || o.depositWithdrawalStatus === 'processing') {
+                    depositStatusText = 'Pengajuan pengembalian sudah dikirim. Menunggu proses admin.';
+                    depositStatusClass = 'bg-blue-50 border-blue-200 text-blue-800';
+                } else if (o.depositWithdrawalStatus === 'completed' || o.depositStatus === 'refunded') {
+                    depositStatusText = `Jaminan sudah ditransfer. Nominal diterima: ${formatRp(o.depositRefundNet || 0)}.`;
+                    depositStatusClass = 'bg-green-50 border-green-200 text-green-800';
+                } else if (o.depositWithdrawalStatus === 'rejected') {
+                    depositStatusText = 'Pengajuan sebelumnya ditolak. Silakan hubungi admin untuk tindak lanjut.';
+                    depositStatusClass = 'bg-red-50 border-red-200 text-red-800';
+                }
+                const canRequestDeposit = o.status === 'completed' && o.depositStatus === 'return_eligible' && !['requested','processing','completed'].includes(o.depositWithdrawalStatus);
+                const transferFee = String(bank).toLowerCase() === 'bca' ? 0 : 5000;
+                customerDepositHtml += `<div class="border rounded-xl p-4 mb-3 bg-white">
+                    <div class="flex flex-wrap justify-between items-start gap-2">
+                        <div><p class="text-[10px] text-gray-400 font-semibold">${o.orderId || o.id}</p><h4 class="font-bold text-gray-800">${o.carName || 'Mobil'} • Lepas Kunci</h4></div>
+                        <span class="text-sm font-black text-amber-700">${formatRp(depAmount)}</span>
+                    </div>
+                    <div class="mt-3 border rounded-lg p-3 text-xs text-gray-600">
+                        <p><b>Rekening pengembalian:</b> ${bank}</p>
+                        <p><b>Nomor rekening:</b> ${bankAccount}</p>
+                        <p><b>Atas nama:</b> ${bankHolder}</p>
+                        <p class="mt-1 text-[10px] text-gray-500">Biaya transfer: ${String(bank).toLowerCase() === 'bca' ? 'Gratis untuk BCA' : 'Rp5.000 untuk bank selain BCA'}.</p>
+                    </div>
+                    <div class="mt-3 border rounded-lg p-3 text-xs ${depositStatusClass}">${depositStatusText}</div>
+                    ${canRequestDeposit ? `<button onclick="requestSecurityDepositWithdrawal('${o.id}')" class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white rounded-lg px-3 py-3 text-sm font-black"><i class="ph-bold ph-bank mr-1"></i> Ajukan Pengembalian Dana Jaminan</button><p class="mt-1 text-center text-[10px] text-gray-500">Perkiraan diterima: ${formatRp(Math.max(0,depAmount-transferFee))}</p>` : ''}
+                </div>`;
+            });
+
             let topupHtml = myTopups.length ? '' : '<p class="text-sm text-gray-400 text-center py-8">Belum ada riwayat top up.</p>';
             myTopups.slice(0,10).forEach(t => {
                 const s = (t.status === 'approved' || t.status === 'completed') ? '<span class="text-green-600 font-bold">Berhasil</span>' : '<span class="text-yellow-600 font-bold">Diproses</span>';
@@ -1614,6 +1655,16 @@
                 <button onclick="openTopupModal()" class="bg-white border rounded-xl p-4 text-left hover:shadow-md transition"><i class="ph-fill ph-wallet text-2xl text-yellow-500"></i><p class="font-bold text-sm mt-2">Top Up</p><p class="text-[10px] text-gray-400">Isi saldo OtoPay</p></button>
                 <button onclick="renderMitraChatRoom()" class="bg-white border rounded-xl p-4 text-left hover:shadow-md transition relative">${badgeHtml}<i class="ph-fill ph-chats-circle text-2xl text-blue-600"></i><p class="font-bold text-sm mt-2">Chat Admin</p><p class="text-[10px] text-gray-400">Bantuan & konfirmasi</p></button>
                 <button onclick="document.getElementById('userTransactions').scrollIntoView({behavior:'smooth'})" class="bg-white border rounded-xl p-4 text-left hover:shadow-md transition"><i class="ph-fill ph-clock-counter-clockwise text-2xl text-green-600"></i><p class="font-bold text-sm mt-2">Riwayat</p><p class="text-[10px] text-gray-400">Transaksi Anda</p></button>
+                <button onclick="document.getElementById('customerDepositReturns').scrollIntoView({behavior:'smooth'})" class="bg-white border border-amber-200 rounded-xl p-4 text-left hover:shadow-md transition"><i class="ph-fill ph-shield-check text-2xl text-amber-600"></i><p class="font-bold text-sm mt-2">Pengembalian Jaminan</p><p class="text-[10px] text-gray-400">Pantau / ajukan dana</p></button>
+            </div>
+
+            <div id="customerDepositReturns" class="bg-white border border-amber-100 rounded-2xl p-4 md:p-5 shadow-sm mb-5">
+                <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-3 mb-3">
+                    <div><h3 class="font-black text-gray-800"><i class="ph-fill ph-shield-check text-amber-600 mr-1"></i> Pengembalian Dana Jaminan Customer</h3><p class="text-xs text-gray-500 mt-1">Khusus sewa lepas kunci • jaminan Rp2.000.000</p></div>
+                    <span class="text-[10px] font-bold bg-amber-50 text-amber-800 px-3 py-1.5 rounded-full">${myDepositOrders.length} transaksi</span>
+                </div>
+                ${customerDepositHtml}
+                <p class="text-[10px] text-gray-500 mt-2">Dana dikembalikan setelah transaksi selesai, kondisi kendaraan dikonfirmasi, dan admin menyelesaikan transfer. Status selesai hanya ditandai setelah admin mengonfirmasi transfer.</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
