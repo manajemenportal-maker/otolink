@@ -2522,9 +2522,38 @@
             window.loadMessages(mitraEmail, 'admin');
         };
 
+        window.refreshChatUnreadBadges = function() {
+            const user = window.currentUser;
+            if(!user) return;
+            const email = String(user.email||'').toLowerCase();
+            const unread = (window.messagesData||[]).filter(m => {
+                if(m.isRead) return false;
+                const receiver = String(m.receiverEmail||'').toLowerCase();
+                if(user.role === 'admin') return receiver === 'admin' || receiver === email || (!receiver && String(m.senderEmail||'').toLowerCase() !== email);
+                return receiver === email;
+            }).length;
+            const badge = document.getElementById('mobileChatBadge');
+            if(badge) badge.classList.toggle('hidden', unread === 0);
+            const navBadges = document.querySelectorAll('[data-chat-unread-badge]');
+            navBadges.forEach(el => {
+                el.textContent = unread > 0 ? String(unread) : '';
+                el.classList.toggle('hidden', unread === 0);
+            });
+            return unread;
+        };
+
         window.loadMessages = function(otherEmail, myEmail) {
             const body = document.getElementById('chatMessagesBody'); if(!body) return;
-            const msgs = window.messagesData.filter(m => (m.senderEmail === myEmail && m.receiverEmail === otherEmail) || (m.senderEmail === otherEmail && m.receiverEmail === myEmail));
+            const msgs = window.messagesData.filter(m => (m.senderEmail === myEmail && m.receiverEmail === otherEmail) || (m.senderEmail === otherEmail && (m.receiverEmail === myEmail || (myEmail === 'admin' && (!m.receiverEmail || m.receiverEmail === 'admin')))));
+            // Saat percakapan dibuka, tandai hanya pesan masuk pada percakapan ini sebagai dibaca.
+            // Update database dan cache lokal agar badge dashboard langsung mengikuti status baca.
+            msgs.filter(m => m.senderEmail === otherEmail && !m.isRead && (m.receiverEmail === myEmail || (myEmail === 'admin' && (!m.receiverEmail || m.receiverEmail === 'admin')))).forEach(async m => {
+                try {
+                    await window.fsUpdateDoc('messages', m.id, { isRead: true, readAt: Date.now() });
+                    m.isRead = true;
+                    window.refreshChatUnreadBadges?.();
+                } catch(err) { console.warn('Status baca pesan belum tersimpan', err); }
+            });
             
             body.innerHTML = msgs.length === 0 ? `<div class="text-center text-xs text-gray-500 mt-10 bg-white/50 py-2 rounded-full mx-auto px-4">Kirim pesan pertama. Komunikasi dienkripsi end-to-end.</div>` : '';
             
@@ -2594,7 +2623,7 @@
             const unreadChat = window.messagesData.filter(m => {
                 if(m.isRead) return false;
                 const receiver=String(m.receiverEmail||'').toLowerCase();
-                return receiver==='admin' || (window.currentUser?.email && receiver===String(window.currentUser.email).toLowerCase());
+                return receiver==='admin' || !receiver || (window.currentUser?.email && receiver===String(window.currentUser.email).toLowerCase());
             }).length;
             const pendingPartners = window.usersData.filter(u => u.role === 'mitra' && ['pending','uploading','submitted','waiting_verification'].includes(String(u.partnerVerificationStatus||'').toLowerCase())).length;
             const counts = {
@@ -2882,7 +2911,7 @@
             const completedWdCount = window.withdrawalsData.filter(w => ['completed','approved'].includes(w.status)).length;
             const rejectedWdCount = window.withdrawalsData.filter(w => ['rejected','cancelled'].includes(w.status)).length;
 
-            const unreadChatCount = window.messagesData.filter(m => m.receiverEmail === 'admin' && !m.isRead).length;
+            const unreadChatCount = window.messagesData.filter(m => !m.isRead && (m.receiverEmail === 'admin' || m.receiverEmail === window.currentUser?.email || !m.receiverEmail)).length;
             const totalChatCount = window.messagesData.filter(m => m.senderEmail === 'admin' || m.receiverEmail === 'admin').length;
             const repliedChatCount = window.messagesData.filter(m => m.senderEmail === 'admin').length;
 
@@ -3080,7 +3109,7 @@
                 const activeOrdersCount = window.ordersData.filter(o => o.status === 'paid').length;
                 const pendingTopupCount = window.topupsData.filter(t => t.status === 'pending').length;
                 const pendingWdCount = window.withdrawalsData.filter(w => w.status === 'pending').length;
-                const unreadChatCount = window.messagesData.filter(m => m.receiverEmail === 'admin' && !m.isRead).length;
+                const unreadChatCount = window.messagesData.filter(m => !m.isRead && (m.receiverEmail === 'admin' || m.receiverEmail === window.currentUser?.email || !m.receiverEmail)).length;
                 const userCount = window.usersData.filter(u => u.role === 'user').length;
                 const mitraCount = window.usersData.filter(u => u.role === 'mitra').length;
                 const carCount = window.carsData.filter(c => c.status === 'approved').length;
