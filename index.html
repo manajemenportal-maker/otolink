@@ -1242,6 +1242,15 @@
                               <label class="block bg-white border rounded-lg p-3"><span class="block text-sm font-bold">Kartu Keluarga (KK) <span class="text-gray-400">Opsional</span></span><input id="coDocKK" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs mt-2" onchange="previewRentalDocName('coDocKK','coDocKKName')"><span id="coDocKKName" class="block text-[10px] text-gray-500 mt-1">Belum dipilih</span></label>
                               <label class="block bg-white border rounded-lg p-3 sm:col-span-2"><span class="block text-sm font-bold">BPJS <span class="text-gray-400">Opsional</span></span><input id="coDocBPJS" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs mt-2" onchange="previewRentalDocName('coDocBPJS','coDocBPJSName')"><span id="coDocBPJSName" class="block text-[10px] text-gray-500 mt-1">Belum dipilih</span></label>
                             </div>
+                            <div class="mt-4 border-t border-amber-200 pt-3">
+                              <h5 class="font-bold text-sm text-gray-800 mb-2">Rekening Pengembalian Jaminan</h5>
+                              <div class="grid sm:grid-cols-3 gap-2">
+                                <label class="text-xs font-semibold">Bank<select id="coDepositBank" class="w-full border rounded-lg p-2 mt-1"><option value="BCA">BCA (gratis)</option><option value="Mandiri">Mandiri</option><option value="BRI">BRI</option><option value="BNI">BNI</option><option value="CIMB Niaga">CIMB Niaga</option><option value="BTN">BTN</option><option value="Lainnya">Bank lainnya</option></select></label>
+                                <label class="text-xs font-semibold">Nomor rekening<input id="coDepositAccount" inputmode="numeric" class="w-full border rounded-lg p-2 mt-1" placeholder="Nomor rekening"></label>
+                                <label class="text-xs font-semibold">Nama pemilik rekening<input id="coDepositHolder" class="w-full border rounded-lg p-2 mt-1" placeholder="Sesuai rekening"></label>
+                              </div>
+                              <p id="coDepositFeeNote" class="text-xs text-blue-800 mt-2">Transfer ke BCA gratis. Bank lain dikenakan biaya Rp5.000 per transaksi, dipotong dari jaminan saat pengembalian.</p>
+                            </div>
                             <p class="text-[11px] text-red-700 font-semibold mt-3">PENTING: SIM dan KTP asli wajib ditunjukkan saat serah terima unit kendaraan. Dokumen digital hanya untuk pemeriksaan awal.</p>
                             <p class="text-[10px] text-gray-500 mt-1">Foto akan dikompres sebelum disimpan untuk menghemat kapasitas database. Dokumen hanya ditujukan untuk pemeriksaan transaksi.</p>
                         </div>
@@ -1403,6 +1412,8 @@
                 if(rentalMode !== '24h' && rentalMode !== 'monthly') { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast('Sewa lepas kunci minimal 24 jam. Pilih 24 jam atau bulanan.',false); }
                 if(!Number.isFinite(startMs)||!Number.isFinite(endMs)||endMs-startMs < 24*3600000) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast('Sewa lepas kunci wajib minimal 24 jam.',false); }
                 try { rentalDocuments = await window.collectRentalDocuments(); } catch(err) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast(err.message||'SIM dan KTP wajib diunggah.',false); }
+                const depositAccount=(document.getElementById('coDepositAccount')?.value||'').trim(); const depositHolder=(document.getElementById('coDepositHolder')?.value||'').trim();
+                if(!depositAccount||!depositHolder) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast('Isi nomor rekening dan nama pemilik rekening untuk pengembalian jaminan.',false); }
                 const walletForDeposit = window.getOtoPayBalance(window.currentUser.email);
                 const requiredWallet = 2000000 + (method==='otopay' ? total : 0);
                 if(walletForDeposit < requiredWallet) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast(`Saldo OtoPay tidak cukup. Untuk lepas kunci diperlukan jaminan Rp2.000.000${method==='otopay'?' ditambah biaya sewa':''}.`,false); }
@@ -1444,6 +1455,10 @@
                 securityDepositAmount: isSelfDrive ? 2000000 : 0,
                 depositStatus: isSelfDrive ? 'held' : 'not_required',
                 originalDocumentsMustBeShownAtHandover: isSelfDrive,
+                depositBankName: isSelfDrive ? (document.getElementById('coDepositBank')?.value||'') : '',
+                depositBankAccount: isSelfDrive ? (document.getElementById('coDepositAccount')?.value||'').trim() : '',
+                depositBankHolder: isSelfDrive ? (document.getElementById('coDepositHolder')?.value||'').trim() : '',
+                depositWithdrawalStatus: isSelfDrive ? 'held' : 'not_required',
                 completionRequestedAt: null,
                 platformFeeRate: rentalFee.feeRate,
                 platformFee: rentalFee.fee,
@@ -2268,8 +2283,26 @@
                 const title=isOwner?`<span class="text-blue-600 font-bold text-xs"><i class="ph-fill ph-arrow-down-left"></i> Penyewaan unit Anda</span>`:`<span class="text-orange-600 font-bold text-xs"><i class="ph-fill ph-arrow-up-right"></i> Anda menyewa mobil</span>`;
                 const stat=o.status==='paid'?'<span class="text-green-600 font-bold text-xs">Aktif</span>':o.status==='completion_requested'?'<span class="text-blue-600 font-bold text-xs">Proses Selesai</span>':o.status==='completed'?'<span class="text-gray-500 font-bold text-xs">Selesai</span>':'<span class="text-yellow-600 font-bold text-xs">Pending</span>';
                 const rate=isOwner && o.status==='completed' ? (o.partnerCustomerRating ? `<div class="mt-3 bg-blue-50 p-2 rounded text-xs"><b>Penilaian pelanggan:</b> ${window.ratingStars(o.partnerCustomerRating)} ${o.partnerCustomerRating}/5</div>` : `<button type="button" onclick="openPartnerRating('${o.id}')" class="mt-3 w-full bg-yellow-500 text-white py-2.5 rounded-lg text-xs font-black"><i class="ph-fill ph-star mr-1"></i>NILAI PELANGGAN</button>`) : '';
-                list.innerHTML+=`<div class="border p-3 rounded hover:bg-gray-50 transition"><div class="flex justify-between mb-1">${title}${stat}</div><p class="font-semibold text-sm text-gray-800">${o.carName||'Mobil'}</p><p class="text-[10px] text-gray-500">${isOwner?'Pelanggan: '+(o.customerName||o.customerEmail||'-'):''}</p><div class="flex justify-between mt-2 pt-2 border-t"><p class="text-xs text-gray-500">${o.orderId||'-'}</p><p class="font-black text-shopee text-sm">${formatRp(o.totalAmount||0)}</p></div>${o.service==='lepas_kunci'?`<div class="mt-2 bg-amber-50 rounded p-2 text-[10px] text-amber-900">Jaminan ${formatRp(o.securityDepositAmount||2000000)} • ${o.depositStatus==='refunded'?'Sudah dikembalikan':'Ditahan sampai pemeriksaan unit'}<button onclick="openRentalDocs('${o.id}')" class="block mt-1 font-bold underline">Lihat dokumen SIM/KTP</button><p class="mt-1">SIM dan KTP asli harus ditunjukkan saat serah terima.</p></div>`:''}${rate}</div>`;
+                list.innerHTML+=`<div class="border p-3 rounded hover:bg-gray-50 transition"><div class="flex justify-between mb-1">${title}${stat}</div><p class="font-semibold text-sm text-gray-800">${o.carName||'Mobil'}</p><p class="text-[10px] text-gray-500">${isOwner?'Pelanggan: '+(o.customerName||o.customerEmail||'-'):''}</p><div class="flex justify-between mt-2 pt-2 border-t"><p class="text-xs text-gray-500">${o.orderId||'-'}</p><p class="font-black text-shopee text-sm">${formatRp(o.totalAmount||0)}</p></div>${o.service==='lepas_kunci'?`<div class="mt-2 bg-amber-50 rounded p-2 text-[10px] text-amber-900">Jaminan ${formatRp(o.securityDepositAmount||2000000)} • ${o.depositStatus==='refunded'?'Sudah dikembalikan':o.depositStatus==='return_eligible'?'Sewa selesai — dapat ajukan pengembalian': 'Ditahan sampai pemeriksaan unit'}<button onclick="openRentalDocs('${o.id}')" class="block mt-1 font-bold underline">Lihat dokumen SIM/KTP</button><p class="mt-1">SIM dan KTP asli harus ditunjukkan saat serah terima.</p>${!isOwner&&o.depositStatus==='return_eligible'&&o.depositWithdrawalStatus!=='requested'&&o.depositWithdrawalStatus!=='processing'&&o.depositWithdrawalStatus!=='completed'?`<button onclick="requestSecurityDepositWithdrawal('${o.id}')" class="mt-2 w-full bg-green-600 text-white rounded px-3 py-2 text-xs font-bold">Ajukan Transfer Jaminan</button>`:''}${!isOwner&&['requested','processing'].includes(o.depositWithdrawalStatus)?`<p class="mt-2 font-bold">Pengembalian jaminan: ${o.depositWithdrawalStatus==='requested'?'Menunggu admin':'Sedang diproses admin'}</p>`:''}${!isOwner&&o.depositWithdrawalStatus==='completed'?`<p class="mt-2 text-green-700 font-bold">Jaminan telah ditransfer • ${formatRp(o.depositRefundNet||0)}</p>`:''}</div>`:''}${rate}</div>`;
             });
+        };
+
+        window.requestSecurityDepositWithdrawal = async function(orderId) {
+            const o=(window.ordersData||[]).find(x=>x.id===orderId); const email=String(window.currentUser?.email||'').trim().toLowerCase();
+            if(!o||String(o.customerEmail||'').trim().toLowerCase()!==email) return window.showToast('Pesanan tidak ditemukan di akun Anda.',false);
+            if(o.service!=='lepas_kunci'||o.status!=='completed'||o.depositStatus!=='return_eligible') return window.showToast('Pengembalian jaminan baru tersedia setelah sewa selesai dan pemilik/admin menyetujui kondisi unit.',false);
+            if(['requested','processing','completed'].includes(o.depositWithdrawalStatus)) return window.showToast('Pengajuan pengembalian jaminan sudah tercatat.',false);
+            const bank=String(o.depositBankName||'').trim(), account=String(o.depositBankAccount||'').trim(), holder=String(o.depositBankHolder||'').trim();
+            if(!bank||!account||!holder) return window.showToast('Data rekening pengembalian belum lengkap. Hubungi admin.',false);
+            const gross=Number(o.securityDepositAmount||2000000); const fee=bank.toLowerCase()==='bca'?0:5000; const net=Math.max(0,gross-fee);
+            if(!confirm(`Ajukan pengembalian jaminan?\nBank: ${bank}\nRekening: ${account}\nAtas nama: ${holder}\nJaminan: ${formatRp(gross)}\nBiaya transfer: ${formatRp(fee)}\nDiterima: ${formatRp(net)}\n\nPengajuan dikirim ke admin untuk diperiksa dan ditransfer.`)) return;
+            try {
+                const wdId=await window.fsAddDoc('withdrawals',{type:'security_deposit_refund',orderId:o.id,orderCode:o.orderId||o.id,email:o.customerEmail,name:o.customerName||window.currentUser.name||'',amount:gross,fee,netAmount:net,bankName:bank,bankAccount:account,bankHolder:holder,status:'pending',timestamp:Date.now(),service:'lepas_kunci'});
+                await window.fsUpdateDoc('orders',o.id,{depositWithdrawalStatus:'requested',depositWithdrawalId:wdId,depositWithdrawalRequestedAt:Date.now(),depositRefundFee:fee,depositRefundNet:net});
+                Object.assign(o,{depositWithdrawalStatus:'requested',depositWithdrawalId:wdId,depositWithdrawalRequestedAt:Date.now(),depositRefundFee:fee,depositRefundNet:net});
+                await window.createAdminActivityNotification('security_deposit_refund','Pengajuan pengembalian jaminan',`${o.customerName||o.customerEmail} mengajukan pengembalian jaminan ${o.orderId||o.id}.`,o.id,o.customerEmail);
+                window.showToast('Pengajuan pengembalian jaminan berhasil dikirim ke admin.'); window.openUserDashboard();
+            } catch(err) { console.error(err); window.showToast('Pengajuan gagal disimpan: '+(err.message||''),false); }
         };
 
         window.createAdminActivityNotification = async function(type, title, message, relatedId='', senderEmail='') {
@@ -3186,11 +3219,13 @@
             // ===== PENCAIRAN =====
             const c_adC = document.getElementById('adPencairan');
             if(c_adC) {
-                const pending = window.withdrawalsData.filter(w=>w.status==='pending').sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+                const pending = window.withdrawalsData.filter(w=>w.status==='pending'&&w.type!=='security_deposit_refund').sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+                const pendingDeposits = window.withdrawalsData.filter(w=>w.status==='pending'&&w.type==='security_deposit_refund').sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
                 const done = window.withdrawalsData.filter(w=>w.status==='completed').sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,10);
                 let hC = `<div class="mb-4 border-b pb-3"><h3 class="font-black text-gray-800"><i class="ph-fill ph-money mr-1"></i> Pencairan Dana Mitra</h3><p class="text-xs text-gray-500 mt-1">Menunggu transfer: ${pending.length} • Selesai: ${window.withdrawalsData.filter(w=>w.status==='completed').length}</p></div>`;
                 hC += helpBox('Tugas admin di menu ini','Periksa saldo dan rekening mitra, lakukan transfer ke rekening yang tercatat, lalu tandai transaksi selesai. Jangan menandai selesai sebelum transfer benar-benar dilakukan.',['Cek rekening mitra','Cek jumlah bersih','Lakukan transfer','Tandai selesai']);
-                if(!pending.length) hC += emptyBox('ph-check-circle','Tidak ada pencairan menunggu','Pengajuan penarikan baru dari mitra akan muncul di sini.');
+                if(pendingDeposits.length) { hC += `<div class="mt-5 mb-3"><h4 class="font-black text-amber-800"><i class="ph-fill ph-shield-check mr-1"></i>Pengembalian Jaminan Lepas Kunci (${pendingDeposits.length})</h4><p class="text-xs text-gray-500">Periksa bahwa unit telah dikembalikan dan pemilik iklan menyatakan kondisi unit OK sebelum transfer.</p></div>`; pendingDeposits.forEach(w=>{const fee=Number(w.fee||0),net=Number(w.netAmount||0); hC+=`<div class="border border-amber-200 bg-amber-50/50 p-4 rounded-xl mb-3"><div class="flex justify-between gap-3"><div><p class="font-black text-sm">${esc(w.name||w.email||'Pelanggan')}</p><p class="text-xs text-gray-500">${esc(w.orderCode||w.orderId||'-')} • ${esc(w.email||'')}</p></div><p class="font-black text-green-700">${money(net)}</p></div><div class="text-xs mt-2 bg-white border rounded-lg p-3"><p><b>Rekening:</b> ${esc(w.bankName||'-')} • ${esc(w.bankAccount||'-')}</p><p><b>Atas nama:</b> ${esc(w.bankHolder||'-')}</p><p><b>Jaminan:</b> ${money(w.amount)} • <b>Biaya:</b> ${money(fee)} • <b>Transfer:</b> ${money(net)}</p><p class="mt-1 text-amber-800">Pastikan persetujuan pemilik unit dan kondisi kendaraan sebelum transfer manual.</p></div><div class="flex gap-2 mt-3"><button onclick="adminCompleteSecurityDeposit('${w.id}')" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold">Konfirmasi Sudah Transfer</button><button onclick="adminRejectWithdraw('${w.id}')" class="px-4 bg-red-50 text-red-600 rounded-lg text-xs font-bold">Tolak</button></div></div>`;}); }
+                if(!pending.length && !pendingDeposits.length) hC += emptyBox('ph-check-circle','Tidak ada pencairan menunggu','Pengajuan penarikan mitra dan pengembalian jaminan pelanggan akan muncul di sini.');
                 pending.forEach(w=>{const u=window.usersData.find(x=>x.email===w.email); const bankName=w.bankName||u?.bankName||'', bankAccount=w.bankAccount||u?.bankAccount||'', bankHolder=w.bankHolder||u?.bankHolder||'';
                     const verified = u?.partnerVerificationStatus === 'verified';
                     const bank=(bankName&&bankAccount)?`<div class="bg-blue-50 p-2 rounded border border-blue-100 text-xs my-2 text-blue-800"><p><b>${esc(bankName)}</b> • <span class="font-mono">${esc(bankAccount)}</span></p><p>a.n. ${esc(bankHolder||'-')}</p><p class="mt-1 ${verified?'text-green-700':'text-red-600'} font-bold">${verified?'✓ Mitra terverifikasi':'⚠ Mitra belum terverifikasi'}</p></div>`:'<div class="text-xs text-red-600 bg-red-50 border border-red-100 rounded p-2 my-2">Rekening mitra belum diatur. Hubungi mitra sebelum transfer.</div>'; hC += `<div class="border p-4 rounded-xl mb-3 shadow-sm"><div class="flex flex-col md:flex-row md:justify-between gap-2"><div><p class="font-black text-sm">${esc(w.name||'-')}</p><p class="text-[10px] text-gray-500">${esc(w.email||'-')}</p></div><div class="md:text-right"><p class="text-lg font-black text-shopee">${money(w.netAmount)}</p><p class="text-[9px] text-gray-400">Permintaan ${money(w.amount)} • Fee ${money(w.fee)}</p></div></div>${bank}<div class="flex gap-2 mt-3"><button onclick="approveWithdraw('${w.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-xs font-bold">Sudah Ditransfer</button><button onclick="adminRejectWithdraw('${w.id}')" class="px-4 bg-red-50 text-red-600 rounded-lg text-xs font-bold">Tolak</button></div></div>`;});
@@ -3334,6 +3369,17 @@
         window.adminToggleCarStatus = async function(id) { const c=window.carsData.find(x=>x.id===id); if(!c)return; const st=c.status==='approved'?'pending':'approved'; await window.fsUpdateDoc('cars',id,{status:st}); window.showToast(st==='approved'?'Iklan diaktifkan':'Iklan dinonaktifkan'); };
         window.adminDeleteBanner = async function(id) { if(!confirm('Hapus banner ini dari halaman utama?'))return; await window.fsDeleteDoc('banners',id); window.showToast('Banner dihapus'); };
         window.adminRejectTopup = async function(id) { if(!confirm('Tolak pengajuan top up ini? Saldo tidak akan ditambahkan.'))return; await window.fsUpdateDoc('topups',id,{status:'rejected',processedAt:Date.now()}); window.showToast('Top up ditolak'); };
+        window.adminCompleteSecurityDeposit = async function(id) {
+            if(!window.requireAdminPermission('finance_withdrawal')) return;
+            const w=(window.withdrawalsData||[]).find(x=>x.id===id);
+            if(!w||w.type!=='security_deposit_refund') return window.showToast('Pengajuan jaminan tidak ditemukan.',false);
+            if(w.status!=='pending') return window.showToast('Pengajuan ini sudah diproses.',false);
+            const o=(window.ordersData||[]).find(x=>x.id===w.orderId);
+            if(!o||o.status!=='completed'||o.depositStatus!=='return_eligible') return window.showToast('Transaksi sewa belum dinyatakan selesai oleh admin.',false);
+            if(!confirm(`Pastikan pemilik iklan sudah menyatakan unit kembali dalam kondisi OK dan transfer manual sudah dilakukan. Tandai transfer ${formatRp(w.netAmount)} selesai?`)) return;
+            try { await window.fsUpdateDoc('withdrawals',id,{status:'completed',processedAt:Date.now(),processedBy:window.currentUser?.email||'admin',transferConfirmed:true}); await window.fsUpdateDoc('orders',o.id,{depositWithdrawalStatus:'completed',depositStatus:'refunded',depositRefundedAt:Date.now(),depositRefundedBy:window.currentUser?.email||'admin',depositRefundNet:Number(w.netAmount||0),depositRefundFee:Number(w.fee||0)}); Object.assign(o,{depositWithdrawalStatus:'completed',depositStatus:'refunded',depositRefundedAt:Date.now(),depositRefundNet:Number(w.netAmount||0),depositRefundFee:Number(w.fee||0)}); await window.writeAdminAudit('security_deposit_refund',{withdrawalId:id,orderId:o.id,amount:w.amount,fee:w.fee,netAmount:w.netAmount},'finance'); window.showToast('Pengembalian jaminan ditandai selesai. Pastikan bukti transfer tersimpan.'); window.loadAdminData(); } catch(err) { console.error(err); window.showToast('Gagal menyimpan status transfer: '+(err.message||''),false); }
+        };
+
         window.adminRejectWithdraw = async function(id) { if(!window.requireAdminPermission('finance_withdrawal')) return; if(!confirm('Tolak pengajuan pencairan ini?'))return; await window.fsUpdateDoc('withdrawals',id,{status:'rejected',processedAt:Date.now()}); window.showToast('Pencairan ditolak'); };
         window.adminCancelOrder = async function(id,carId) { if(!confirm('Batalkan pesanan ini? Mobil akan dibuat tersedia kembali.'))return; await window.fsUpdateDoc('orders',id,{status:'cancelled'}); if(carId)await window.fsUpdateDoc('cars',carId,{isBooked:false,timestamp:Date.now()}); window.showToast('Pesanan dibatalkan'); };
         window.adminDeleteAccount = function(userId) { if(!window.requireAdminPermission('customers') && !window.requireAdminPermission('partners')) return;
@@ -3580,14 +3626,13 @@
             if(!confirm('Data pelanggan dan laporan operasional sudah cocok. Nyatakan transaksi selesai dan buka pencairan Mitra?')) return;
             const finishUpdate={status:'completed',adminCompletedAt:Date.now(),completionApprovedBy:'admin'};
             if(o.service==='lepas_kunci' && Number(o.securityDepositAmount||0)>0 && o.depositStatus==='held') {
-                const refundAmount=Number(o.securityDepositAmount||2000000);
-                await window.fsAddDoc('topups',{name:window.currentUser.name||window.currentUser.email,email:o.customerEmail,amount:refundAmount,status:'completed',type:'security_deposit_refund',orderId:o.id,orderCode:o.orderId||o.id,note:'Pengembalian jaminan sewa lepas kunci setelah Admin menyatakan unit selesai dan diperiksa.',timestamp:Date.now(),processedBy:window.currentUser.email});
-                finishUpdate.depositStatus='refunded'; finishUpdate.depositRefundedAt=Date.now(); finishUpdate.depositRefundedBy=window.currentUser.email;
+                finishUpdate.depositStatus='return_eligible'; finishUpdate.depositWithdrawalStatus='available'; finishUpdate.depositEligibleAt=Date.now();
+                finishUpdate.depositApprovedBy=window.currentUser.email;
             }
             await window.fsUpdateDoc('orders',orderId,finishUpdate);
             Object.assign(o,finishUpdate);
             if(carId) await window.fsUpdateDoc('cars',carId,{isBooked:false,timestamp:Date.now()});
-            window.showToast(o.service==='lepas_kunci'&&finishUpdate.depositStatus==='refunded'?'Transaksi selesai. Jaminan Rp2.000.000 dikembalikan ke saldo OtoPay pelanggan.':'Transaksi selesai. Pencairan dana Mitra sekarang dapat dilakukan.');
+            window.showToast(o.service==='lepas_kunci'&&finishUpdate.depositStatus==='return_eligible'?'Transaksi selesai. Pelanggan kini dapat mengajukan transfer pengembalian jaminan.':'Transaksi selesai. Pencairan dana Mitra sekarang dapat dilakukan.');
             setTimeout(()=>window.loadAdminData(),100);
         };
 
