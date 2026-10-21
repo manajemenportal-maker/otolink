@@ -1232,6 +1232,20 @@
                             <p class="text-[10px] text-gray-500 mt-2">Tarif 24 jam memakai harga harian. Tarif 12 jam = 60% harga harian. Tarif per jam = harga harian dibagi 15 jam.</p>
                         </div>
 
+                        <div id="coSelfDriveDocs" class="hidden mb-5 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                            <h4 class="font-black text-amber-900 mb-1"><i class="ph-fill ph-identification-card mr-1"></i>Persyaratan Sewa Lepas Kunci</h4>
+                            <p class="text-xs text-amber-900 mb-3">Minimal sewa 24 jam dan wajib menahan jaminan Rp2.000.000 dari saldo OtoPay. Jaminan dapat dikembalikan setelah sewa selesai dan unit diperiksa.</p>
+                            <div class="grid sm:grid-cols-2 gap-3">
+                              <label class="block bg-white border rounded-lg p-3"><span class="block text-sm font-bold">SIM <span class="text-red-600">*Wajib</span></span><span class="block text-[10px] text-gray-500 mb-2">Foto jelas, JPG/PNG/WebP</span><input id="coDocSIM" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs" onchange="previewRentalDocName('coDocSIM','coDocSIMName')"><span id="coDocSIMName" class="block text-[10px] text-gray-500 mt-1">Belum dipilih</span></label>
+                              <label class="block bg-white border rounded-lg p-3"><span class="block text-sm font-bold">KTP <span class="text-red-600">*Wajib</span></span><span class="block text-[10px] text-gray-500 mb-2">Foto jelas, JPG/PNG/WebP</span><input id="coDocKTP" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs" onchange="previewRentalDocName('coDocKTP','coDocKTPName')"><span id="coDocKTPName" class="block text-[10px] text-gray-500 mt-1">Belum dipilih</span></label>
+                              <label class="block bg-white border rounded-lg p-3"><span class="block text-sm font-bold">NPWP <span class="text-gray-400">Opsional</span></span><input id="coDocNPWP" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs mt-2" onchange="previewRentalDocName('coDocNPWP','coDocNPWPName')"><span id="coDocNPWPName" class="block text-[10px] text-gray-500 mt-1">Belum dipilih</span></label>
+                              <label class="block bg-white border rounded-lg p-3"><span class="block text-sm font-bold">Kartu Keluarga (KK) <span class="text-gray-400">Opsional</span></span><input id="coDocKK" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs mt-2" onchange="previewRentalDocName('coDocKK','coDocKKName')"><span id="coDocKKName" class="block text-[10px] text-gray-500 mt-1">Belum dipilih</span></label>
+                              <label class="block bg-white border rounded-lg p-3 sm:col-span-2"><span class="block text-sm font-bold">BPJS <span class="text-gray-400">Opsional</span></span><input id="coDocBPJS" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs mt-2" onchange="previewRentalDocName('coDocBPJS','coDocBPJSName')"><span id="coDocBPJSName" class="block text-[10px] text-gray-500 mt-1">Belum dipilih</span></label>
+                            </div>
+                            <p class="text-[11px] text-red-700 font-semibold mt-3">PENTING: SIM dan KTP asli wajib ditunjukkan saat serah terima unit kendaraan. Dokumen digital hanya untuk pemeriksaan awal.</p>
+                            <p class="text-[10px] text-gray-500 mt-1">Foto akan dikompres sebelum disimpan untuk menghemat kapasitas database. Dokumen hanya ditujukan untuk pemeriksaan transaksi.</p>
+                        </div>
+
                         <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
                             <h4 class="text-xs font-bold text-blue-800 mb-3 uppercase tracking-wider">Pilih Metode Pembayaran</h4>
                             <label class="flex items-center gap-3 p-3 border rounded bg-white cursor-pointer hover:border-shopee mb-2">
@@ -1261,6 +1275,8 @@
                 return window.showToast('Mitra belum mengaktifkan jenis durasi sewa untuk unit ini.', false);
             }
             window.applyRentalMode();
+            const initialService=document.querySelector('input[name="coService"]:checked')?.value || 'lepas_kunci';
+            const docs=document.getElementById('coSelfDriveDocs'); if(docs) docs.classList.toggle('hidden',initialService!=='lepas_kunci');
         };
 
         window.toggleService = function(val) {
@@ -1274,8 +1290,19 @@
             document.getElementById('icnLepasKunci').className = `ph-fill ph-steering-wheel text-xl ${val==='lepas_kunci' ? 'text-blue-500' : 'text-gray-400'}`;
             document.getElementById('icnSupirDalam').className = `ph-fill ph-user-circle text-xl ${val==='dengan_supir_dalam_kota' ? 'text-blue-500' : 'text-gray-400'}`;
             document.getElementById('icnSupirLuar').className = `ph-fill ph-map-pin-line text-xl ${val==='dengan_supir_luar_kota' ? 'text-purple-500' : 'text-gray-400'}`;
+            const docs = document.getElementById('coSelfDriveDocs');
+            if(docs) docs.classList.toggle('hidden', val !== 'lepas_kunci');
             window.calculateCheckoutTotal();
         };
+
+        window.previewRentalDocName = function(inputId, labelId) { const f=document.getElementById(inputId)?.files?.[0]; const el=document.getElementById(labelId); if(el) el.textContent=f?`${f.name} (${Math.ceil(f.size/1024)} KB)`:'Belum dipilih'; };
+        window.collectRentalDocuments = async function() {
+            const fields=[['SIM','coDocSIM',true],['KTP','coDocKTP',true],['NPWP','coDocNPWP',false],['KK','coDocKK',false],['BPJS','coDocBPJS',false]]; const docs={};
+            for(const [key,id,required] of fields){ const file=document.getElementById(id)?.files?.[0]; if(required&&!file) throw new Error(`Dokumen ${key} wajib diunggah untuk sewa lepas kunci.`); if(!file) continue; if(!file.type.startsWith('image/')) throw new Error(`Dokumen ${key} harus berupa foto JPG/PNG/WebP.`); if(file.size>8*1024*1024) throw new Error(`Ukuran foto ${key} maksimal 8 MB sebelum kompresi.`); const compact=await window.compressPartnerDocument(file,620,55); if(!compact||compact.length>110000) throw new Error(`Foto ${key} masih terlalu besar setelah kompresi. Ambil foto lebih jelas dengan ukuran lebih kecil.`); docs[key]={data:compact,fileName:file.name,uploadedAt:Date.now()}; }
+            return docs;
+        };
+
+        window.openRentalDocs = function(orderId) { const o=window.ordersData.find(x=>x.id===orderId); const email=String(window.currentUser?.email||'').toLowerCase(); const isAdmin=window.currentUser?.role==='admin'; if(!o||(!isAdmin&&email!==String(o.customerEmail||'').toLowerCase()&&email!==String(o.ownerEmail||'').toLowerCase())){window.showToast('Anda tidak memiliki akses ke dokumen transaksi ini.',false);return;} if(!(o.service==='lepas_kunci')||!o.rentalDocuments){window.showToast('Dokumen sewa lepas kunci belum tersedia.',false);return;} const docs=o.rentalDocuments; const names=['SIM','KTP','NPWP','KK','BPJS']; const body=names.map(k=>{const d=docs[k];return `<div class="border rounded-lg p-3"><div class="font-bold text-sm">${k}</div>${d&&d.data?`<img src="${d.data}" class="mt-2 max-h-48 max-w-full object-contain rounded border bg-gray-50"><p class="text-[10px] text-gray-500 mt-1">${window.escapeHtml(d.fileName||'Dokumen')}</p>`:'<p class="text-xs text-gray-400 mt-1">Tidak diunggah</p>'}</div>`}).join(''); document.getElementById('modalContainer').innerHTML=`<div class="fixed inset-0 modal-overlay z-[120] flex items-center justify-center p-3"><div class="bg-white rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden"><div class="bg-[#101827] text-white p-4 flex justify-between"><div><h2 class="font-black">Dokumen Lepas Kunci</h2><p class="text-xs text-gray-300">${window.escapeHtml(o.orderId||o.id)} • ${window.escapeHtml(o.customerName||o.customerEmail||'')}</p></div><button onclick="closeAllModals()"><i class="ph-bold ph-x text-xl"></i></button></div><div class="p-4 overflow-y-auto"><div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs mb-3">Jaminan: Rp2.000.000 • Status: ${window.escapeHtml(o.depositStatus||'Periksa status')}<br>SIM dan KTP asli wajib diperlihatkan saat serah terima kendaraan.</div><div class="grid sm:grid-cols-2 gap-3">${body}</div></div></div></div>`; };
 
         window.applyRentalMode = function() {
             const mode = document.querySelector('input[name="coRentalMode"]:checked')?.value || '24h';
@@ -1366,7 +1393,20 @@
             const dest = document.getElementById('coDest').value || '-';
             
             const car = window.carsData.find(c => c.id === carId);
-            if(!car) return window.showToast("Data mobil tidak ditemukan.", false);
+            if(!car) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast("Data mobil tidak ditemukan.", false); }
+
+            let rentalDocuments = null;
+            const isSelfDrive = service === 'lepas_kunci';
+            if(isSelfDrive) {
+                const startMs = new Date(`${pickupDate}T${pickupTime||'00:00'}`).getTime();
+                const endMs = new Date(`${endDate}T${endTime||'00:00'}`).getTime();
+                if(rentalMode !== '24h' && rentalMode !== 'monthly') { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast('Sewa lepas kunci minimal 24 jam. Pilih 24 jam atau bulanan.',false); }
+                if(!Number.isFinite(startMs)||!Number.isFinite(endMs)||endMs-startMs < 24*3600000) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast('Sewa lepas kunci wajib minimal 24 jam.',false); }
+                try { rentalDocuments = await window.collectRentalDocuments(); } catch(err) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast(err.message||'SIM dan KTP wajib diunggah.',false); }
+                const walletForDeposit = window.getOtoPayBalance(window.currentUser.email);
+                const requiredWallet = 2000000 + (method==='otopay' ? total : 0);
+                if(walletForDeposit < requiredWallet) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast(`Saldo OtoPay tidak cukup. Untuk lepas kunci diperlukan jaminan Rp2.000.000${method==='otopay'?' ditambah biaya sewa':''}.`,false); }
+            }
 
             if(method === 'otopay') {
                 const currentWalletBalance = window.getOtoPayBalance(window.currentUser.email);
@@ -1400,6 +1440,10 @@
                 rentalEndAt: endDate && endTime ? new Date(`${endDate}T${endTime}`).getTime() : null,
                 customerCompletionConfirmed: false,
                 driverCompletionConfirmed: service === 'lepas_kunci',
+                rentalDocuments: rentalDocuments || null,
+                securityDepositAmount: isSelfDrive ? 2000000 : 0,
+                depositStatus: isSelfDrive ? 'held' : 'not_required',
+                originalDocumentsMustBeShownAtHandover: isSelfDrive,
                 completionRequestedAt: null,
                 platformFeeRate: rentalFee.feeRate,
                 platformFee: rentalFee.fee,
@@ -1407,7 +1451,10 @@
                 payMethod: method, status: method === 'otopay' ? 'paid' : 'pending', 
                 timestamp: Date.now(), isWithdrawn: false 
             };
-            await window.fsAddDoc('orders', orderData);
+            const createdOrderId = await window.fsAddDoc('orders', orderData);
+            if(isSelfDrive) {
+                await window.fsAddDoc('topups', {name:window.currentUser.name||window.currentUser.email,email:window.currentUser.email,amount:-2000000,status:'completed',type:'security_deposit_hold',orderId:createdOrderId,orderCode:orderId,note:'Jaminan sewa lepas kunci ditahan sampai unit selesai dan diperiksa.',timestamp:Date.now()});
+            }
 
             let newRentCount = (car.rentCount || 0) + 1;
             await window.fsUpdateDoc('cars', car.id, { isBooked: true, rentCount: newRentCount });
@@ -2221,7 +2268,7 @@
                 const title=isOwner?`<span class="text-blue-600 font-bold text-xs"><i class="ph-fill ph-arrow-down-left"></i> Penyewaan unit Anda</span>`:`<span class="text-orange-600 font-bold text-xs"><i class="ph-fill ph-arrow-up-right"></i> Anda menyewa mobil</span>`;
                 const stat=o.status==='paid'?'<span class="text-green-600 font-bold text-xs">Aktif</span>':o.status==='completion_requested'?'<span class="text-blue-600 font-bold text-xs">Proses Selesai</span>':o.status==='completed'?'<span class="text-gray-500 font-bold text-xs">Selesai</span>':'<span class="text-yellow-600 font-bold text-xs">Pending</span>';
                 const rate=isOwner && o.status==='completed' ? (o.partnerCustomerRating ? `<div class="mt-3 bg-blue-50 p-2 rounded text-xs"><b>Penilaian pelanggan:</b> ${window.ratingStars(o.partnerCustomerRating)} ${o.partnerCustomerRating}/5</div>` : `<button type="button" onclick="openPartnerRating('${o.id}')" class="mt-3 w-full bg-yellow-500 text-white py-2.5 rounded-lg text-xs font-black"><i class="ph-fill ph-star mr-1"></i>NILAI PELANGGAN</button>`) : '';
-                list.innerHTML+=`<div class="border p-3 rounded hover:bg-gray-50 transition"><div class="flex justify-between mb-1">${title}${stat}</div><p class="font-semibold text-sm text-gray-800">${o.carName||'Mobil'}</p><p class="text-[10px] text-gray-500">${isOwner?'Pelanggan: '+(o.customerName||o.customerEmail||'-'):''}</p><div class="flex justify-between mt-2 pt-2 border-t"><p class="text-xs text-gray-500">${o.orderId||'-'}</p><p class="font-black text-shopee text-sm">${formatRp(o.totalAmount||0)}</p></div>${rate}</div>`;
+                list.innerHTML+=`<div class="border p-3 rounded hover:bg-gray-50 transition"><div class="flex justify-between mb-1">${title}${stat}</div><p class="font-semibold text-sm text-gray-800">${o.carName||'Mobil'}</p><p class="text-[10px] text-gray-500">${isOwner?'Pelanggan: '+(o.customerName||o.customerEmail||'-'):''}</p><div class="flex justify-between mt-2 pt-2 border-t"><p class="text-xs text-gray-500">${o.orderId||'-'}</p><p class="font-black text-shopee text-sm">${formatRp(o.totalAmount||0)}</p></div>${o.service==='lepas_kunci'?`<div class="mt-2 bg-amber-50 rounded p-2 text-[10px] text-amber-900">Jaminan ${formatRp(o.securityDepositAmount||2000000)} • ${o.depositStatus==='refunded'?'Sudah dikembalikan':'Ditahan sampai pemeriksaan unit'}<button onclick="openRentalDocs('${o.id}')" class="block mt-1 font-bold underline">Lihat dokumen SIM/KTP</button><p class="mt-1">SIM dan KTP asli harus ditunjukkan saat serah terima.</p></div>`:''}${rate}</div>`;
             });
         };
 
@@ -3086,7 +3133,7 @@
                     else if(o.status==='completed'){statBadge='<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-[10px] font-bold">SELESAI</span>'; actionBtn=!o.isWithdrawn?`<button onclick="openAdminDisburse('${o.id}','${o.ownerEmail}',${Number(o.totalAmount)||0})" class="bg-orange-500 text-white px-3 py-1.5 rounded text-xs font-bold">Cairkan Mitra</button>`:'<span class="text-xs text-green-600 font-bold"><i class="ph-bold ph-check"></i> Sudah Cair</span>';}
                     else {statBadge=`<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-[10px] font-bold">${esc(o.status||'-')}</span>`;}
                     const search = `${o.orderId||''} ${o.customerName||''} ${o.customerEmail||''} ${o.carName||''} ${o.ownerEmail||''}`.toLowerCase().replace(/"/g,'');
-                    const detail = `<div class="text-xs text-gray-500"><p class="font-bold text-gray-800 text-sm">${esc(o.carName||'-')}</p><p>${o.hours?esc(o.hours)+' jam':esc(o.days||1)+' hari'} • ${new Date(o.timestamp||Date.now()).toLocaleDateString('id-ID')}</p><p class="text-[10px] mt-1"><b>Jadwal:</b> ${esc(o.pickupDate||'-')} ${esc(o.pickupTime||'')} → ${esc(o.endDate||'-')} ${esc(o.endTime||'')}</p><p class="text-[10px] mt-1 ${o.customerCompletionConfirmed?'text-green-600':'text-gray-400'}">Pelanggan: ${o.customerCompletionConfirmed?'✓ menyatakan selesai':'belum konfirmasi selesai'}</p>${(o.service&&o.service!=='lepas_kunci')?`<p class="text-[10px] ${o.driverCompletionConfirmed?'text-green-600':'text-purple-600'}">Laporan sopir: ${o.driverCompletionConfirmed?'✓ cocok / selesai':'menunggu konfirmasi'}</p>`:''}${o.service==='dengan_supir_luar_kota'?'<p class="text-purple-600 font-bold text-[10px] uppercase">Dengan Sopir - Luar Kota</p>':(o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir')?'<p class="text-blue-600 font-bold text-[10px] uppercase">Dengan Sopir - Dalam Kota</p>':''}<p class="mt-1"><span class="font-semibold">Jemput:</span> ${esc(o.pickup||'-')}<br><span class="font-semibold">Tujuan:</span> ${esc(o.dest||'-')}</p><p class="text-shopee font-black mt-2 text-sm">${money(o.totalAmount)}</p><div class="mt-1 text-[10px] text-gray-500"><span>Fee OtoLink 5%: <b>${money(o.platformFee ?? window.getRentalFeeBreakdown(o.totalAmount).fee)}</b></span><br><span>Diterima Mitra: <b class="text-green-600">${money(o.ownerNetAmount ?? window.getRentalFeeBreakdown(o.totalAmount).net)}</b></span></div></div>`;
+                    const detail = `<div class="text-xs text-gray-500"><p class="font-bold text-gray-800 text-sm">${esc(o.carName||'-')}</p><p>${o.hours?esc(o.hours)+' jam':esc(o.days||1)+' hari'} • ${new Date(o.timestamp||Date.now()).toLocaleDateString('id-ID')}</p><p class="text-[10px] mt-1"><b>Jadwal:</b> ${esc(o.pickupDate||'-')} ${esc(o.pickupTime||'')} → ${esc(o.endDate||'-')} ${esc(o.endTime||'')}</p><p class="text-[10px] mt-1 ${o.customerCompletionConfirmed?'text-green-600':'text-gray-400'}">Pelanggan: ${o.customerCompletionConfirmed?'✓ menyatakan selesai':'belum konfirmasi selesai'}</p>${(o.service&&o.service!=='lepas_kunci')?`<p class="text-[10px] ${o.driverCompletionConfirmed?'text-green-600':'text-purple-600'}">Laporan sopir: ${o.driverCompletionConfirmed?'✓ cocok / selesai':'menunggu konfirmasi'}</p>`:''}${o.service==='dengan_supir_luar_kota'?'<p class="text-purple-600 font-bold text-[10px] uppercase">Dengan Sopir - Luar Kota</p>':(o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir')?'<p class="text-blue-600 font-bold text-[10px] uppercase">Dengan Sopir - Dalam Kota</p>':''}<p class="mt-1"><span class="font-semibold">Jemput:</span> ${esc(o.pickup||'-')}<br><span class="font-semibold">Tujuan:</span> ${esc(o.dest||'-')}</p>${o.service==='lepas_kunci'?`<p class="text-[10px] text-amber-700 font-bold mt-2">Jaminan ${money(o.securityDepositAmount||2000000)} • ${esc(o.depositStatus||'held')}</p><button onclick="openRentalDocs('${o.id}')" class="mt-1 bg-amber-100 text-amber-900 px-2 py-1 rounded text-[10px] font-bold">Lihat Dokumen SIM/KTP</button>`:''}<p class="text-shopee font-black mt-2 text-sm">${money(o.totalAmount)}</p><div class="mt-1 text-[10px] text-gray-500"><span>Fee OtoLink 5%: <b>${money(o.platformFee ?? window.getRentalFeeBreakdown(o.totalAmount).fee)}</b></span><br><span>Diterima Mitra: <b class="text-green-600">${money(o.ownerNetAmount ?? window.getRentalFeeBreakdown(o.totalAmount).net)}</b></span></div></div>`;
                     hP += `<tr data-admin-order-row data-status="${esc(o.status||'')}" data-search="${esc(search)}"><td class="p-3 text-xs font-bold">${esc(o.orderId||'-')}</td><td class="p-3 text-xs"><p class="font-semibold">${esc(o.customerName||o.customerEmail||'-')}</p><p class="text-gray-500">Mitra: ${esc(o.ownerEmail||'-')}</p><p class="text-gray-400 mt-1">Bayar: ${esc(o.payMethod||'-')}</p></td><td class="p-3">${detail}</td><td class="p-3">${statBadge}</td><td class="p-3">${actionBtn}</td></tr>`;
                 });
                 c_adP.innerHTML = hP + `</tbody></table></div><p id="adminOrderNoResult" class="hidden text-center text-xs text-gray-400 py-5">Tidak ada pesanan yang cocok dengan filter.</p>`;
@@ -3502,9 +3549,16 @@
             if(!o.customerCompletionConfirmed) return window.showToast('Pelanggan belum menyatakan sewa selesai.', false);
             if(needsDriver && !o.driverCompletionConfirmed) return window.showToast('Laporan sopir belum dikonfirmasi.', false);
             if(!confirm('Data pelanggan dan laporan operasional sudah cocok. Nyatakan transaksi selesai dan buka pencairan Mitra?')) return;
-            await window.fsUpdateDoc('orders',orderId,{status:'completed',adminCompletedAt:Date.now(),completionApprovedBy:'admin'});
+            const finishUpdate={status:'completed',adminCompletedAt:Date.now(),completionApprovedBy:'admin'};
+            if(o.service==='lepas_kunci' && Number(o.securityDepositAmount||0)>0 && o.depositStatus==='held') {
+                const refundAmount=Number(o.securityDepositAmount||2000000);
+                await window.fsAddDoc('topups',{name:window.currentUser.name||window.currentUser.email,email:o.customerEmail,amount:refundAmount,status:'completed',type:'security_deposit_refund',orderId:o.id,orderCode:o.orderId||o.id,note:'Pengembalian jaminan sewa lepas kunci setelah Admin menyatakan unit selesai dan diperiksa.',timestamp:Date.now(),processedBy:window.currentUser.email});
+                finishUpdate.depositStatus='refunded'; finishUpdate.depositRefundedAt=Date.now(); finishUpdate.depositRefundedBy=window.currentUser.email;
+            }
+            await window.fsUpdateDoc('orders',orderId,finishUpdate);
+            Object.assign(o,finishUpdate);
             if(carId) await window.fsUpdateDoc('cars',carId,{isBooked:false,timestamp:Date.now()});
-            window.showToast('Transaksi selesai. Pencairan dana Mitra sekarang dapat dilakukan.');
+            window.showToast(o.service==='lepas_kunci'&&finishUpdate.depositStatus==='refunded'?'Transaksi selesai. Jaminan Rp2.000.000 dikembalikan ke saldo OtoPay pelanggan.':'Transaksi selesai. Pencairan dana Mitra sekarang dapat dilakukan.');
             setTimeout(()=>window.loadAdminData(),100);
         };
 
