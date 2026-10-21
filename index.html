@@ -3717,7 +3717,6 @@
             if(!o) return window.showToast('Pesanan tidak ditemukan.', false);
             const needsDriver=o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir_luar_kota'||o.service==='dengan_supir';
             if(!o.customerCompletionConfirmed) return window.showToast('Pelanggan belum menyatakan sewa selesai.', false);
-            if(o.service==='lepas_kunci' && !o.ownerReturnConditionOk) return window.showToast('Menunggu pemilik iklan mengonfirmasi kendaraan sudah kembali dan kondisinya OK.',false);
             if(needsDriver && !o.driverCompletionConfirmed) return window.showToast('Laporan sopir belum dikonfirmasi.', false);
             if(!confirm('Data pelanggan dan laporan operasional sudah cocok. Nyatakan transaksi selesai dan buka pencairan Mitra?')) return;
             const finishUpdate={status:'completed',adminCompletedAt:Date.now(),completionApprovedBy:'admin'};
@@ -3726,10 +3725,11 @@
                 finishUpdate.depositApprovedBy=window.currentUser.email;
             }
             await window.fsUpdateDoc('orders',orderId,finishUpdate);
-            Object.assign(o,finishUpdate);
+            // Sinkronkan status pada cache lokal agar dashboard Admin langsung membaca status completed.
+            window.ordersData = (window.ordersData||[]).map(item => item.id===orderId ? {...item,...finishUpdate} : item);
             if(carId) await window.fsUpdateDoc('cars',carId,{isBooked:false,timestamp:Date.now()});
             window.showToast(o.service==='lepas_kunci'&&finishUpdate.depositStatus==='return_eligible'?'Transaksi selesai. Pelanggan kini dapat mengajukan transfer pengembalian jaminan.':'Transaksi selesai. Pencairan dana Mitra sekarang dapat dilakukan.');
-            setTimeout(()=>window.loadAdminData(),100);
+            window.loadAdminData();
         };
 
         window.updateOrderStatus = async function(id, st, carId=null) {
