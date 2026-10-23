@@ -317,7 +317,7 @@
             onSnapshot(collection(db, 'settings'), (snap) => { 
                 window.appSettingsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 const cnf = window.appSettingsData.find(s => s.type === 'config');
-                if(cnf) { window.configDocId = cnf.id; window.bannerInterval = cnf.bannerInterval || 5000; setupCarouselInterval(); }
+                if(cnf) { window.configDocId = cnf.id; window.bannerInterval = cnf.bannerInterval || 5000; window.RENTAL_PLATFORM_FEE_RATE = Number.isFinite(Number(cnf.rentalPlatformFeeRate)) ? Math.min(0.5, Math.max(0, Number(cnf.rentalPlatformFeeRate))) : (window.RENTAL_PLATFORM_FEE_RATE ?? 0.05); window.PARTNER_AD_FEE_AMOUNT = Number.isFinite(Number(cnf.partnerAdFeeAmount)) ? Math.max(0, Number(cnf.partnerAdFeeAmount)) : (window.PARTNER_AD_FEE_AMOUNT ?? 11200); setupCarouselInterval(); if(window.currentUser?.role==='admin' && !document.getElementById('adFeeSettings')?.classList.contains('hidden')) window.renderAdminFeeSettings?.(); }
             });
             onSnapshot(collection(db, 'messages'), (snap) => { 
                 const am=snap.docChanges().filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()}));if(window.otoNotifInitialSnapshots.messages)am.forEach(m=>{const u=window.currentUser;if(!u||m.senderEmail===u.email)return;const addressed=u.role==='admin'?(m.receiverEmail==='admin'||m.receiverEmail===u.email||(!m.receiverEmail&&m.senderEmail!=='admin')):m.receiverEmail===u.email;if(addressed)window.notifyOtoTransaction('Chat Masuk','Pesan baru dari '+(m.senderName||m.senderEmail||'pengguna OtoLink'));});window.otoNotifInitialSnapshots.messages=true;window.messagesData = snap.docs.map(d => ({id: d.id, ...d.data()})); 
@@ -562,6 +562,7 @@
         // ===== FEE TRANSAKSI SEWA OTOLINK =====
         // Fee 5% = fee marketing + jasa aplikasi. Dipotong sekali dari nilai sewa.
         window.RENTAL_PLATFORM_FEE_RATE = 0.05;
+        window.PARTNER_AD_FEE_AMOUNT = 11200; // Biaya iklan mitra default, dapat diubah Admin.
 
         window.getRentalFeeBreakdown = function(totalAmount) {
             const gross = Math.max(0, Number(totalAmount) || 0);
@@ -2272,16 +2273,16 @@
             let y=78;const widths=headers.map(()=>((doc.internal.pageSize.getWidth()-80)/headers.length));const drawHeader=()=>{doc.setFont('helvetica','bold');doc.setFontSize(8);headers.forEach((h,i)=>doc.text(String(h),40+widths.slice(0,i).reduce((a,b)=>a+b,0),y));y+=14;doc.setFont('helvetica','normal');};drawHeader();
             rows.forEach(row=>{const cells=row.map(v=>String(v??'-').slice(0,48));if(y>doc.internal.pageSize.getHeight()-35){doc.addPage();y=35;drawHeader();}cells.forEach((v,i)=>doc.text(v,40+widths.slice(0,i).reduce((a,b)=>a+b,0),y));y+=13;});doc.save(filename);
         };
-        window.downloadMitraLedgerPDF=function(){const email=window.currentUser?.email,p=window.mitraLedgerPeriod||'month',rows=window.buildMitraLedgerRows(email,p);const b=window.periodBounds(p);const body=rows.map(r=>[window.dateLabel(r.ts),r.title,r.status,formatRp(r.amount),formatRp(r.fee),formatRp(r.net)]);window.pdfFromRows('OtoLink - Pembukuan Mitra',`${window.currentUser?.name||email} | ${email} | ${b.label} (${b.start.toLocaleDateString('id-ID')} - ${new Date(b.end-1).toLocaleDateString('id-ID')})`,['Tanggal','Transaksi / Aktivitas','Status','Nilai','Fee 5%','Bersih'],body,`OtoLink-Pembukuan-${p}.pdf`);};
+        window.downloadMitraLedgerPDF=function(){const email=window.currentUser?.email,p=window.mitraLedgerPeriod||'month',rows=window.buildMitraLedgerRows(email,p);const b=window.periodBounds(p);const body=rows.map(r=>[window.dateLabel(r.ts),r.title,r.status,formatRp(r.amount),formatRp(r.fee),formatRp(r.net)]);window.pdfFromRows('OtoLink - Pembukuan Mitra',`${window.currentUser?.name||email} | ${email} | ${b.label} (${b.start.toLocaleDateString('id-ID')} - ${new Date(b.end-1).toLocaleDateString('id-ID')})`,['Tanggal','Transaksi / Aktivitas','Status','Nilai','Fee aplikasi','Bersih'],body,`OtoLink-Pembukuan-${p}.pdf`);};
         window.renderAdminPartnerLedger=function(){
             const table=document.getElementById('adminPartnerLedgerTable'),totals=document.getElementById('adminLedgerTotals');if(!table||!totals)return;const p=document.getElementById('adminLedgerPeriod')?.value||'month';let all=[],summary=[];
             (window.usersData||[]).filter(u=>u.role==='mitra').forEach(u=>{const email=u.email||'',rows=window.buildMitraLedgerRows(email,p);all.push(...rows.map(r=>({...r,mitra:u.name||email,email})));const rent=rows.filter(r=>r.kind==='order'&&r.amount>0);summary.push({name:u.name||email,email,orders:rent.length,gross:rent.reduce((a,r)=>a+r.amount,0),fee:rent.reduce((a,r)=>a+r.fee,0),net:rent.reduce((a,r)=>a+r.net,0),activities:rows.length});});
-            const gross=summary.reduce((a,r)=>a+r.gross,0),fees=summary.reduce((a,r)=>a+r.fee,0),net=summary.reduce((a,r)=>a+r.net,0);totals.innerHTML=[['Mitra',summary.length],['Nilai sewa',formatRp(gross)],['Fee aplikasi 5%',formatRp(fees)],['Pendapatan bersih mitra',formatRp(net)]].map((x,i)=>`<div class="border rounded-lg p-3 bg-white"><p class="text-[10px] uppercase font-bold text-gray-500">${x[0]}</p><p class="font-black text-sm mt-1 ${i===2?'text-orange-600':i===3?'text-green-700':'text-gray-800'}">${x[1]}</p></div>`).join('');
+            const gross=summary.reduce((a,r)=>a+r.gross,0),fees=summary.reduce((a,r)=>a+r.fee,0),net=summary.reduce((a,r)=>a+r.net,0);totals.innerHTML=[['Mitra',summary.length],['Nilai sewa',formatRp(gross)],['Fee aplikasi',formatRp(fees)],['Pendapatan bersih mitra',formatRp(net)]].map((x,i)=>`<div class="border rounded-lg p-3 bg-white"><p class="text-[10px] uppercase font-bold text-gray-500">${x[0]}</p><p class="font-black text-sm mt-1 ${i===2?'text-orange-600':i===3?'text-green-700':'text-gray-800'}">${x[1]}</p></div>`).join('');
             table.innerHTML=`<table class="min-w-full text-xs bg-white border rounded-lg"><thead class="bg-gray-100"><tr><th class="p-3 text-left">Mitra</th><th class="p-3 text-right">Aktivitas</th><th class="p-3 text-right">Transaksi Sewa</th><th class="p-3 text-right">Nilai Sewa</th><th class="p-3 text-right">Fee 5%</th><th class="p-3 text-right">Bersih</th><th class="p-3 text-left">Rincian</th></tr></thead><tbody>${summary.map((r,i)=>`<tr class="border-t"><td class="p-3"><b>${r.name}</b><div class="text-gray-500">${r.email}</div></td><td class="p-3 text-right">${r.activities}</td><td class="p-3 text-right">${r.orders}</td><td class="p-3 text-right">${formatRp(r.gross)}</td><td class="p-3 text-right text-orange-600">${formatRp(r.fee)}</td><td class="p-3 text-right text-green-700">${formatRp(r.net)}</td><td class="p-3"><button onclick="showAdminMitraLedger(${i})" class="text-blue-700 font-bold underline">Lihat transaksi</button></td></tr>`).join('')||'<tr><td colspan="7" class="p-4 text-center text-gray-400">Belum ada data mitra.</td></tr>'}</tbody></table><div id="adminMitraLedgerDetail" class="mt-3"></div>`;
             window.adminLedgerSummaries=summary;window.adminLedgerAllRows=all;
         };
         window.showAdminMitraLedger=function(i){const m=(window.adminLedgerSummaries||[])[i];if(!m)return;const rows=window.buildMitraLedgerRows(m.email,document.getElementById('adminLedgerPeriod')?.value||'month');const el=document.getElementById('adminMitraLedgerDetail');if(!el)return;el.innerHTML=`<div class="border rounded-lg p-3 bg-white"><div class="font-black mb-2">${m.name} — rincian aktivitas</div><div class="overflow-x-auto"><table class="min-w-full text-xs"><thead><tr><th class="p-2 text-left">Tanggal</th><th class="p-2 text-left">Transaksi</th><th class="p-2 text-left">Status</th><th class="p-2 text-right">Nilai</th><th class="p-2 text-right">Fee</th><th class="p-2 text-right">Bersih</th></tr></thead><tbody>${rows.map(r=>`<tr class="border-t"><td class="p-2">${window.dateLabel(r.ts)}</td><td class="p-2">${r.title}</td><td class="p-2">${r.status}</td><td class="p-2 text-right">${formatRp(r.amount)}</td><td class="p-2 text-right">${formatRp(r.fee)}</td><td class="p-2 text-right">${formatRp(r.net)}</td></tr>`).join('')||'<tr><td colspan="6" class="p-3 text-center text-gray-400">Tidak ada aktivitas di periode ini.</td></tr>'}</tbody></table></div></div>`;};
-        window.downloadAdminLedgerPDF=function(){const p=document.getElementById('adminLedgerPeriod')?.value||'month';const b=window.periodBounds(p);const rows=(window.adminLedgerAllRows||[]).map(r=>[r.mitra,r.email,window.dateLabel(r.ts),r.title,r.status,formatRp(r.amount),formatRp(r.fee),formatRp(r.net)]);window.pdfFromRows('OtoLink - Rekap Aktivitas Seluruh Mitra',`${b.label} (${b.start.toLocaleDateString('id-ID')} - ${new Date(b.end-1).toLocaleDateString('id-ID')})`,['Nama Mitra','Email','Tanggal','Transaksi/Aktivitas','Status','Nilai','Fee 5%','Bersih'],rows,`OtoLink-Rekap-Mitra-${p}.pdf`);};
+        window.downloadAdminLedgerPDF=function(){const p=document.getElementById('adminLedgerPeriod')?.value||'month';const b=window.periodBounds(p);const rows=(window.adminLedgerAllRows||[]).map(r=>[r.mitra,r.email,window.dateLabel(r.ts),r.title,r.status,formatRp(r.amount),formatRp(r.fee),formatRp(r.net)]);window.pdfFromRows('OtoLink - Rekap Aktivitas Seluruh Mitra',`${b.label} (${b.start.toLocaleDateString('id-ID')} - ${new Date(b.end-1).toLocaleDateString('id-ID')})`,['Nama Mitra','Email','Tanggal','Transaksi/Aktivitas','Status','Nilai','Fee aplikasi','Bersih'],rows,`OtoLink-Rekap-Mitra-${p}.pdf`);};
 
         window.loadMitraData = function() {
             const dc = document.getElementById('dashboardContent');
@@ -2405,7 +2406,7 @@
             if(cars.length === 0) { list.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">Belum ada iklan.</p>'; return; }
             cars.forEach(car => {
                 let badge = car.status === 'approved' ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">Disetujui</span>` : `<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">Menunggu</span>`;
-                if(car.status === 'pending_payment') badge = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Pending Bayar Rp 11.200</span>`;
+                if(car.status === 'pending_payment') badge = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Pending Bayar ${money(car.partnerAdFeeAmount ?? window.PARTNER_AD_FEE_AMOUNT ?? 11200)}</span>`;
                 if(car.isBooked) badge += ` <span class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm animate-pulse">Sedang Disewa</span>`;
                 
                 const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><p class="text-[10px] text-gray-400 mt-1">Layanan durasi: ${[car.allow24h!==false?'24 Jam':'',car.allow12h!==false?'12 Jam':'',car.allowHourly!==false?'Per Jam':'',car.allowMonthly===true?'Bulanan':''].filter(Boolean).join(' • ') || 'Tidak aktif'}</p><p class="text-[10px] text-blue-700 mt-1">Mode: ${[car.allowSelfDrive!==false?'Lepas kunci':'',car.allowDriverCity!==false?'Sopir dalam kota ('+formatRp(car.driverCityPrice??150000)+')':'',car.allowDriverOutside!==false?'Sopir luar kota ('+formatRp(car.driverOutsidePrice??250000)+')':''].filter(Boolean).join(' • ') || 'Belum diatur'}</p><div class="mt-1">${badge}</div>${window.carRatingStatusHtml(car.id)}</div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
@@ -2532,6 +2533,7 @@
 
                 const myCars = window.carsData.filter(c => c.ownerPhone === window.currentUser.email && c.status !== 'deleted');
                 const isPaidAd = myCars.length >= 1;
+                const partnerAdFeeAmount = isPaidAd ? Math.max(0, Number(window.PARTNER_AD_FEE_AMOUNT ?? 11200)) : 0;
                 const carData = {
                     name, category:cat, priceDay:price, seat,
                     allow24h, allow12h, allowHourly, allowMonthly, monthlyPrice,
@@ -2540,6 +2542,7 @@
                     ownerPhone:window.currentUser.email,
                     ownerName:window.currentUser.name || '',
                     status:isPaidAd ? 'pending_payment' : 'pending',
+                    partnerAdFeeAmount, adFeePaid:false, adFeeCurrency:'IDR',
                     timestamp:Date.now(),
                     updatedAt:Date.now(),
                     images:photoUrls,
@@ -2589,6 +2592,8 @@
             try {
                 const data = JSON.parse(decodeURIComponent(dataStr));
                 data.status = 'pending_payment';
+                data.partnerAdFeeAmount = Math.max(0, Number(window.PARTNER_AD_FEE_AMOUNT ?? 11200));
+                data.adFeePaid = false; data.adFeeCurrency = 'IDR';
                 data.adminNotifUnread = true;
                 data.updatedAt = Date.now();
                 const r = await addDoc(collection(db,'cars'),data);
@@ -2864,7 +2869,8 @@
             {key:'all_cars', label:'Kelola Semua Iklan', tab:'adAllCars'},
             {key:'banner', label:'Banner / Carousel', tab:'adBanner'},
             {key:'chat', label:'Chat User & Mitra', tab:'adChat'},
-            {key:'ratings', label:'Riwayat Penilaian', tab:'adRatings'}
+            {key:'ratings', label:'Riwayat Penilaian', tab:'adRatings'},
+            {key:'fee_settings', label:'Pengaturan Fee', tab:'adFeeSettings'}
         ];
         window.isSuperAdmin = () => !!(window.currentUser?.isSuperAdmin || window.currentUser?.email === 'admin');
         window.hasAdminPermission = function(key) {
@@ -3081,6 +3087,52 @@
             ${o.customerUnitRating?`<div class="mt-3 p-3 bg-yellow-50 rounded-lg"><p class="text-xs font-black">Pelanggan → Mobil / Sopir</p><p class="text-sm mt-1">Mobil: ${window.ratingStars(o.customerUnitRating)} <b>${o.customerUnitRating}/5 ${window.ratingLabel(o.customerUnitRating)}</b></p>${o.customerDriverRating?`<p class="text-sm">Sopir: ${window.ratingStars(o.customerDriverRating)} <b>${o.customerDriverRating}/5 ${window.ratingLabel(o.customerDriverRating)}</b></p>`:''}${o.customerRatingComment?`<p class="text-xs mt-2">“${o.customerRatingComment}”</p>`:''}</div>`:''}
             ${o.partnerCustomerRating?`<div class="mt-2 p-3 bg-blue-50 rounded-lg"><p class="text-xs font-black">Mitra → Pelanggan <span class="text-[9px] text-red-500">(INTERNAL ADMIN)</span></p><p class="text-sm mt-1">${window.ratingStars(o.partnerCustomerRating)} <b>${o.partnerCustomerRating}/5 ${window.ratingLabel(o.partnerCustomerRating)}</b></p>${o.partnerCustomerRatingComment?`<p class="text-xs mt-2">“${o.partnerCustomerRatingComment}”</p>`:''}</div>`:''}</div>`).join('')}</div>`:`<div class="p-10 text-center text-gray-400 border border-dashed rounded-xl">Belum ada transaksi yang dinilai.</div>`}`;
         };
+        // ===== PENGATURAN FEE TRANSAKSI DAN IKLAN MITRA =====
+        window.renderAdminFeeSettings = function() {
+            const box = document.getElementById('adFeeSettings');
+            if(!box) return;
+            const rate = Math.max(0, Math.min(50, Number(window.RENTAL_PLATFORM_FEE_RATE || 0) * 100));
+            const adFee = Math.max(0, Number(window.PARTNER_AD_FEE_AMOUNT ?? 11200));
+            const cfg = (window.appSettingsData || []).find(x => x.type === 'config') || {};
+            box.innerHTML = `<div class="max-w-3xl">
+              <div class="mb-5 border-b pb-4"><h3 class="text-xl font-black text-gray-900"><i class="ph-fill ph-percent text-green-600 mr-2"></i>Pengaturan Fee OtoLink</h3><p class="text-sm text-gray-500 mt-1">Atur persentase pendapatan OtoLink dari transaksi sewa dan biaya iklan yang dikenakan kepada mitra. Perubahan berlaku untuk transaksi/iklan baru.</p></div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border rounded-xl p-4 bg-blue-50"><label for="adminRentalFeeRate" class="block text-sm font-black text-blue-900 mb-1">Admin fee transaksi sewa</label><div class="flex items-center gap-2"><input id="adminRentalFeeRate" type="number" min="0" max="50" step="0.1" value="${rate}" class="w-full border rounded-lg p-3 bg-white text-lg font-black"><span class="font-black text-blue-900">%</span></div><p class="text-xs text-blue-800 mt-2">Contoh: nilai sewa Rp1.000.000 dengan fee 5% menghasilkan fee OtoLink Rp50.000.</p></div>
+                <div class="border rounded-xl p-4 bg-amber-50"><label for="adminPartnerAdFee" class="block text-sm font-black text-amber-900 mb-1">Biaya iklan mitra</label><div class="flex items-center gap-2"><span class="font-bold text-amber-900">Rp</span><input id="adminPartnerAdFee" type="number" min="0" step="500" value="${adFee}" class="w-full border rounded-lg p-3 bg-white text-lg font-black"></div><p class="text-xs text-amber-800 mt-2">Iklan pertama mitra tetap gratis. Iklan berikutnya menggunakan nominal ini dan menunggu pemeriksaan pembayaran oleh Admin.</p></div>
+              </div>
+              <div class="mt-4 border rounded-xl p-4 bg-gray-50"><p class="text-sm font-bold text-gray-800">Simulasi fee transaksi</p><div class="flex items-center gap-2 mt-2"><span class="text-sm text-gray-600">Nilai sewa Rp</span><input id="adminFeeExampleGross" type="number" min="0" step="10000" value="1000000" oninput="previewAdminFeeSettings()" class="border rounded-lg p-2 w-40"><span id="adminFeeExampleResult" class="text-sm font-black text-green-700">Fee OtoLink: Rp50.000</span></div></div>
+              <div class="mt-5 flex flex-wrap gap-2"><button onclick="saveAdminFeeSettings()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-black"><i class="ph-bold ph-floppy-disk mr-1"></i>Simpan Pengaturan Fee</button><button onclick="renderAdminFeeSettings()" class="border bg-white px-4 py-3 rounded-xl font-bold">Muat Ulang</button></div>
+              <p class="text-[11px] text-gray-500 mt-3">Catatan: perubahan fee tidak mengubah transaksi lama yang sudah tersimpan. Untuk iklan berbayar, Admin tetap harus memverifikasi pembayaran sebelum menyetujui iklan.</p>
+            </div>`;
+            window.previewAdminFeeSettings();
+        };
+        window.previewAdminFeeSettings = function() {
+            const gross = Math.max(0, Number(document.getElementById('adminFeeExampleGross')?.value || 0));
+            const rate = Math.max(0, Math.min(50, Number(document.getElementById('adminRentalFeeRate')?.value || 0)));
+            const out = document.getElementById('adminFeeExampleResult');
+            if(out) out.textContent = 'Fee OtoLink: ' + formatRp(Math.round(gross * rate / 100)) + ' • Bersih mitra: ' + formatRp(Math.max(0, gross - Math.round(gross * rate / 100)));
+        };
+        window.saveAdminFeeSettings = async function() {
+            if(window.currentUser?.role !== 'admin') return window.showToast('Hanya Admin yang dapat mengatur fee.', false);
+            if(!window.isSuperAdmin() && !window.hasAdminPermission('fee_settings')) return window.showToast('Anda tidak memiliki izin mengatur fee.', false);
+            const rate = Number(document.getElementById('adminRentalFeeRate')?.value);
+            const adFee = Number(document.getElementById('adminPartnerAdFee')?.value);
+            if(!Number.isFinite(rate) || rate < 0 || rate > 50) return window.showToast('Admin fee transaksi harus 0 sampai 50%.', false);
+            if(!Number.isFinite(adFee) || adFee < 0 || adFee > 100000000) return window.showToast('Biaya iklan harus berupa nominal Rp0 atau lebih.', false);
+            const payload = {type:'config', rentalPlatformFeeRate:rate/100, partnerAdFeeAmount:Math.round(adFee), feeSettingsUpdatedAt:Date.now(), feeSettingsUpdatedBy:window.currentUser.email||''};
+            try {
+                const cfg = (window.appSettingsData||[]).find(x=>x.type==='config');
+                if(cfg?.id) { await window.fsUpdateDoc('settings',cfg.id,payload); window.configDocId=cfg.id; }
+                else { const id=await window.fsAddDoc('settings',{...payload,bannerInterval:window.bannerInterval||5000}); window.configDocId=id; }
+                window.RENTAL_PLATFORM_FEE_RATE=rate/100;
+                window.PARTNER_AD_FEE_AMOUNT=Math.round(adFee);
+                window.appSettingsData=[...(window.appSettingsData||[]).filter(x=>x.type!=='config'),{...(cfg||{}),...payload,id:window.configDocId}];
+                await window.writeAdminAudit?.('fee_settings_updated',{rentalPlatformFeeRate:rate/100,partnerAdFeeAmount:Math.round(adFee)},'finance');
+                window.showToast('Pengaturan fee berhasil disimpan.');
+                window.renderAdminFeeSettings();
+            } catch(err) { console.error('Simpan pengaturan fee gagal:',err); window.showToast('Gagal menyimpan fee. Periksa koneksi Firebase dan aturan database.',false); }
+        };
+
         window.loadAdminData = function() {
             const dc = document.getElementById('dashboardContent');
             const notif = window.getAdminNotificationCounts();
@@ -3214,7 +3266,7 @@
                     </button>
                 </div>
                 <section class="mt-5 border rounded-xl p-4 bg-slate-50">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3"><div><h3 class="font-black text-gray-800"><i class="ph-fill ph-notebook text-blue-600 mr-1"></i> Pembukuan & Aktivitas Seluruh Mitra</h3><p class="text-xs text-gray-500">Rekap transaksi sewa, fee aplikasi 5%, pencairan, iklan, top up, chat, dan penilaian per mitra.</p></div><div class="flex gap-2"><select id="adminLedgerPeriod" onchange="renderAdminPartnerLedger()" class="border rounded-lg p-2 text-xs"><option value="day">Harian</option><option value="week">Mingguan</option><option value="month" selected>Bulanan</option><option value="year">Tahunan</option></select><button onclick="downloadAdminLedgerPDF()" class="bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold"><i class="ph-fill ph-file-pdf mr-1"></i> PDF Rekap</button></div></div>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3"><div><h3 class="font-black text-gray-800"><i class="ph-fill ph-notebook text-blue-600 mr-1"></i> Pembukuan & Aktivitas Seluruh Mitra</h3><p class="text-xs text-gray-500">Rekap transaksi sewa, fee aplikasi sesuai pengaturan, pencairan, iklan, top up, chat, dan penilaian per mitra.</p></div><div class="flex gap-2"><select id="adminLedgerPeriod" onchange="renderAdminPartnerLedger()" class="border rounded-lg p-2 text-xs"><option value="day">Harian</option><option value="week">Mingguan</option><option value="month" selected>Bulanan</option><option value="year">Tahunan</option></select><button onclick="downloadAdminLedgerPDF()" class="bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold"><i class="ph-fill ph-file-pdf mr-1"></i> PDF Rekap</button></div></div>
                     <div id="adminLedgerTotals" class="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3"></div><div id="adminPartnerLedgerTable" class="overflow-x-auto"></div>
                 </section>
             </div>
@@ -3231,6 +3283,7 @@
                 <button onclick="switchAdminTab('adBanner')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adBanner"><i class="ph-fill ph-image mr-1"></i> Pengaturan Banner</button>
                 <button onclick="switchAdminTab('adChat')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab relative" id="tab-adChat"><i class="ph-fill ph-chats mr-1"></i> Pesan User & Mitra ${badge(notif.adChat)}</button>
                 <button onclick="switchAdminTab('adRatings')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adRatings"><i class="ph-fill ph-star mr-1 text-yellow-500"></i> Penilaian</button>
+                <button onclick="switchAdminTab('adFeeSettings')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adFeeSettings"><i class="ph-fill ph-percent mr-1 text-green-600"></i> Pengaturan Fee</button>
                 <button onclick="openAdminManagement()" class="${window.isSuperAdmin()?'':'hidden'} px-4 py-2 text-sm font-bold rounded border shadow-sm bg-[#101827] text-white admin-tab" id="tab-adAdminManagement"><i class="ph-fill ph-users-three mr-1"></i> Admin & Hak Akses</button>
             </div>
 
@@ -3246,6 +3299,7 @@
                 <div id="adBanner" class="hidden admin-panel"></div>
                 <div id="adChat" class="hidden admin-panel"></div>
                 <div id="adRatings" class="hidden admin-panel"></div>
+                <div id="adFeeSettings" class="hidden admin-panel"></div>
                 <div id="adAdminManagement" class="hidden admin-panel"></div>
             </div>`;
             dc.innerHTML = html;
@@ -3253,6 +3307,7 @@
             window.renderAdminPartnerLedger();
             window.renderAdminManagement();
             window.renderAdminRatings();
+            window.renderAdminFeeSettings();
             window.applyAdminPermissions();
             if(!window.isSuperAdmin()) setTimeout(()=>window.switchAdminTab(window.getFirstAllowedAdminTab()),0);
         };
@@ -3342,7 +3397,7 @@
                 hV += helpBox('Tugas admin di menu ini','Periksa kelayakan iklan sebelum mobil tampil di halaman utama. Untuk iklan berbayar, pastikan pembayaran biaya iklan sudah diterima sebelum menyetujui.',['Periksa foto & nama mobil','Periksa harga/kursi','Cek pembayaran bila berbayar','Terima atau tolak']);
                 if(!pendingCars.length) hV += emptyBox('ph-check-circle','Semua pengajuan sudah ditangani','Iklan baru dari mitra akan muncul otomatis di sini.');
                 pendingCars.forEach(c => {
-                    const pInfo = c.status === 'pending_payment' ? `<div class="bg-red-50 border border-red-200 text-red-700 p-2 rounded text-xs font-bold mb-2">Perlu cek pembayaran Rp 11.200 dari ${esc(c.ownerPhone)} sebelum disetujui.</div>` : `<span class="bg-green-50 text-green-700 px-2 py-1 rounded text-[10px] font-bold inline-block mb-2">Iklan Gratis Pertama</span>`;
+                    const pInfo = c.status === 'pending_payment' ? `<div class="bg-red-50 border border-red-200 text-red-700 p-2 rounded text-xs font-bold mb-2">Perlu cek pembayaran ${money(c.partnerAdFeeAmount ?? window.PARTNER_AD_FEE_AMOUNT ?? 11200)} dari ${esc(c.ownerPhone)} sebelum disetujui.</div>` : `<span class="bg-green-50 text-green-700 px-2 py-1 rounded text-[10px] font-bold inline-block mb-2">Iklan Gratis Pertama</span>`;
                     hV += `<div class="border p-3 rounded-xl mb-3 flex flex-col md:flex-row gap-4 items-start md:items-center bg-white shadow-sm"><button onclick="openAdminImage('${c.id}')" class="shrink-0"><img src="${c.img}" class="w-28 h-20 object-cover rounded-lg bg-gray-100"></button><div class="flex-grow min-w-0">${pInfo}<p class="font-black text-sm">${esc(c.name)} <span class="text-xs text-gray-500 font-normal">(${esc(c.category||'Mobil')})</span></p><p class="text-xs text-gray-600 mt-1">Pemilik: ${esc(c.ownerPhone)} • Kursi: ${esc(c.seat)}</p><p class="text-shopee font-black text-sm mt-1">${money(c.priceDay)} / hari</p>${window.carRatingStatusHtml(c.id)}</div><div class="grid grid-cols-3 md:flex gap-2 w-full md:w-auto"><button onclick="openCarModal('${c.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-xs font-bold border border-blue-100"><i class="ph-bold ph-pencil-simple mr-1"></i>Edit</button><button onclick="updateCarStatus('${c.id}','approved')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-xs font-bold">Setujui</button><button onclick="adminRejectCar('${c.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-xs font-bold border border-red-100">Tolak</button></div></div>`;
                 });
                 c_adV.innerHTML = hV;
@@ -3370,7 +3425,7 @@
                     else if(o.status==='completed'){statBadge='<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-[10px] font-bold">SELESAI</span>'; actionBtn=!o.isWithdrawn?`<button onclick="openAdminDisburse('${o.id}','${o.ownerEmail}',${Number(o.totalAmount)||0})" class="bg-orange-500 text-white px-3 py-1.5 rounded text-xs font-bold">Cairkan Mitra</button>`:'<span class="text-xs text-green-600 font-bold"><i class="ph-bold ph-check"></i> Sudah Cair</span>';}
                     else {statBadge=`<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-[10px] font-bold">${esc(o.status||'-')}</span>`;}
                     const search = `${o.orderId||''} ${o.customerName||''} ${o.customerEmail||''} ${o.carName||''} ${o.ownerEmail||''}`.toLowerCase().replace(/"/g,'');
-                    const detail = `<div class="text-xs text-gray-500"><p class="font-bold text-gray-800 text-sm">${esc(o.carName||'-')}</p><p>${o.hours?esc(o.hours)+' jam':esc(o.days||1)+' hari'} • ${new Date(o.timestamp||Date.now()).toLocaleDateString('id-ID')}</p><p class="text-[10px] mt-1"><b>Jadwal:</b> ${esc(o.pickupDate||'-')} ${esc(o.pickupTime||'')} → ${esc(o.endDate||'-')} ${esc(o.endTime||'')}</p><p class="text-[10px] mt-1 ${o.customerCompletionConfirmed?'text-green-600':'text-gray-400'}">Pelanggan: ${o.customerCompletionConfirmed?'✓ menyatakan selesai':'belum konfirmasi selesai'}</p>${(o.service&&o.service!=='lepas_kunci')?`<p class="text-[10px] ${o.driverCompletionConfirmed?'text-green-600':'text-purple-600'}">Laporan sopir: ${o.driverCompletionConfirmed?'✓ cocok / selesai':'menunggu konfirmasi'}</p>`:''}${o.service==='dengan_supir_luar_kota'?'<p class="text-purple-600 font-bold text-[10px] uppercase">Dengan Sopir - Luar Kota</p>':(o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir')?'<p class="text-blue-600 font-bold text-[10px] uppercase">Dengan Sopir - Dalam Kota</p>':''}<p class="mt-1"><span class="font-semibold">Jemput:</span> ${esc(o.pickup||'-')}<br><span class="font-semibold">Tujuan:</span> ${esc(o.dest||'-')}</p>${o.payMethod==='bank'? (o.paymentProof?`<div class="mt-2 border rounded-lg p-2 bg-blue-50"><p class="text-xs font-bold text-blue-800">Bukti transfer pelanggan terlampir</p><a href="${o.paymentProof}" target="_blank" rel="noopener" class="text-xs underline text-blue-700">Buka bukti transfer</a><img src="${o.paymentProof}" alt="Bukti transfer pembayaran" class="mt-2 max-h-40 max-w-full object-contain rounded border bg-white"></div>`:`<p class="mt-2 text-xs font-bold text-red-600">Bukti transfer belum diunggah.</p>`):''}${o.service==='lepas_kunci'?`<p class="text-[10px] text-amber-700 font-bold mt-2">Jaminan ${money(o.securityDepositAmount||2000000)} • ${esc(o.depositStatus||'held')}</p><button onclick="openRentalDocs('${o.id}')" class="mt-1 bg-amber-100 text-amber-900 px-2 py-1 rounded text-[10px] font-bold">Lihat Dokumen SIM/KTP</button>`:''}<p class="text-shopee font-black mt-2 text-sm">${money(o.totalAmount)}</p><div class="mt-1 text-[10px] text-gray-500"><span>Fee OtoLink 5%: <b>${money(o.platformFee ?? window.getRentalFeeBreakdown(o.totalAmount).fee)}</b></span><br><span>Diterima Mitra: <b class="text-green-600">${money(o.ownerNetAmount ?? window.getRentalFeeBreakdown(o.totalAmount).net)}</b></span></div></div>`;
+                    const detail = `<div class="text-xs text-gray-500"><p class="font-bold text-gray-800 text-sm">${esc(o.carName||'-')}</p><p>${o.hours?esc(o.hours)+' jam':esc(o.days||1)+' hari'} • ${new Date(o.timestamp||Date.now()).toLocaleDateString('id-ID')}</p><p class="text-[10px] mt-1"><b>Jadwal:</b> ${esc(o.pickupDate||'-')} ${esc(o.pickupTime||'')} → ${esc(o.endDate||'-')} ${esc(o.endTime||'')}</p><p class="text-[10px] mt-1 ${o.customerCompletionConfirmed?'text-green-600':'text-gray-400'}">Pelanggan: ${o.customerCompletionConfirmed?'✓ menyatakan selesai':'belum konfirmasi selesai'}</p>${(o.service&&o.service!=='lepas_kunci')?`<p class="text-[10px] ${o.driverCompletionConfirmed?'text-green-600':'text-purple-600'}">Laporan sopir: ${o.driverCompletionConfirmed?'✓ cocok / selesai':'menunggu konfirmasi'}</p>`:''}${o.service==='dengan_supir_luar_kota'?'<p class="text-purple-600 font-bold text-[10px] uppercase">Dengan Sopir - Luar Kota</p>':(o.service==='dengan_supir_dalam_kota'||o.service==='dengan_supir')?'<p class="text-blue-600 font-bold text-[10px] uppercase">Dengan Sopir - Dalam Kota</p>':''}<p class="mt-1"><span class="font-semibold">Jemput:</span> ${esc(o.pickup||'-')}<br><span class="font-semibold">Tujuan:</span> ${esc(o.dest||'-')}</p>${o.payMethod==='bank'? (o.paymentProof?`<div class="mt-2 border rounded-lg p-2 bg-blue-50"><p class="text-xs font-bold text-blue-800">Bukti transfer pelanggan terlampir</p><a href="${o.paymentProof}" target="_blank" rel="noopener" class="text-xs underline text-blue-700">Buka bukti transfer</a><img src="${o.paymentProof}" alt="Bukti transfer pembayaran" class="mt-2 max-h-40 max-w-full object-contain rounded border bg-white"></div>`:`<p class="mt-2 text-xs font-bold text-red-600">Bukti transfer belum diunggah.</p>`):''}${o.service==='lepas_kunci'?`<p class="text-[10px] text-amber-700 font-bold mt-2">Jaminan ${money(o.securityDepositAmount||2000000)} • ${esc(o.depositStatus||'held')}</p><button onclick="openRentalDocs('${o.id}')" class="mt-1 bg-amber-100 text-amber-900 px-2 py-1 rounded text-[10px] font-bold">Lihat Dokumen SIM/KTP</button>`:''}<p class="text-shopee font-black mt-2 text-sm">${money(o.totalAmount)}</p><div class="mt-1 text-[10px] text-gray-500"><span>Fee OtoLink (${Math.round(Number(o.platformFeeRate ?? window.RENTAL_PLATFORM_FEE_RATE)*1000)/10}%): <b>${money(o.platformFee ?? window.getRentalFeeBreakdown(o.totalAmount).fee)}</b></span><br><span>Diterima Mitra: <b class="text-green-600">${money(o.ownerNetAmount ?? window.getRentalFeeBreakdown(o.totalAmount).net)}</b></span></div></div>`;
                     hP += `<tr data-admin-order-row data-status="${esc(o.status||'')}" data-search="${esc(search)}"><td class="p-3 text-xs font-bold">${esc(o.orderId||'-')}</td><td class="p-3 text-xs"><p class="font-semibold">${esc(o.customerName||o.customerEmail||'-')}</p><p class="text-gray-500">Mitra: ${esc(o.ownerEmail||'-')}</p><p class="text-gray-400 mt-1">Bayar: ${esc(o.payMethod||'-')}</p></td><td class="p-3">${detail}</td><td class="p-3">${statBadge}</td><td class="p-3">${actionBtn}</td></tr>`;
                 });
                 c_adP.innerHTML = hP + `</tbody></table></div><p id="adminOrderNoResult" class="hidden text-center text-xs text-gray-400 py-5">Tidak ada pesanan yang cocok dengan filter.</p>`;
