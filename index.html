@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OtoLink - Sewa Mobil Mudah & Cepat</title>
+    <title>OtoLink - Portal Layanan Terpadu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -32,13 +32,42 @@
         .chat-bubble-left { background-color: #f3f4f6; color: #1f2937; border-radius: 1rem 1rem 1rem 0; padding: 0.5rem 0.75rem; max-width: 80%; width: fit-content; }
         .chat-bubble-right { background-color: #dbeafe; color: #1e3a8a; border-radius: 1rem 1rem 0 1rem; padding: 0.5rem 0.75rem; max-width: 80%; width: fit-content; margin-left: auto; }
         
+        .portal-banking { background:linear-gradient(145deg,#0756a5 0%,#0878c9 48%,#e8f4ff 48%,#f4f8fc 100%); }
+        .portal-choice { background:rgba(255,255,255,.96); border:1px solid #e4edf7; box-shadow:0 8px 24px rgba(12,54,100,.08); transition:.18s ease; }
+        .portal-choice:active { transform:scale(.985); }
         /* Security Print Hide */
         @media print { body { display: none; } }
     </style>
 </head>
 <body class="text-gray-800 antialiased selection:bg-orange-200 selection:text-shopee relative">
 
-    <header class="bg-shopee text-white sticky top-0 z-40 shadow-md">
+
+    <section id="portalHome" class="portal-banking min-h-screen fixed inset-0 z-[60] overflow-y-auto">
+      <div class="max-w-md mx-auto min-h-screen px-5 pt-7 pb-10 flex flex-col">
+        <div class="flex items-center justify-between text-white mb-8">
+          <button onclick="handlePortalLogoClick(event)" class="flex items-center gap-2 text-left" aria-label="OtoLink"><span class="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center"><i class="ph-fill ph-car-profile text-2xl"></i></span><span><b class="text-xl tracking-tight">OtoLink</b><small class="block text-blue-100 text-[10px] tracking-widest">DIGITAL SERVICES</small></span></button>
+          <span class="text-[10px] bg-white/15 rounded-full px-3 py-1.5">LAYANAN TERPADU</span>
+        </div>
+        <div class="text-white mb-7">
+          <p class="text-xs font-bold tracking-[.22em] text-blue-100 mb-2">SELAMAT DATANG</p>
+          <h1 class="text-3xl font-extrabold leading-tight">Semua layanan<br>OtoLink dalam satu pintu.</h1>
+          <p class="text-sm text-blue-50 mt-3 leading-relaxed">Silakan pilih layanan yang ingin Anda akses.</p>
+        </div>
+        <div class="bg-white rounded-[28px] p-4 shadow-2xl shadow-blue-950/20">
+          <div class="flex items-center justify-between px-1 mb-3"><div><p class="text-sm font-extrabold text-slate-800">Pilih Layanan</p><p class="text-[11px] text-slate-500">Pilih salah satu untuk melanjutkan</p></div><i class="ph-fill ph-squares-four text-2xl text-blue-600"></i></div>
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="openPortalService('rental')" class="portal-choice rounded-2xl p-4 text-left"><span class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center text-2xl mb-3"><i class="ph-fill ph-car"></i></span><b class="block text-sm text-slate-800">OtoLink Rental</b><span class="text-[10px] text-slate-500 block mt-1">Sewa dan kelola kendaraan</span><i class="ph-bold ph-arrow-up-right text-blue-600 mt-3 block"></i></button>
+            <button onclick="openPortalService('market')" class="portal-choice rounded-2xl p-4 text-left"><span class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-2xl mb-3"><i class="ph-fill ph-arrows-left-right"></i></span><b class="block text-sm text-slate-800">OtoLink Jual Beli</b><span class="text-[10px] text-slate-500 block mt-1">Jual dan beli kendaraan</span><i class="ph-bold ph-arrow-up-right text-emerald-600 mt-3 block"></i></button>
+            <button onclick="openPortalService('complaint')" class="portal-choice rounded-2xl p-4 text-left"><span class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-2xl mb-3"><i class="ph-fill ph-headset"></i></span><b class="block text-sm text-slate-800">Keluhan</b><span class="text-[10px] text-slate-500 block mt-1">Bantuan dan pengaduan</span><i class="ph-bold ph-arrow-up-right text-amber-600 mt-3 block"></i></button>
+            <button onclick="openPortalService('investor')" class="portal-choice rounded-2xl p-4 text-left"><span class="w-12 h-12 rounded-2xl bg-violet-50 text-violet-700 flex items-center justify-center text-2xl mb-3"><i class="ph-fill ph-chart-line-up"></i></span><b class="block text-sm text-slate-800">Investor</b><span class="text-[10px] text-slate-500 block mt-1">Informasi peluang investasi</span><i class="ph-bold ph-arrow-up-right text-violet-600 mt-3 block"></i></button>
+          </div>
+          <p class="text-[10px] text-center text-slate-400 mt-4">Akses layanan resmi OtoLink</p>
+        </div>
+        <div class="mt-auto pt-8 text-center text-[10px] text-blue-100">© 2026 OtoLink • PT OtoLink Nusantara</div>
+      </div>
+    </section>
+
+    <header id="rentalHeader" class="hidden bg-shopee text-white sticky top-0 z-40 shadow-md">
         <div class="container mx-auto px-4 max-w-5xl">
             <div class="flex justify-between items-center py-2 text-[10px] md:text-xs opacity-90 border-b border-white/20">
                 <button type="button" onclick="openRentalBenefits()" class="font-semibold hover:text-orange-100 hover:underline transition cursor-pointer" title="Lihat manfaat OtoLink untuk mitra dan penyewa">Mulai Sewakan Mobil <i class="ph ph-arrow-up-right inline-block ml-1"></i></button>
@@ -70,7 +99,7 @@
         </div>
     </header>
 
-    <div id="appContent">
+    <div id="appContent" class="hidden">
         <section class="bg-white border-b relative group">
             <div class="container mx-auto px-0 md:px-4 max-w-5xl aspect-[16/7] md:aspect-[16/6] max-h-[360px] overflow-hidden relative bg-gray-100" id="carouselContainer">
                 <div id="carouselWrapper" class="flex w-full h-full carousel-transition">
@@ -265,10 +294,12 @@
             setTimeout(() => t.classList.add('-translate-y-20', 'opacity-0'), 3000);
         };
         window.closeAllModals = () => { document.getElementById('modalContainer').innerHTML = ''; };
+        window.portalAdminReturn = false;
         window.closeDashboard = () => {
             window.closeAllModals();
             const dash = document.getElementById('dashboardSection');
             if(dash) dash.classList.add('hidden');
+            if(window.portalAdminReturn) { window.portalAdminReturn=false; document.getElementById('dashboardContent')?.classList.add('hidden'); document.getElementById('appContent')?.classList.add('hidden'); document.getElementById('rentalHeader')?.classList.add('hidden'); document.getElementById('portalHome')?.classList.remove('hidden'); return; }
             window.goHome();
         };
         // Klik area gelap di luar popup = tutup. Klik isi popup tidak ikut menutup.
@@ -316,8 +347,9 @@
             onSnapshot(collection(db, 'banners'), (snap) => { window.bannersData = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCarousel(); });
             onSnapshot(collection(db, 'settings'), (snap) => { 
                 window.appSettingsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                window.renderPortalLinks?.();
                 const cnf = window.appSettingsData.find(s => s.type === 'config');
-                if(cnf) { window.configDocId = cnf.id; window.bannerInterval = cnf.bannerInterval || 5000; window.RENTAL_PLATFORM_FEE_RATE = Number.isFinite(Number(cnf.rentalPlatformFeeRate)) ? Math.min(0.5, Math.max(0, Number(cnf.rentalPlatformFeeRate))) : (window.RENTAL_PLATFORM_FEE_RATE ?? 0.05); window.PARTNER_AD_FEE_AMOUNT = Number.isFinite(Number(cnf.partnerAdFeeAmount)) ? Math.max(0, Number(cnf.partnerAdFeeAmount)) : (window.PARTNER_AD_FEE_AMOUNT ?? 11200); setupCarouselInterval(); if(window.currentUser?.role==='admin' && !document.getElementById('adFeeSettings')?.classList.contains('hidden')) window.renderAdminFeeSettings?.(); }
+                if(cnf) { window.configDocId = cnf.id; window.bannerInterval = cnf.bannerInterval || 5000; window.RENTAL_PLATFORM_FEE_RATE = Number.isFinite(Number(cnf.rentalPlatformFeeRate)) ? Math.min(0.5, Math.max(0, Number(cnf.rentalPlatformFeeRate))) : (window.RENTAL_PLATFORM_FEE_RATE ?? 0.05); window.PARTNER_AD_FEE_AMOUNT = Number.isFinite(Number(cnf.partnerAdFeeAmount)) ? Math.max(0, Number(cnf.partnerAdFeeAmount)) : (window.PARTNER_AD_FEE_AMOUNT ?? 11200); setupCarouselInterval(); if(window.currentUser?.role==='admin' && !document.getElementById('adFeeSettings')?.classList.contains('hidden')) window.renderAdminFeeSettings?.(); if(window.currentUser?.role==='admin' && !document.getElementById('adPortalLinks')?.classList.contains('hidden')) window.renderAdminPortalLinks?.(); }
             });
             onSnapshot(collection(db, 'messages'), (snap) => { 
                 const am=snap.docChanges().filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()}));if(window.otoNotifInitialSnapshots.messages)am.forEach(m=>{const u=window.currentUser;if(!u||m.senderEmail===u.email)return;const addressed=u.role==='admin'?(m.receiverEmail==='admin'||m.receiverEmail===u.email||(!m.receiverEmail&&m.senderEmail!=='admin')):m.receiverEmail===u.email;if(addressed)window.notifyOtoTransaction('Chat Masuk','Pesan baru dari '+(m.senderName||m.senderEmail||'pengguna OtoLink'));});window.otoNotifInitialSnapshots.messages=true;window.messagesData = snap.docs.map(d => ({id: d.id, ...d.data()})); 
@@ -662,6 +694,7 @@
             // Jangan simpan sesi admin ke localStorage.
             window.clearLoginSession();
             window.closeAllModals();
+            document.getElementById('portalHome')?.classList.add('hidden');
             document.getElementById('appContent').classList.add('hidden');
             const dc = document.getElementById('dashboardContent');
             dc.classList.remove('hidden');
@@ -774,6 +807,36 @@
                 window.goHome();
             }, 650);
         };
+
+        // ===== HALAMAN DEPAN PORTAL OTOLINK + TAUTAN LAYANAN =====
+        window.PORTAL_SERVICE_DEFS = [
+          {key:'rental',label:'OtoLink Rental',hint:'Sewa mobil dan dashboard rental',icon:'car'},
+          {key:'market',label:'OtoLink Jual Beli',hint:'Marketplace jual beli kendaraan',icon:'arrows-left-right'},
+          {key:'complaint',label:'Keluhan',hint:'Layanan bantuan dan pengaduan',icon:'headset'},
+          {key:'investor',label:'Investor',hint:'Informasi dan hubungan investor',icon:'chart-line-up'}
+        ];
+        window.portalLinks = {market:'',complaint:'',investor:''};
+        window.portalClickCount=0; window.portalClickTimer=null;
+        window.handlePortalLogoClick=function(event){if(event)event.preventDefault();window.portalClickCount++;clearTimeout(window.portalClickTimer);if(window.portalClickCount>=3){window.portalClickCount=0;window.portalAdminReturn=true;window.openAdminPasswordModal();return;}window.portalClickTimer=setTimeout(()=>window.portalClickCount=0,650);};
+        window.renderPortalLinks=function(){const cfg=window.appSettingsData.find(x=>x.type==='config');window.portalLinks={market:cfg?.portalLinks?.market||'',complaint:cfg?.portalLinks?.complaint||'',investor:cfg?.portalLinks?.investor||''};};
+        window.openPortalService=function(key){
+          if(key==='rental'){document.getElementById('portalHome')?.classList.add('hidden');document.getElementById('rentalHeader')?.classList.remove('hidden');document.getElementById('appContent')?.classList.remove('hidden');window.renderCars();window.scrollTo({top:0,behavior:'smooth'});return;}
+          window.renderPortalLinks();const url=String(window.portalLinks[key]||'').trim();
+          if(!url){window.showToast('Link layanan ini belum diatur oleh Admin.',false);return;}
+          try{const u=new URL(url);if(!['http:','https:'].includes(u.protocol))throw new Error('URL tidak valid');window.open(u.href,'_blank','noopener');}catch(e){window.showToast('Link layanan belum valid. Hubungi Admin.',false);}
+        };
+        window.renderAdminPortalLinks=function(){
+          const box=document.getElementById('adPortalLinks');if(!box||!window.hasAdminPermission('portal_links'))return;
+          const cfg=window.appSettingsData.find(x=>x.type==='config');const links=cfg?.portalLinks||{};
+          const fields=[['market','OtoLink Jual Beli','https://contoh-domain-jualbeli.com'],['complaint','Keluhan','https://contoh-domain-keluhan.com'],['investor','Investor','https://contoh-domain-investor.com']];
+          box.innerHTML=`<div class="max-w-3xl"><div class="border-b pb-4 mb-5"><h3 class="text-xl font-black text-slate-800"><i class="ph-fill ph-link text-blue-600 mr-2"></i>Pengaturan Link Portal</h3><p class="text-sm text-slate-500 mt-1">Admin dapat menentukan alamat website tujuan untuk setiap layanan. Perubahan akan tampil pada halaman depan portal.</p></div><div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-800 mb-4"><b>OtoLink Rental</b> tetap membuka aplikasi rental yang sedang digunakan. Isi link untuk tiga layanan lainnya di bawah ini.</div><div class="space-y-4">${fields.map(([key,label,placeholder])=>`<label class="block border rounded-xl p-4 bg-white"><span class="font-bold text-sm text-slate-800">${label}</span><span class="block text-xs text-slate-500 mt-1 mb-2">Alamat website lengkap (diawali https://)</span><input id="portalLink_${key}" type="url" value="${window.escapeHtml(links[key]||'')}" placeholder="${placeholder}" class="w-full border rounded-lg px-3 py-3 text-sm focus:ring-2 focus:ring-blue-200 outline-none"></label>`).join('')}</div><div class="flex flex-wrap gap-2 mt-5"><button onclick="saveAdminPortalLinks()" class="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-5 py-3 font-bold text-sm"><i class="ph-bold ph-floppy-disk mr-1"></i>Simpan Link Portal</button><button onclick="previewPortalHome()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg px-5 py-3 font-bold text-sm"><i class="ph-bold ph-eye mr-1"></i>Pratinjau Halaman Depan</button></div></div>`;
+        };
+        window.saveAdminPortalLinks=async function(){
+          if(!window.requireAdminPermission('portal_links'))return;
+          const links={};for(const key of ['market','complaint','investor']){const v=String(document.getElementById('portalLink_'+key)?.value||'').trim();if(v){try{const u=new URL(v);if(!['http:','https:'].includes(u.protocol))throw 0;links[key]=u.href;}catch(e){return window.showToast('Alamat link '+key+' harus menggunakan http:// atau https://',false);}}else links[key]='';}
+          try{const cfg=window.appSettingsData.find(x=>x.type==='config');const payload={type:'config',portalLinks:links,portalLinksUpdatedAt:Date.now(),portalLinksUpdatedBy:window.currentUser?.email||'admin'};if(cfg?.id){await window.fsUpdateDoc('settings',cfg.id,payload);window.configDocId=cfg.id;}else{const id=await window.fsAddDoc('settings',payload);window.configDocId=id;}window.portalLinks=links;window.showToast('Link portal berhasil disimpan.');window.renderAdminPortalLinks();}catch(e){console.error(e);window.showToast('Gagal menyimpan link portal: '+(e.message||''),false);}
+        };
+        window.previewPortalHome=function(){window.closeDashboard();document.getElementById('portalHome')?.classList.remove('hidden');document.getElementById('rentalHeader')?.classList.add('hidden');document.getElementById('appContent')?.classList.add('hidden');};
 
         window.goHome = function() {
             document.getElementById('appContent').classList.remove('hidden');
@@ -1235,7 +1298,7 @@
 
                         <div id="coSelfDriveDocs" class="hidden mb-5 bg-amber-50 border border-amber-200 rounded-xl p-4">
                             <h4 class="font-black text-amber-900 mb-1"><i class="ph-fill ph-identification-card mr-1"></i>Persyaratan Sewa Lepas Kunci</h4>
-                            <p class="text-xs text-amber-900 mb-3">Minimal sewa 24 jam dan wajib menahan jaminan Rp2.000.000 dari saldo OtoPay. Jaminan dapat dikembalikan setelah sewa selesai dan unit diperiksa.</p>
+                            <p class="text-xs text-amber-900 mb-3">Minimal sewa 24 jam. Uang jaminan ditentukan oleh mitra untuk unit ini sebesar <b>${formatRp(Number(car.securityDepositAmount ?? 2000000))}</b> dan ditahan selama masa sewa. Pengembalian diproses setelah sewa selesai dan unit diperiksa.</p>
                             <div class="grid sm:grid-cols-2 gap-3">
                               <label class="block bg-white border rounded-lg p-3"><span class="block text-sm font-bold">SIM <span class="text-red-600">*Wajib</span></span><span class="block text-[10px] text-gray-500 mb-2">Foto jelas, JPG/PNG/WebP</span><input id="coDocSIM" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs" onchange="previewRentalDocName('coDocSIM','coDocSIMName')"><span id="coDocSIMName" class="block text-[10px] text-gray-500 mt-1">Belum dipilih</span></label>
                               <label class="block bg-white border rounded-lg p-3"><span class="block text-sm font-bold">KTP <span class="text-red-600">*Wajib</span></span><span class="block text-[10px] text-gray-500 mb-2">Foto jelas, JPG/PNG/WebP</span><input id="coDocKTP" type="file" accept="image/jpeg,image/png,image/webp" class="w-full text-xs" onchange="previewRentalDocName('coDocKTP','coDocKTPName')"><span id="coDocKTPName" class="block text-[10px] text-gray-500 mt-1">Belum dipilih</span></label>
@@ -1407,6 +1470,7 @@
 
             let rentalDocuments = null;
             const isSelfDrive = service === 'lepas_kunci';
+            const securityDepositAmount = isSelfDrive ? Math.max(0, Number(car.securityDepositAmount ?? 2000000)) : 0;
             if(isSelfDrive) {
                 const startMs = new Date(`${pickupDate}T${pickupTime||'00:00'}`).getTime();
                 const endMs = new Date(`${endDate}T${endTime||'00:00'}`).getTime();
@@ -1416,8 +1480,8 @@
                 const depositAccount=(document.getElementById('coDepositAccount')?.value||'').trim(); const depositHolder=(document.getElementById('coDepositHolder')?.value||'').trim();
                 if(!depositAccount||!depositHolder) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast('Isi nomor rekening dan nama pemilik rekening untuk pengembalian jaminan.',false); }
                 const walletForDeposit = window.getOtoPayBalance(window.currentUser.email);
-                const requiredWallet = 2000000 + (method==='otopay' ? total : 0);
-                if(walletForDeposit < requiredWallet) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast(`Saldo OtoPay tidak cukup. Untuk lepas kunci diperlukan jaminan Rp2.000.000${method==='otopay'?' ditambah biaya sewa':''}.`,false); }
+                const requiredWallet = securityDepositAmount + (method==='otopay' ? total : 0);
+                if(walletForDeposit < requiredWallet) { btn.disabled=false; btn.innerHTML='Bayar Sekarang'; return window.showToast(`Saldo OtoPay tidak cukup. Untuk lepas kunci diperlukan jaminan ${formatRp(securityDepositAmount)}${method==='otopay'?' ditambah biaya sewa':''}.`,false); }
             }
 
             if(method === 'otopay') {
@@ -1453,7 +1517,7 @@
                 customerCompletionConfirmed: false,
                 driverCompletionConfirmed: service === 'lepas_kunci',
                 rentalDocuments: rentalDocuments || null,
-                securityDepositAmount: isSelfDrive ? 2000000 : 0,
+                securityDepositAmount: isSelfDrive ? securityDepositAmount : 0,
                 depositStatus: isSelfDrive ? 'held' : 'not_required',
                 originalDocumentsMustBeShownAtHandover: isSelfDrive,
                 depositBankName: isSelfDrive ? (document.getElementById('coDepositBank')?.value||'') : '',
@@ -1470,7 +1534,7 @@
             const createdOrderId = await window.fsAddDoc('orders', orderData);
             window.pendingBankTransferOrder = {id: createdOrderId, ...orderData};
             if(isSelfDrive) {
-                await window.fsAddDoc('topups', {name:window.currentUser.name||window.currentUser.email,email:window.currentUser.email,amount:-2000000,status:'completed',type:'security_deposit_hold',orderId:createdOrderId,orderCode:orderId,note:'Jaminan sewa lepas kunci ditahan sampai unit selesai dan diperiksa.',timestamp:Date.now()});
+                await window.fsAddDoc('topups', {name:window.currentUser.name||window.currentUser.email,email:window.currentUser.email,amount:-securityDepositAmount,status:'completed',type:'security_deposit_hold',orderId:createdOrderId,orderCode:orderId,note:`Jaminan sewa lepas kunci ${formatRp(securityDepositAmount)} ditahan sampai sewa selesai dan unit diperiksa.`,timestamp:Date.now()});
             }
 
             let newRentCount = (car.rentCount || 0) + 1;
@@ -1764,7 +1828,7 @@
 
             <div id="customerDepositReturns" class="bg-white border border-amber-100 rounded-2xl p-4 md:p-5 shadow-sm mb-5">
                 <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-3 mb-3">
-                    <div><h3 class="font-black text-gray-800"><i class="ph-fill ph-shield-check text-amber-600 mr-1"></i> Pengembalian Dana Jaminan Customer</h3><p class="text-xs text-gray-500 mt-1">Khusus sewa lepas kunci • jaminan Rp2.000.000</p></div>
+                    <div><h3 class="font-black text-gray-800"><i class="ph-fill ph-shield-check text-amber-600 mr-1"></i> Pengembalian Dana Jaminan Customer</h3><p class="text-xs text-gray-500 mt-1">Khusus sewa lepas kunci • nominal mengikuti pengaturan masing-masing mitra</p></div>
                     <span class="text-[10px] font-bold bg-amber-50 text-amber-800 px-3 py-1.5 rounded-full">${myDepositOrders.length} transaksi</span>
                 </div>
                 ${customerDepositHtml}
@@ -2349,6 +2413,11 @@
                         <div><label class="block text-[11px] font-bold text-gray-600 mb-1">Jasa Sopir Dalam Kota (Rp/hari)</label><input type="number" min="0" id="addDriverCityPrice" value="150000" class="w-full border p-2.5 rounded text-sm outline-none focus:border-shopee" placeholder="Contoh: 150000"></div>
                         <div><label class="block text-[11px] font-bold text-gray-600 mb-1">Jasa Sopir Luar Kota (Rp/hari)</label><input type="number" min="0" id="addDriverOutsidePrice" value="250000" class="w-full border p-2.5 rounded text-sm outline-none focus:border-shopee" placeholder="Contoh: 250000"></div>
                     </div>
+                    <div class="mt-3 p-3 rounded-lg border border-amber-200 bg-amber-50">
+                        <label class="block text-[11px] font-bold text-amber-900 mb-1">Uang Jaminan Lepas Kunci (Rp)</label>
+                        <input type="number" min="0" step="10000" id="addSecurityDepositAmount" value="2000000" class="w-full border border-amber-300 p-2.5 rounded text-sm" placeholder="Contoh: 2000000">
+                        <p class="text-[10px] text-amber-800 mt-1">Mitra bebas menentukan nominal jaminan untuk mobil ini. Nominal akan ditampilkan kepada pelanggan saat memilih Lepas Kunci.</p>
+                    </div>
                 </div>
                 <div class="mt-4 p-4 rounded-xl border bg-orange-50/50">
                     <p class="text-xs font-black text-gray-800 mb-1">Jenis Durasi Sewa yang Dilayani</p>
@@ -2409,7 +2478,7 @@
                 if(car.status === 'pending_payment') badge = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Pending Bayar ${money(car.partnerAdFeeAmount ?? window.PARTNER_AD_FEE_AMOUNT ?? 11200)}</span>`;
                 if(car.isBooked) badge += ` <span class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-sm animate-pulse">Sedang Disewa</span>`;
                 
-                const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><p class="text-[10px] text-gray-400 mt-1">Layanan durasi: ${[car.allow24h!==false?'24 Jam':'',car.allow12h!==false?'12 Jam':'',car.allowHourly!==false?'Per Jam':'',car.allowMonthly===true?'Bulanan':''].filter(Boolean).join(' • ') || 'Tidak aktif'}</p><p class="text-[10px] text-blue-700 mt-1">Mode: ${[car.allowSelfDrive!==false?'Lepas kunci':'',car.allowDriverCity!==false?'Sopir dalam kota ('+formatRp(car.driverCityPrice??150000)+')':'',car.allowDriverOutside!==false?'Sopir luar kota ('+formatRp(car.driverOutsidePrice??250000)+')':''].filter(Boolean).join(' • ') || 'Belum diatur'}</p><div class="mt-1">${badge}</div>${window.carRatingStatusHtml(car.id)}</div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
+                const imgs = window.getCarImages(car); list.innerHTML += `<div class="border p-3 rounded-lg hover:bg-gray-50 transition"><div class="flex items-center gap-3"><button onclick="openCarDetail('${car.id}')" class="shrink-0"><img src="${imgs[0] || car.img}" class="w-20 h-14 object-cover rounded bg-gray-200"></button><div class="flex-grow min-w-0"><p class="font-bold text-sm text-gray-800 truncate">${car.name}</p><p class="text-xs text-gray-500">${formatRp(car.priceDay)} • <i class="ph-fill ph-camera"></i> ${imgs.length || 1} foto</p><p class="text-[10px] text-gray-400 mt-1">Layanan durasi: ${[car.allow24h!==false?'24 Jam':'',car.allow12h!==false?'12 Jam':'',car.allowHourly!==false?'Per Jam':'',car.allowMonthly===true?'Bulanan':''].filter(Boolean).join(' • ') || 'Tidak aktif'}</p><p class="text-[10px] text-blue-700 mt-1">Mode: ${[car.allowSelfDrive!==false?'Lepas kunci':'',car.allowDriverCity!==false?'Sopir dalam kota ('+formatRp(car.driverCityPrice??150000)+')':'',car.allowDriverOutside!==false?'Sopir luar kota ('+formatRp(car.driverOutsidePrice??250000)+')':''].filter(Boolean).join(' • ') || 'Belum diatur'}</p>${car.allowSelfDrive!==false?`<p class="text-[10px] text-amber-700 font-bold mt-1">Jaminan Lepas Kunci: ${formatRp(car.securityDepositAmount??2000000)}</p>`:''}<div class="mt-1">${badge}</div>${window.carRatingStatusHtml(car.id)}</div></div><div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t"><button onclick="openCarDetail('${car.id}')" class="bg-blue-50 text-blue-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-eye"></i> Lihat</button><button onclick="openMitraCarEdit('${car.id}')" class="bg-yellow-50 text-yellow-700 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-pencil-simple"></i> Edit</button><button onclick="deleteMitraCar('${car.id}')" class="bg-red-50 text-red-600 py-2 rounded text-[11px] font-bold"><i class="ph-bold ph-trash"></i> Hapus</button></div></div>`;
             });
         };
 
@@ -2518,6 +2587,7 @@
                 const allowDriverOutside = !!document.getElementById('addAllowDriverOutside')?.checked;
                 const driverCityPrice = Math.max(0, parseInt(document.getElementById('addDriverCityPrice')?.value || '0'));
                 const driverOutsidePrice = Math.max(0, parseInt(document.getElementById('addDriverOutsidePrice')?.value || '0'));
+                const securityDepositAmount = Math.max(0, parseInt(document.getElementById('addSecurityDepositAmount')?.value || '2000000'));
                 const imgFiles = window.collectCarPhotoSlots('addCarImg');
 
                 if(!name || !price || !seat) throw new Error('Nama mobil, harga, dan jumlah kursi wajib diisi.');
@@ -2527,6 +2597,7 @@
                 if(!allowSelfDrive && !allowDriverCity && !allowDriverOutside) throw new Error('Pilih minimal satu layanan: lepas kunci atau dengan sopir.');
                 if(allowDriverCity && !(driverCityPrice > 0)) throw new Error('Isi jasa sopir dalam kota dengan nilai lebih dari Rp0.');
                 if(allowDriverOutside && !(driverOutsidePrice > 0)) throw new Error('Isi jasa sopir luar kota dengan nilai lebih dari Rp0.');
+                if(allowSelfDrive && !(securityDepositAmount > 0)) throw new Error('Uang jaminan lepas kunci harus lebih dari Rp0.');
 
                 window.setPartnerAdProgress(`Memproses ${imgFiles.length} foto...`, true);
                 const photoUrls = await window.uploadCarImages(imgFiles, window.currentUser.email);
@@ -2538,7 +2609,7 @@
                     name, category:cat, priceDay:price, seat,
                     allow24h, allow12h, allowHourly, allowMonthly, monthlyPrice,
                     allowSelfDrive, allowDriverCity, allowDriverOutside,
-                    driverCityPrice, driverOutsidePrice,
+                    driverCityPrice, driverOutsidePrice, securityDepositAmount,
                     ownerPhone:window.currentUser.email,
                     ownerName:window.currentUser.name || '',
                     status:isPaidAd ? 'pending_payment' : 'pending',
@@ -2870,7 +2941,8 @@
             {key:'banner', label:'Banner / Carousel', tab:'adBanner'},
             {key:'chat', label:'Chat User & Mitra', tab:'adChat'},
             {key:'ratings', label:'Riwayat Penilaian', tab:'adRatings'},
-            {key:'fee_settings', label:'Pengaturan Fee', tab:'adFeeSettings'}
+            {key:'fee_settings', label:'Pengaturan Fee', tab:'adFeeSettings'},
+            {key:'portal_links', label:'Pengaturan Link Portal', tab:'adPortalLinks'}
         ];
         window.isSuperAdmin = () => !!(window.currentUser?.isSuperAdmin || window.currentUser?.email === 'admin');
         window.hasAdminPermission = function(key) {
@@ -3284,6 +3356,7 @@
                 <button onclick="switchAdminTab('adChat')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab relative" id="tab-adChat"><i class="ph-fill ph-chats mr-1"></i> Pesan User & Mitra ${badge(notif.adChat)}</button>
                 <button onclick="switchAdminTab('adRatings')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adRatings"><i class="ph-fill ph-star mr-1 text-yellow-500"></i> Penilaian</button>
                 <button onclick="switchAdminTab('adFeeSettings')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adFeeSettings"><i class="ph-fill ph-percent mr-1 text-green-600"></i> Pengaturan Fee</button>
+                <button onclick="switchAdminTab('adPortalLinks')" class="px-4 py-2 text-sm font-bold rounded border shadow-sm hover:bg-gray-50 admin-tab" id="tab-adPortalLinks"><i class="ph-fill ph-link mr-1"></i> Link Portal</button>
                 <button onclick="openAdminManagement()" class="${window.isSuperAdmin()?'':'hidden'} px-4 py-2 text-sm font-bold rounded border shadow-sm bg-[#101827] text-white admin-tab" id="tab-adAdminManagement"><i class="ph-fill ph-users-three mr-1"></i> Admin & Hak Akses</button>
             </div>
 
@@ -3300,6 +3373,7 @@
                 <div id="adChat" class="hidden admin-panel"></div>
                 <div id="adRatings" class="hidden admin-panel"></div>
                 <div id="adFeeSettings" class="hidden admin-panel"></div>
+                <div id="adPortalLinks" class="hidden admin-panel"></div>
                 <div id="adAdminManagement" class="hidden admin-panel"></div>
             </div>`;
             dc.innerHTML = html;
@@ -3308,6 +3382,7 @@
             window.renderAdminManagement();
             window.renderAdminRatings();
             window.renderAdminFeeSettings();
+            window.renderAdminPortalLinks();
             window.applyAdminPermissions();
             if(!window.isSuperAdmin()) setTimeout(()=>window.switchAdminTab(window.getFirstAllowedAdminTab()),0);
         };
@@ -4101,6 +4176,11 @@
                     <div class="w-1/2"><label class="block text-xs font-semibold mb-1">Harga 24 Jam (Rp)</label><input type="number" id="ecPrice" value="${car ? car.priceDay : ''}" class="w-full border p-2 text-sm rounded"></div>
                     <div class="w-1/2"><label class="block text-xs font-semibold mb-1">Kursi</label><input type="number" id="ecSeat" value="${car ? car.seat : ''}" class="w-full border p-2 text-sm rounded"></div>
                   </div>
+                  <div class="mb-3 p-3 border rounded-xl bg-amber-50">
+                    <label class="block text-xs font-black mb-1 text-amber-900">Uang Jaminan Lepas Kunci (Rp)</label>
+                    <input type="number" min="0" step="10000" id="ecSecurityDepositAmount" value="${car ? Number(car.securityDepositAmount ?? 2000000) : 2000000}" class="w-full border border-amber-300 p-2 text-sm rounded">
+                    <p class="text-[10px] text-amber-800 mt-1">Mitra dapat mengatur nominal jaminan untuk iklannya. Wajib lebih dari Rp0 jika layanan Lepas Kunci aktif.</p>
+                  </div>
                   <div class="mb-3 p-3 border rounded-xl bg-orange-50/50">
                     <label class="block text-xs font-black mb-2">Layanan Durasi yang Aktif</label>
                     <div class="grid grid-cols-3 gap-2 text-[11px]">
@@ -4144,6 +4224,7 @@
                 allowHourly: !!document.getElementById('ecAllowHourly')?.checked,
                 allowMonthly: !!document.getElementById('ecAllowMonthly')?.checked,
                 monthlyPrice: (parseInt(document.getElementById('ecMonthlyPrice')?.value || '0') || Math.ceil((parseInt(document.getElementById('ecPrice')?.value || '0') || 0) * 30 * 0.9)),
+                securityDepositAmount: Math.max(0, parseInt(document.getElementById('ecSecurityDepositAmount')?.value || '2000000') || 0),
                 ownerPhone: document.getElementById('ecOwner')?.value || 'official'
             };
             const imgFiles = window.collectCarPhotoSlots('ecImgInput');
@@ -4152,6 +4233,8 @@
                 return window.showToast("Lengkapi nama, harga, dan jumlah kursi.", false);
             if(!data.allow24h && !data.allow12h && !data.allowHourly && !data.allowMonthly)
                 return window.showToast("Aktifkan minimal 1 jenis durasi sewa.", false);
+            if(data.allowSelfDrive !== false && data.securityDepositAmount <= 0)
+                return window.showToast("Uang jaminan harus lebih dari Rp0 jika layanan Lepas Kunci aktif.", false);
             if(imgFiles.length > 5)
                 return window.showToast("Maksimal 5 foto per iklan!", false);
 
