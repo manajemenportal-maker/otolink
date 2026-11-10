@@ -59,7 +59,7 @@
             <button onclick="openPortalService('rental')" class="portal-choice rounded-2xl p-4 text-left"><span class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-700 flex items-center justify-center text-2xl mb-3"><i class="ph-fill ph-car"></i></span><b class="block text-sm text-slate-800">OtoLink Rental</b><span class="text-[10px] text-slate-500 block mt-1">Sewa dan kelola kendaraan</span><i class="ph-bold ph-arrow-up-right text-orange-600 mt-3 block"></i></button>
             <button onclick="openPortalService('market')" class="portal-choice rounded-2xl p-4 text-left"><span class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-700 flex items-center justify-center text-2xl mb-3"><i class="ph-fill ph-handshake"></i></span><b class="block text-sm text-slate-800">OtoLink Kemitraan</b><span class="text-[10px] text-slate-500 block mt-1">Bergabung dan kembangkan usaha bersama</span><i class="ph-bold ph-arrow-up-right text-orange-600 mt-3 block"></i></button>
             <button onclick="openPortalService('complaint')" class="portal-choice rounded-2xl p-4 text-left"><span class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-700 flex items-center justify-center text-2xl mb-3"><i class="ph-fill ph-headset"></i></span><b class="block text-sm text-slate-800">Keluhan</b><span class="text-[10px] text-slate-500 block mt-1">Bantuan dan pengaduan</span><i class="ph-bold ph-arrow-up-right text-orange-600 mt-3 block"></i></button>
-            <button onclick="openPortalService('investor')" class="portal-choice rounded-2xl p-4 text-left"><span class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-700 flex items-center justify-center text-2xl mb-3"><i class="ph-fill ph-chart-line-up"></i></span><b class="block text-sm text-slate-800">Investor</b><span class="text-[10px] text-slate-500 block mt-1">Informasi peluang investasi</span><i class="ph-bold ph-arrow-up-right text-orange-600 mt-3 block"></i></button>
+            <button onclick="openPortalService('investor')" class="portal-choice rounded-2xl p-4 text-left"><span class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-700 flex items-center justify-center text-2xl mb-3"><i class="ph-fill ph-car"></i></span><b class="block text-sm text-slate-800">OtoLink Mobil & Motor</b><span class="text-[10px] text-slate-500 block mt-1">Jual beli mobil dan motor</span><i class="ph-bold ph-arrow-up-right text-orange-600 mt-3 block"></i></button>
           </div>
           <p class="text-[10px] text-center text-slate-400 mt-4">Akses layanan resmi OtoLink</p>
         </div>
@@ -813,7 +813,7 @@
           {key:'rental',label:'OtoLink Rental',hint:'Sewa mobil dan dashboard rental',icon:'car'},
           {key:'market',label:'OtoLink Kemitraan',hint:'Bergabung dan kembangkan usaha bersama',icon:'handshake'},
           {key:'complaint',label:'Keluhan',hint:'Layanan bantuan dan pengaduan',icon:'headset'},
-          {key:'investor',label:'Investor',hint:'Informasi dan hubungan investor',icon:'chart-line-up'}
+          {key:'investor',label:'OtoLink Mobil & Motor',hint:'Jual beli mobil dan motor',icon:'car'}
         ];
         window.portalLinks = {market:'',complaint:'',investor:''};
         window.portalClickCount=0; window.portalClickTimer=null;
@@ -839,10 +839,32 @@
           if(!url){window.showToast('Link layanan ini belum diatur oleh Admin.',false);return;}
           try{const u=new URL(url);if(!['http:','https:'].includes(u.protocol))throw new Error('URL tidak valid');window.open(u.href,'_blank','noopener');}catch(e){window.showToast('Link layanan belum valid. Hubungi Admin.',false);}
         };
-        window.openMitraProspectSite=function(){
-          window.renderPortalLinks();const url=String(window.portalLinks.market||'').trim();
-          try{const u=new URL(url);if(!['http:','https:'].includes(u.protocol))throw new Error('URL tidak valid');window.open(u.href,'_blank','noopener');window.closeAllModals();}
-          catch(e){window.showToast('Link website Kemitraan belum diatur atau belum valid oleh Admin.',false);}
+        // Calon mitra langsung diarahkan ke formulir pendaftaran mitra yang sudah tersedia di aplikasi.
+        window.openMitraRegistration=function(){
+          // Form pendaftaran yang dipakai adalah form asli pada menu Masuk | Daftar OtoLink.
+          // Portal harus disembunyikan terlebih dahulu karena z-index portal lebih tinggi
+          // daripada modal autentikasi; jika tidak, form terbuka di belakang halaman depan.
+          window.closeAllModals();
+          if(window.currentUser){
+            if(window.currentUser.role==='mitra'){
+              document.getElementById('portalHome')?.classList.add('hidden');
+              document.getElementById('rentalHeader')?.classList.remove('hidden');
+              document.getElementById('appContent')?.classList.add('hidden');
+              return window.openUserDashboard();
+            }
+            window.showToast('Anda sedang masuk dengan akun non-mitra. Silakan keluar terlebih dahulu untuk membuat akun Mitra.',false);
+            return;
+          }
+          document.getElementById('portalHome')?.classList.add('hidden');
+          document.getElementById('rentalHeader')?.classList.remove('hidden');
+          document.getElementById('appContent')?.classList.remove('hidden');
+          document.getElementById('dashboardContent')?.classList.add('hidden');
+          // Panggil langsung mode Daftar agar form tidak sempat kembali ke halaman depan.
+          window.openLoginModal('register');
+          const roleField=document.getElementById('regRole');
+          if(roleField){ roleField.value='mitra'; }
+          const nameField=document.getElementById('regName');
+          if(nameField){ nameField.focus(); }
         };
         window.openMitraPortalGate=function(){
           window.renderPortalLinks();
@@ -858,13 +880,13 @@
                   <p class="text-sm text-orange-50 mt-1">Silakan pilih akses sesuai status kemitraan Anda.</p>
                 </div>
                 <div class="p-5 space-y-3">
-                  <button ${safeUrl?'':'disabled'} onclick="openMitraProspectSite()" class="w-full text-left border border-orange-200 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 rounded-xl p-4">
-                    <span class="flex items-center gap-3"><span class="w-11 h-11 rounded-xl bg-orange-500 text-white flex items-center justify-center text-xl"><i class="ph-fill ph-user-plus"></i></span><span class="flex-1"><b class="block text-sm text-slate-800">Saya ingin menjadi Mitra</b><small class="block text-xs text-slate-600 mt-1">Lihat seluruh menu kemitraan, persyaratan, manfaat, dan pendaftaran.</small></span><i class="ph-bold ph-arrow-up-right text-orange-600"></i></span>
+                  <button onclick="openMitraRegistration()" class="w-full text-left border border-orange-200 bg-orange-50 hover:bg-orange-100 rounded-xl p-4">
+                    <span class="flex items-center gap-3"><span class="w-11 h-11 rounded-xl bg-orange-500 text-white flex items-center justify-center text-xl"><i class="ph-fill ph-user-plus"></i></span><span class="flex-1"><b class="block text-sm text-slate-800">Saya ingin menjadi Mitra</b><small class="block text-xs text-slate-600 mt-1">Langsung menuju formulir pendaftaran Mitra OtoLink.</small></span><i class="ph-bold ph-arrow-up-right text-orange-600"></i></span>
                   </button>
                   <button onclick="closeAllModals();document.getElementById('portalHome')?.classList.add('hidden');document.getElementById('rentalHeader')?.classList.remove('hidden');document.getElementById('appContent')?.classList.add('hidden');window.openLoginModal('login')" class="w-full text-left border border-slate-200 hover:bg-slate-50 rounded-xl p-4">
                     <span class="flex items-center gap-3"><span class="w-11 h-11 rounded-xl bg-slate-800 text-white flex items-center justify-center text-xl"><i class="ph-fill ph-lock-key"></i></span><span class="flex-1"><b class="block text-sm text-slate-800">Saya sudah menjadi Mitra</b><small class="block text-xs text-slate-600 mt-1">Masuk ke akun untuk membuka Dashboard Mitra.</small></span><i class="ph-bold ph-arrow-right text-slate-500"></i></span>
                   </button>
-                  ${!safeUrl?'<p class="text-xs text-red-600">Link website Kemitraan belum diatur Admin. Admin perlu mengisi link pada Dashboard Admin → Link Portal.</p>':''}
+
                   <button onclick="closeAllModals()" class="w-full text-xs text-slate-500 py-2">Kembali ke halaman utama</button>
                 </div>
               </div>
@@ -873,7 +895,7 @@
         window.renderAdminPortalLinks=function(){
           const box=document.getElementById('adPortalLinks');if(!box||!window.hasAdminPermission('portal_links'))return;
           const cfg=window.appSettingsData.find(x=>x.type==='config');const links=cfg?.portalLinks||{};
-          const fields=[['market','OtoLink Kemitraan','https://contoh-domain-kemitraan.com'],['complaint','Keluhan','https://contoh-domain-keluhan.com'],['investor','Investor','https://contoh-domain-investor.com']];
+          const fields=[['market','OtoLink Kemitraan (tautan eksternal tidak digunakan untuk pendaftaran)','https://contoh-domain-kemitraan.com'],['complaint','Keluhan','https://contoh-domain-keluhan.com'],['investor','OtoLink Mobil & Motor','https://contoh-domain-mobil-motor.com']];
           box.innerHTML=`<div class="max-w-3xl"><div class="border-b pb-4 mb-5"><h3 class="text-xl font-black text-slate-800"><i class="ph-fill ph-link text-blue-600 mr-2"></i>Pengaturan Link Portal</h3><p class="text-sm text-slate-500 mt-1">Admin dapat menentukan alamat website tujuan untuk setiap layanan. Perubahan akan tampil pada halaman depan portal.</p></div><div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-800 mb-4"><b>OtoLink Rental</b> tetap membuka aplikasi rental yang sedang digunakan. Isi link untuk tiga layanan lainnya di bawah ini.</div><div class="space-y-4">${fields.map(([key,label,placeholder])=>`<label class="block border rounded-xl p-4 bg-white"><span class="font-bold text-sm text-slate-800">${label}</span><span class="block text-xs text-slate-500 mt-1 mb-2">Alamat website lengkap (diawali https://)</span><input id="portalLink_${key}" type="url" value="${window.escapeHtml(links[key]||'')}" placeholder="${placeholder}" class="w-full border rounded-lg px-3 py-3 text-sm focus:ring-2 focus:ring-blue-200 outline-none"></label>`).join('')}</div><div class="flex flex-wrap gap-2 mt-5"><button onclick="saveAdminPortalLinks()" class="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-5 py-3 font-bold text-sm"><i class="ph-bold ph-floppy-disk mr-1"></i>Simpan Link Portal</button><button onclick="previewPortalHome()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg px-5 py-3 font-bold text-sm"><i class="ph-bold ph-eye mr-1"></i>Pratinjau Halaman Depan</button></div></div>`;
         };
         window.saveAdminPortalLinks=async function(){
